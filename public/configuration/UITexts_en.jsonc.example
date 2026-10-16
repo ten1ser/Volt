@@ -1,4 +1,7 @@
 {
+    "roleplay.stats.health": "Health",
+    "roleplay.stats.energy": "Energy",
+    "roleplay.stats.title": "Your stats",
     "widgets.chatinput.text_size": "Text size",
     // ------------------------------------------------------------------
     // UITexts — English (en). Full UI text set (630 keys),

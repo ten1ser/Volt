@@ -1,4 +1,7 @@
 {
+    "roleplay.stats.health": "Salute",
+    "roleplay.stats.energy": "Energia",
+    "roleplay.stats.title": "Le tue statistiche",
     "widgets.chatinput.text_size": "Dimensione del testo",
     // ------------------------------------------------------------------------
     // Friendlist

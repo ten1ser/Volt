@@ -1,0 +1,27 @@
+.rp-stats-hud {
+    position: fixed;
+    top: max(14px, env(safe-area-inset-top));
+    left: max(14px, env(safe-area-inset-left));
+    z-index: 10;
+    width: 190px;
+    padding: 12px 14px 14px;
+    border: 1px solid #50696c;
+    border-radius: 10px;
+    color: #f1f8f6;
+    background: #14252bed;
+    box-shadow: 0 4px 16px #0005;
+    pointer-events: none;
+    font: 600 12px/1.4 system-ui, sans-serif;
+
+    &__title { margin-bottom: 10px; color: #9ab7b5; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+    &__stat + &__stat { margin-top: 10px; }
+    &__line { display: flex; justify-content: space-between; margin-bottom: 5px; }
+    &__track { height: 7px; overflow: hidden; border-radius: 5px; background: #091419; }
+    &__fill { height: 100%; border-radius: inherit; transition: width 180ms ease; }
+    &__stat--health &__fill { background: #f18891; }
+    &__stat--energy &__fill { background: #8fe0bd; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rp-stats-hud__fill { transition: none; }
+}

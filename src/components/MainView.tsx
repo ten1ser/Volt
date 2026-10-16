@@ -46,6 +46,7 @@ import { VariablesExplorerView } from './variables-explorer/VariablesExplorerVie
 import { VaultView } from './vault/VaultView';
 import { WiredView } from './wired/WiredView';
 import { WiredCreatorToolsView } from './wired-tools/WiredCreatorToolsView';
+import { StatsHud } from './roleplay/stats/StatsHud';
 
 export const MainView: FC<{}> = (props) =>
 {
@@ -130,6 +131,7 @@ export const MainView: FC<{}> = (props) =>
         <>
             <div className="hidden" data-localization-version={localizationVersion} />
             <NativeTextHaloFilter />
+            <StatsHud />
             <AnimatePresence>
                 {landingViewVisible && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

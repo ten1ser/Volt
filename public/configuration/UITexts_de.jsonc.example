@@ -1,4 +1,7 @@
 {
+    "roleplay.stats.health": "Gesundheit",
+    "roleplay.stats.energy": "Energie",
+    "roleplay.stats.title": "Deine Werte",
     // ------------------------------------------------------------------
     // UITexts — Deutsch (de). Vollständiger UI-Textsatz (630 Keys),
     // parallel zu UITexts_en.jsonc. Platzhalter (%...%) unverändert lassen.

@@ -36,16 +36,14 @@ export const ChatInputView: FC<{}> = (props) => {
     const chatModeIdSpeak = useMemo(() => LocalizeText('widgets.chatinput.mode.speak'), []);
     const maxChatLength = useMemo(() => GetConfigurationValue<number>('chat.input.maxlength', 100), []);
 
-    const anotherInputHasFocus = useCallback(() => {
+    const anotherControlHasFocus = useCallback(() => {
         const activeElement = document.activeElement;
 
         if (!activeElement) return false;
 
         if (inputRef && inputRef.current === activeElement) return false;
 
-        if (!(activeElement instanceof HTMLInputElement) && !(activeElement instanceof HTMLTextAreaElement)) return false;
-
-        return true;
+        return activeElement instanceof HTMLElement && !!activeElement.closest('input, textarea, select, button, a[href], [role="button"], [contenteditable="true"]');
     }, [inputRef]);
 
     const setInputFocus = useCallback(() => {
@@ -130,7 +128,7 @@ export const ChatInputView: FC<{}> = (props) => {
 
     const onKeyDownEvent = useCallback(
         (event: KeyboardEvent) => {
-            if (floodBlocked || !inputRef.current || anotherInputHasFocus()) return;
+            if (event.defaultPrevented || event.key === 'Tab' || event.key === 'Escape' || floodBlocked || !inputRef.current || anotherControlHasFocus()) return;
 
             if (document.activeElement !== inputRef.current) setInputFocus();
 
@@ -156,7 +154,7 @@ export const ChatInputView: FC<{}> = (props) => {
                     return;
             }
         },
-        [floodBlocked, inputRef, chatModeIdWhisper, anotherInputHasFocus, setInputFocus, checkSpecialKeywordForInput, sendChatValue]
+        [floodBlocked, inputRef, chatModeIdWhisper, anotherControlHasFocus, setInputFocus, checkSpecialKeywordForInput, sendChatValue]
     );
 
     useUiEvent<RoomWidgetUpdateChatInputContentEvent>(RoomWidgetUpdateChatInputContentEvent.CHAT_INPUT_CONTENT, (event) => {

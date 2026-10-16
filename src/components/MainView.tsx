@@ -38,7 +38,8 @@ import { ExternalPluginLoader } from './plugins/ExternalPluginLoader';
 import { DailyTasksView, QuestCompletedView, QuestsView, RewardTrackView } from './quests';
 import { RightSideView } from './right-side/RightSideView';
 import { RoomView } from './room/RoomView';
-import { ToolbarView } from './toolbar/ToolbarView';
+import { DistrictDock } from './roleplay/hud/DistrictDock';
+import { DistrictHud } from './roleplay/hud/DistrictHud';
 import { TraxEditorView } from './trax-editor/TraxEditorView';
 import { UserProfileView } from './user-profile/UserProfileView';
 import { UserSettingsView } from './user-settings/UserSettingsView';
@@ -46,7 +47,6 @@ import { VariablesExplorerView } from './variables-explorer/VariablesExplorerVie
 import { VaultView } from './vault/VaultView';
 import { WiredView } from './wired/WiredView';
 import { WiredCreatorToolsView } from './wired-tools/WiredCreatorToolsView';
-import { StatsHud } from './roleplay/stats/StatsHud';
 
 export const MainView: FC<{}> = (props) =>
 {
@@ -131,7 +131,7 @@ export const MainView: FC<{}> = (props) =>
         <>
             <div className="hidden" data-localization-version={localizationVersion} />
             <NativeTextHaloFilter />
-            <StatsHud />
+            <DistrictHud />
             <AnimatePresence>
                 {landingViewVisible && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -139,7 +139,7 @@ export const MainView: FC<{}> = (props) =>
                     </motion.div>
                 )}
             </AnimatePresence>
-            <ToolbarView isInRoom={!landingViewVisible} />
+            <DistrictDock isInRoom={!landingViewVisible} />
             <ModToolsView />
             <WiredCreatorToolsView />
             <VariablesExplorerView />

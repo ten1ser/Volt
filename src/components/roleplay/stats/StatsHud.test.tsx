@@ -2,7 +2,9 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StatsHud } from './StatsHud';
 
-const test = vi.hoisted(() => ({ authenticated: true, send: vi.fn(), receive: null }));
+const test = vi.hoisted(() => ({ authenticated: true, send: vi.fn(), receive: null, user: { userName: 'DistrictPlayer', figure: 'hr-100-61', gender: 'M' } }));
+vi.mock('../../../hooks/session/useSessionSnapshots', () => ({ useUserDataSnapshot: () => test.user }));
+vi.mock('../../../common/layout/LayoutAvatarImageView', () => ({ LayoutAvatarImageView: ({ figure, gender }: { figure: string; gender: string }) => <div data-testid="player-avatar" data-figure={figure} data-gender={gender} /> }));
 vi.mock('@volt/renderer', () => ({ RpStatsEvent: class
 {}, RpStatsRequestComposer: class
 {} }));
@@ -20,6 +22,7 @@ describe('DistrictRP stats HUD', () =>
 {
     beforeEach(() =>
     {
+        test.user = { userName: 'DistrictPlayer', figure: 'hr-100-61', gender: 'M' };
         test.authenticated = true; test.send.mockClear(); vi.useFakeTimers();
     });
     afterEach(() =>
@@ -53,6 +56,20 @@ describe('DistrictRP stats HUD', () =>
         view.unmount();
         act(() => vi.advanceTimersByTime(30000));
         expect(test.send).toHaveBeenCalledTimes(2);
+    });
+
+    it('keeps the player name and portrait in sync with the session snapshot', () =>
+    {
+        const view = render(<StatsHud />);
+        snapshot(100, 100);
+        expect(screen.getByText('DistrictPlayer')).toBeInTheDocument();
+        expect(screen.getByTestId('player-avatar')).toHaveAttribute('data-figure', 'hr-100-61');
+        test.user = { userName: 'UpdatedPlayer', figure: 'hr-200-45', gender: 'F' };
+        view.rerender(<StatsHud />);
+        expect(screen.getByText('UpdatedPlayer')).toBeInTheDocument();
+        expect(screen.queryByText('DistrictPlayer')).toBeNull();
+        expect(screen.getByTestId('player-avatar')).toHaveAttribute('data-figure', 'hr-200-45');
+        expect(screen.getByTestId('player-avatar')).toHaveAttribute('data-gender', 'F');
     });
 
     it('hides stats and cancels refreshes when disconnected', () =>

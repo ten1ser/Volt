@@ -175,7 +175,7 @@ export const RoomToolsWidgetView: FC<{}> = (props) => {
 
     return (
         <div
-            className={classNames('volt-room-tools-container', !isToolsOpen && 'is-collapsed')}
+            className={classNames('volt-room-tools-container district-room-tools', !isToolsOpen && 'is-collapsed')}
             style={{ '--room-tools-height': `${windowHeight}px` } as CSSProperties}
         >
             <div className="volt-room-tools">

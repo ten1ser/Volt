@@ -141,6 +141,30 @@ describe('ChatInputView help button (AIR helpbutton)', () => {
 });
 
 describe('ChatInputView keyboard (AIR RoomChatInputView, no command lister)', () => {
+    it('leaves focused HUD buttons and their keyboard actions alone', () =>
+    {
+        renderChatInput();
+        const controls = render(<button type="button">Tools</button>);
+        const button = screen.getByRole('button', { name: 'Tools' });
+        button.focus();
+        fireEvent.keyDown(button, { key: 'Enter' });
+        expect(button).toHaveFocus();
+        fireEvent.keyDown(button, { key: ' ' });
+        expect(button).toHaveFocus();
+        expect(mocks.sendChat).not.toHaveBeenCalled();
+        controls.unmount();
+    });
+
+    it('does not redirect Tab or Escape from the page into chat', () =>
+    {
+        renderChatInput();
+        getInput().blur();
+        fireEvent.keyDown(document.body, { key: 'Tab' });
+        expect(getInput()).not.toHaveFocus();
+        fireEvent.keyDown(document.body, { key: 'Escape' });
+        expect(getInput()).not.toHaveFocus();
+    });
+
     it('shows no command popup when typing ":" and lets Enter send it as chat', () => {
         const { target } = renderChatInput();
         const input = getInput();

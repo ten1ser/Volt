@@ -23,7 +23,7 @@ import {
     RoomVariableEnum,
     Vector3d
 } from '@volt/renderer';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { registerSharedHook, useSharedHook } from '@/state/useSharedHook';
 import {
     CanManipulateFurniture,
@@ -38,6 +38,7 @@ import {
 } from '../../api';
 import { useMessageEvent, useVoltEvent, useUiEvent } from '../events';
 import { updateRoomTint } from './updateRoomTint';
+import { updateCityBackdrop } from './updateCityBackdrop';
 import { useWiredFurniOpacity } from './useWiredFurniOpacity';
 
 const getViewportSize = () => {
@@ -56,6 +57,12 @@ const useRoomState = () => {
     const [roomFilter, setRoomFilter] = useState<VoltAdjustmentFilter>(null);
     const [roomMaster, setRoomMaster] = useState<VoltContainer>(null);
     const [originalRoomBackgroundColor, setOriginalRoomBackgroundColor] = useState(0);
+    const [backgroundPreview, setBackgroundPreview] = useState(false);
+    const [backgroundColorOverride, setBackgroundColorOverride] = useState(false);
+
+    const setCityBackdropColor = useCallback((color: number | null) => {
+        updateCityBackdrop(roomBackground, color, originalRoomBackgroundColor, backgroundPreview || backgroundColorOverride);
+    }, [roomBackground, backgroundPreview, backgroundColorOverride, originalRoomBackgroundColor]);
 
     useWiredFurniOpacity(roomSession?.roomId ?? 0);
 
@@ -79,18 +86,21 @@ const useRoomState = () => {
         updateRoomTint(roomMaster, roomFilter, color);
     };
 
-    useUiEvent<RoomWidgetUpdateBackgroundColorPreviewEvent>(RoomWidgetUpdateBackgroundColorPreviewEvent.PREVIEW, (event) =>
-        updateRoomBackgroundColor(event.hue, event.saturation, event.lightness)
-    );
+    useUiEvent<RoomWidgetUpdateBackgroundColorPreviewEvent>(RoomWidgetUpdateBackgroundColorPreviewEvent.PREVIEW, (event) => {
+        setBackgroundPreview(true);
+        updateRoomBackgroundColor(event.hue, event.saturation, event.lightness);
+    });
 
     useUiEvent<RoomWidgetUpdateBackgroundColorPreviewEvent>(RoomWidgetUpdateBackgroundColorPreviewEvent.CLEAR_PREVIEW, (event) => {
         if (!roomBackground) return;
 
         roomBackground.tint = originalRoomBackgroundColor;
+        setBackgroundPreview(false);
     });
 
     useVoltEvent<RoomObjectHSLColorEnabledEvent>(RoomObjectHSLColorEnabledEvent.ROOM_BACKGROUND_COLOR, (event) => {
         if (RoomId.isRoomPreviewerId(event.roomId)) return;
+        setBackgroundColorOverride(event.enable);
 
         if (event.enable) updateRoomBackgroundColor(event.hue, event.saturation, event.lightness, true);
         else updateRoomBackgroundColor(0, 0, 0, true);
@@ -356,6 +366,8 @@ const useRoomState = () => {
             updateRoomTint(master, filter, 0xffffff);
             filter.destroy();
             setOriginalRoomBackgroundColor(0);
+            setBackgroundPreview(false);
+            setBackgroundColorOverride(false);
 
             window.removeEventListener('resize', resize);
             viewport?.removeEventListener('resize', resize);
@@ -363,7 +375,7 @@ const useRoomState = () => {
         };
     }, [roomSession]);
 
-    return { roomSession, isHandItemBlocked };
+    return { roomSession, isHandItemBlocked, setCityBackdropColor };
 };
 
 export const useRoom = () => useSharedHook(useRoomState);

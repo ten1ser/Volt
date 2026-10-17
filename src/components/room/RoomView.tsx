@@ -7,6 +7,7 @@ import { classNames } from '../../layout';
 import { RoomSpectatorView } from './spectator/RoomSpectatorView';
 import { RoomWidgetsView } from './widgets/RoomWidgetsView';
 import { WiredVariableFxOverlayView } from './widgets/wired-fx/WiredVariableFxOverlayView';
+import { CityBackdrop } from '../roleplay/hud/CityBackdrop';
 
 export const RoomView: FC<{}> = (props) => {
     const { roomSession = null } = useRoom();
@@ -150,6 +151,7 @@ export const RoomView: FC<{}> = (props) => {
             {
                 <motion.div className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <div ref={elementRef} className="w-full h-full">
+                        <CityBackdrop />
                         <WiredVariableFxOverlayView />
                         {roomSession instanceof RoomSession && (
                             <>

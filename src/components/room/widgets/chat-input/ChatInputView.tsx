@@ -2,15 +2,12 @@ import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChatMessageTypeEnum, CreateLinkEvent, GetConfigurationValue, LocalizeText, RoomWidgetUpdateChatInputContentEvent } from '../../../../api';
 import { Text } from '../../../../common';
-import { useChatHelpButton, useChatInputWidget, useClientAccessLists, useRoom, useSessionInfo, useUiEvent, useUserDataSnapshot } from '../../../../hooks';
-import { ChatInputHabbiconSelectorView } from './ChatInputHabbiconSelectorView';
-import { ChatInputStyleSelectorView } from './ChatInputStyleSelectorView';
-import { ChatStyleDefinition, getSelectableChatStyleIds } from './chatStyles';
+import { useChatHelpButton, useChatInputWidget, useRoom, useSessionInfo, useUiEvent } from '../../../../hooks';
 
 export const ChatInputView: FC<{}> = (props) => {
     const [chatValue, setChatValue] = useState<string>('');
     const [portalTarget, setPortalTarget] = useState<HTMLElement>(null);
-    const { chatStyleId = 0, updateChatStyleId = null } = useSessionInfo();
+    const { chatStyleId = 0 } = useSessionInfo();
     const {
         selectedUsername = '',
         floodBlocked = false,
@@ -20,14 +17,6 @@ export const ChatInputView: FC<{}> = (props) => {
         sendChat = null
     } = useChatInputWidget();
     const { roomSession = null } = useRoom();
-    const { chatStyleIds } = useClientAccessLists();
-    const { clubLevel = 0, isAmbassador = false, securityLevel = 0 } = useUserDataSnapshot();
-    const selectableChatStyleIds = useMemo(() => getSelectableChatStyleIds(
-        GetConfigurationValue<ChatStyleDefinition[]>('chat.styles', []),
-        chatStyleIds,
-        GetConfigurationValue<string>('disabled.custom.chat.styles', ''),
-        { hasClub: clubLevel > 0, isAmbassador, hasSecurity: securityLevel >= 4 }
-    ), [ chatStyleIds, clubLevel, isAmbassador, securityLevel ]);
     const inputRef = useRef<HTMLInputElement>(null);
     const { isHelpButtonVisible, hoverRegionProps, helpButtonProps } = useChatHelpButton();
 
@@ -213,12 +202,7 @@ export const ChatInputView: FC<{}> = (props) => {
     if (!roomSession || roomSession.isSpectator || !portalTarget) return null;
 
     return createPortal(
-        // justify-start, not between: the style trigger overlaps the bubble's pointed
-        // left cap via a negative margin. With justify-between, hiding an optional
-        // trailing button (habbicons disabled) redistributes the slack between the
-        // trigger and the bubble, exposing the cap and opening a gap.
         <div className="volt-chat-input-container swf-chat-input relative flex w-full items-center justify-start overflow-visible">
-            <ChatInputStyleSelectorView chatStyleId={chatStyleId} chatStyleIds={selectableChatStyleIds} selectChatStyleId={updateChatStyleId} />
             {!floodBlocked && (
                 <div className="flex-1 items-center input-sizer swf-chat-input-sizer" {...hoverRegionProps}>
                     <input
@@ -250,7 +234,6 @@ export const ChatInputView: FC<{}> = (props) => {
                     {...helpButtonProps}
                 />
             )}
-            <ChatInputHabbiconSelectorView />
         </div>,
         portalTarget
     );

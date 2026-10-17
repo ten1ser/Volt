@@ -45,13 +45,15 @@ describe('DistrictRP navigation', () =>
         expect(test.visit).toHaveBeenCalledOnce();
     });
 
-    it('opens character actions and uses the authenticated player ID', () =>
+    it('keeps Character and Progress out of navigation and the Tools drawer', () =>
     {
         render(<DistrictDock isInRoom />);
-        fireEvent.click(screen.getByRole('button', { name: 'Character' }));
-        fireEvent.click(screen.getByRole('button', { name: 'My profile' }));
-        expect(test.profile).toHaveBeenCalledWith(42);
-        expect(screen.getByRole('button', { name: 'Character' })).toHaveAttribute('aria-expanded', 'false');
+        expect(screen.queryByRole('button', { name: 'Character' })).toBeNull();
+        expect(screen.queryByRole('button', { name: /Progress/ })).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
+        expect(screen.queryByRole('button', { name: /Progress/ })).toBeNull();
+        expect(document.getElementById('district-character')).toBeNull();
+        expect(document.getElementById('district-progress')).toBeNull();
     });
 
     it('closes a drawer on Escape, restores trigger focus and dismisses outside clicks', () =>

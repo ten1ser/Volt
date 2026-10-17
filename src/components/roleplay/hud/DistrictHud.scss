@@ -15,7 +15,7 @@
     inset: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) auto max(12px, env(safe-area-inset-left));
     z-index: 10;
     display: grid;
-    grid-template-columns: 238px 1fr 230px;
+    grid-template-columns: 280px 1fr 340px;
     align-items: start;
     gap: 12px;
     pointer-events: none;
@@ -36,23 +36,34 @@
     small { display: block; margin-top: 3px; color: #a9ada4; font-size: 9px; letter-spacing: 2px; }
 }
 
-.district-wallet {
+.district-city {
     grid-column: 3;
-    padding: 4px 8px 7px;
+    justify-self: end;
+    width: 340px;
+    max-width: 100%;
+    color: #f1f4f0;
+    font: 12px/17px HabboAirUbuntu, UbuntuRegular, sans-serif;
     pointer-events: auto;
 
-    &__heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-bottom: 5px; border-bottom: 1px solid #45433e; color: #b9c5ba; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
-    &__heading button { display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid #78786b; border-radius: 3px; background: #464840; cursor: pointer; }
-    .district-wallet__heading .volt-icon { width: 18px; height: 18px; background-size: contain; pointer-events: none; }
-    &__balances { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 12px; margin: 7px 0 0; }
-    &__balances > div { min-width: 0; }
-    &__balances dt { color: #aaa99e; font-size: 10px; }
-    &__balances dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-    &__credits { grid-column: 1 / -1; }
-    &__credits dd { color: #e5c876; font-size: 19px; line-height: 22px; }
+    &__main, &__location { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border: 1px solid #131c1b; border-radius: 6px; background: #202a2aeb; box-shadow: inset 0 1px #a8b8af30, 0 2px 3px #0005; }
+    &__main { min-height: 43px; }
+    &__clock { display: flex; align-items: center; gap: 7px; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    &__sky-icon { color: #edd080; font: 24px/22px sans-serif; }
+    &__sky-icon.is-night { color: #a8c9e5; }
+    &__coins { display: flex; align-items: center; justify-content: flex-end; gap: 7px; flex: 1; min-width: 0; padding-left: 10px; border-left: 1px solid #7384784d; }
+    &__coins strong { overflow-wrap: anywhere; color: #efcf78; font-size: 17px; font-variant-numeric: tabular-nums; }
+    &__coins svg { width: 20px; height: 20px; flex-shrink: 0; fill: #b99537; stroke: #f1d77f; stroke-width: 1.5px; }
+    button { display: grid; place-items: center; flex: 0 0 24px; height: 24px; padding: 0; border: 0; border-radius: 3px; background: transparent; cursor: pointer; }
+    button:hover { background: #ffffff18; }
     button:focus-visible { outline: 2px solid #b7dfbe; outline-offset: 2px; }
+    .volt-icon { width: 19px; height: 19px; background-size: contain; }
+    &__location { gap: 12px; margin-top: 5px; padding: 5px 9px; color: #d6ded7; font-size: 11px; }
+    &__room { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+    &__room > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    &__room svg { width: 13px; height: 15px; flex-shrink: 0; fill: none; stroke: #a5c9b2; stroke-width: 1.6px; }
+    &__online { display: flex; align-items: center; gap: 5px; flex-shrink: 0; color: #b9c9c0; }
+    &__online svg { width: 12px; height: 12px; fill: #92b5a2; }
 }
-
 .district-dock {
     position: fixed;
     bottom: max(10px, env(safe-area-inset-bottom));
@@ -117,6 +128,17 @@
     pointer-events: none;
 
     > div { display: flex; align-items: center; width: 100%; height: 100%; pointer-events: auto; }
+
+    .swf-chat-input .swf-chat-input-sizer,
+    .swf-chat-input .swf-chat-flood {
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        margin: 0;
+        padding-left: 14px !important;
+        padding-right: 36px !important;
+    }
+
+    .swf-chat-input .swf-chat-help-button { left: auto; right: 10px; }
 }
 
 .district-context-rail { position: fixed; top: 172px; right: 12px; z-index: 10; width: 230px; max-width: calc(100vw - 24px); pointer-events: none; }
@@ -124,21 +146,17 @@
 .volt-room-tools-container.district-room-tools { bottom: 100px; }
 
 @media (max-width: 900px) {
-    .district-hud-top { grid-template-columns: 238px 1fr 210px; }
+    .district-hud-top { grid-template-columns: 280px 1fr 310px; }
     .district-hud-brand { display: none; }
     .district-nav__brand { display: none; }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 660px) {
+    .district-city { grid-column: 1; justify-self: start; width: min(100%, 340px); }
     .district-hud-top { grid-template-columns: 1fr; gap: 7px; }
     .district-hud-top .rp-stats-hud { width: min(100%, 300px); }
-    .district-wallet { grid-column: 1; padding: 3px 7px; }
-    .district-wallet__heading { display: none; }
-    .district-wallet__balances { grid-template-columns: 1.2fr 1fr 1fr; gap: 6px; margin: 0; }
-    .district-wallet__credits { grid-column: auto; }
-    .district-wallet__credits dd { font-size: 14px; line-height: 17px; }
     .district-nav { gap: 0; padding: 2px 0; }
-    .district-nav > button { flex-basis: 0; width: calc((100vw - 38px) / 6); height: 54px; padding: 2px 0; font-size: 9px; }
+    .district-nav > button { flex-basis: 0; width: calc((100vw - 38px) / 5); height: 54px; padding: 2px 0; font-size: 9px; }
     .district-nav > .district-nav__secondary { display: none; }
     .district-dock .district-mobile-action { display: flex; }
     .district-nav > button .volt-icon { width: 27px; height: 27px; }

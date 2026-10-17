@@ -1,63 +1,67 @@
 .rp-stats-hud {
     position: fixed;
-    top: max(8px, env(safe-area-inset-top));
-    left: max(8px, env(safe-area-inset-left));
+    top: max(12px, env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
     z-index: 10;
     box-sizing: border-box;
-    width: 238px;
-    padding: 7px 9px 9px;
-    border: 7px solid transparent;
-    border-bottom-width: 8px;
-    border-image: url('../../../assets/images/habbo-skin/slices/border-ubuntu-9.png') 28 28 32 28 fill / 7px 7px 8px 7px stretch;
+    width: 280px;
+    max-width: calc(100vw - 24px);
     color: #fff;
     pointer-events: none;
     font: 12px/17px HabboAirUbuntu, UbuntuRegular, sans-serif;
     image-rendering: var(--volt-pixel-art, pixelated);
 
-    &__name {
-        overflow: hidden;
-        padding-bottom: 6px;
-        border-bottom: 1px solid #45433e;
-        box-shadow: 0 1px #ffffff24;
-        font-size: 13px;
-        font-weight: 700;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    &__body { display: flex; align-items: center; gap: 10px; padding-top: 8px; }
+    &__body { display: flex; align-items: center; gap: 7px; min-height: 72px; }
     &__portrait {
         position: relative;
-        flex: 0 0 54px;
-        height: 64px;
+        box-sizing: border-box;
+        flex: 0 0 66px;
+        height: 66px;
         overflow: hidden;
-        border: 1px solid #35342f;
-        border-radius: 3px;
-        background: #494741;
-        box-shadow: inset 0 1px 2px #0005, 0 1px #ffffff30;
+        border: 2px solid #b3bab8;
+        border-radius: 50%;
+        background: #25312ee6;
+        box-shadow: 0 0 0 2px #202624, inset 0 0 0 2px #111815, 0 3px 4px #0006;
     }
 
     &__portrait &__avatar {
         position: absolute;
-        left: -18px;
-        top: -16px;
+        left: -14px;
+        top: -15px;
         width: 90px;
         height: 130px;
         image-rendering: var(--volt-pixel-art, pixelated);
     }
 
     &__stats { flex: 1; min-width: 0; }
-    &__stat + &__stat { margin-top: 8px; }
-    &__line { display: flex; justify-content: space-between; gap: 4px; margin-bottom: 3px; }
-    &__line > :last-child { color: #e0ded8; font-size: 10px; font-variant-numeric: tabular-nums; }
-    &__track { height: 10px; overflow: hidden; border: 1px solid #302f2b; border-radius: 2px; background: #393832; box-shadow: 0 1px #ffffff24; }
+    &__identity { display: flex; align-items: center; height: 22px; padding-left: 19px; }
+    &__name {
+        flex: 1;
+        overflow: hidden;
+        font-size: 14px;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        text-shadow: 0 1px 2px #000, 1px 1px #17201b, -1px -1px #17201b;
+        white-space: nowrap;
+    }
+    &__stat { display: flex; align-items: center; gap: 5px; }
+    &__stat + &__stat { margin-top: 3px; }
+    &__icon { flex: 0 0 14px; width: 14px; height: 15px; fill: #e65f55; filter: drop-shadow(1px 1px 0 #111); }
+    &__stat--energy &__icon { fill: #f4cf5b; }
+    &__track {
+        position: relative;
+        flex: 1;
+        height: 18px;
+        overflow: hidden;
+        border: 1px solid #1a211e;
+        border-radius: 4px;
+        background: #27312fe6;
+        box-shadow: 0 1px 2px #0007, inset 0 1px 2px #0006;
+    }
     &__fill { height: 100%; box-shadow: inset 0 1px #ffffff50, inset 0 -1px #0003; transition: width 180ms ease; }
-    &__stat--health &__fill { background: #d65c58; }
-    &__stat--energy &__fill { background: #e4b94b; }
-}
-
-@media (max-width: 500px) {
-    .rp-stats-hud { top: max(82px, env(safe-area-inset-top)); }
+    &__stat--health &__fill { background: linear-gradient(#e45b51, #bb3934); }
+    &__stat--energy &__fill { background: linear-gradient(#e9c65b, #bb942e); }
+    &__value { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px #000, 1px 0 #0008; }
 }
 
 @media (prefers-reduced-motion: reduce) {

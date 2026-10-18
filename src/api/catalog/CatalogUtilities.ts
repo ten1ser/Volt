@@ -1,9 +1,7 @@
 import { GetRoomEngine, SellablePetPaletteData } from '@volt/renderer';
-import { GetConfigurationValue } from '../volt';
 import { ICatalogNode } from './ICatalogNode';
 import { IProduct } from './IProduct';
 import { IPurchasableOffer } from './IPurchasableOffer';
-import { ProductTypeEnum } from './ProductTypeEnum';
 
 export const GetPixelEffectIcon = (id: number) => {
     return '';
@@ -12,23 +10,7 @@ export const GetPixelEffectIcon = (id: number) => {
 export const GetProductIconUrl = (product: IProduct, offer: IPurchasableOffer = null): string => {
     if (!product) return null;
 
-    if (product.productType === ProductTypeEnum.FLOOR || product.productType === ProductTypeEnum.WALL) {
-        const className = product.furnitureData?.className;
-
-        if (className?.length) {
-            let param = '';
-
-            if (product.productType === ProductTypeEnum.WALL && product.extraParam?.length) param = `_${product.extraParam}`;
-            else if (product.productType === ProductTypeEnum.FLOOR && product.furnitureData?.hasIndexedColor && product.furnitureData.colorIndex > 0) {
-                param = `_${product.furnitureData.colorIndex}`;
-            }
-
-            const configuredIconUrl = GetConfigurationValue<string>('furni.asset.icon.url', '');
-
-            if (configuredIconUrl?.length) return configuredIconUrl.replace('%libname%', className).replace('%param%', param);
-        }
-    }
-
+    // Product owns poster variants, material swatches and the renderer's indexed-colour names.
     return typeof product.getIconUrl === 'function' ? (product.getIconUrl(offer) ?? null) : null;
 };
 

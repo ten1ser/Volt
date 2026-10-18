@@ -1971,10 +1971,10 @@
     min-height: 26px;
     border-image-outset: 0;
     font-family: HabboAirUbuntu, UbuntuRegular, sans-serif;
-    font-size: var(--chat-text-size);
+    font-size: calc(var(--chat-text-size) * 20 / 12);
     font-weight: 400;
     font-synthesis: none;
-    line-height: calc(var(--chat-text-size) * 16 / 12);
+    line-height: calc(var(--chat-text-size) * 24 / 12);
     letter-spacing: normal;
     text-shadow: none;
     color: #000;

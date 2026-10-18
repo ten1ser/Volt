@@ -1963,3 +1963,40 @@
     transform: none;
     image-rendering: auto;
 }
+
+/* Ordinary room chat (styles 0/3/4): compact single-line bubble with a narrow avatar well.
+   Only clamps the well; face size stays on the inline imageScale pipeline. */
+.bubble-container.native-room-bubble.district-plain-chat .chat-bubble {
+    box-sizing: border-box;
+    min-height: 26px;
+    border-image-outset: 0;
+    font-family: HabboAirUbuntu, UbuntuRegular, sans-serif;
+    font-size: var(--chat-text-size);
+    font-weight: 400;
+    font-synthesis: none;
+    line-height: calc(var(--chat-text-size) * 16 / 12);
+    letter-spacing: normal;
+    text-shadow: none;
+    color: #000;
+}
+
+.bubble-container.native-room-bubble.district-plain-chat .chat-content {
+    margin: 0;
+    min-height: 0;
+    padding: 5px 10px 5px 32px;
+    font-size: inherit;
+    line-height: inherit;
+    color: #000;
+}
+
+.bubble-container.native-room-bubble.district-plain-chat .chat-bubble .user-container {
+    left: 0 !important;
+    top: 0 !important;
+    width: 28px !important;
+    height: 26px !important;
+}
+
+.bubble-container.native-room-bubble.district-plain-chat .chat-bubble .user-image {
+    left: 50%;
+    transform: translateX(-50%);
+}

@@ -42,6 +42,7 @@ export const ChatWidgetMessageView: FC<ChatWidgetMessageViewProps> = ({
     const [defaultSkin, setDefaultSkin] = useState<string>(null);
     const fontScale = getChatFontScale(chatTextSize);
     const anonymous = isNativeAnonymousStyle(chat.styleId);
+    const plainRoomChat = layout === 'room' && (chat.styleId === 0 || chat.styleId === 3 || chat.styleId === 4);
     const elementRef = useRef<HTMLDivElement>(null);
     const makeRoomRef = useRef(makeRoom);
     const { onClickChat } = useOnClickChat();
@@ -53,7 +54,7 @@ export const ChatWidgetMessageView: FC<ChatWidgetMessageViewProps> = ({
         if (layout === 'history') return 'max-w-[335px]';
         switch (bubbleWidth) {
             case RoomChatSettings.CHAT_BUBBLE_WIDTH_NORMAL:
-                return 'max-w-[350px]';
+                return plainRoomChat ? 'max-w-[min(700px,calc(100vw_-_24px))]' : 'max-w-[350px]';
             case RoomChatSettings.CHAT_BUBBLE_WIDTH_THIN:
                 return 'max-w-[240px]';
             case RoomChatSettings.CHAT_BUBBLE_WIDTH_WIDE:
@@ -61,7 +62,7 @@ export const ChatWidgetMessageView: FC<ChatWidgetMessageViewProps> = ({
             default:
                 return 'max-w-[350px]';
         }
-    }, [bubbleWidth, layout]);
+    }, [bubbleWidth, layout, plainRoomChat]);
 
     useEffect(() => {
         const element = elementRef.current;
@@ -142,12 +143,12 @@ export const ChatWidgetMessageView: FC<ChatWidgetMessageViewProps> = ({
     const messageClassName = `message [overflow-wrap:anywhere] break-words${chat.type === 2 ? ' font-bold' : ''}`;
     const nativeTextWidth = layout === 'history' ? 291 : bubbleWidth === RoomChatSettings.CHAT_BUBBLE_WIDTH_THIN ? 196 : bubbleWidth === RoomChatSettings.CHAT_BUBBLE_WIDTH_WIDE ? 1956 : 306;
     // style_normal's tint mask ends before the 2px TextField gutter; shirt colour cannot alter the text surface.
-    const nativeTextEnabled = chat.styleId === 0 && fontScale === 1;
+    const nativeTextEnabled = !plainRoomChat && chat.styleId === 0 && fontScale === 1;
 
     return (
         <div
             ref={elementRef}
-            className={`bubble-container native-room-bubble chat-text-size ${layout === 'history' ? 'native-history-bubble relative' : 'newbubblehe absolute'} ${isVisible ? 'visible' : 'invisible'} w-max select-none pointer-events-auto`}
+            className={`bubble-container native-room-bubble chat-text-size${plainRoomChat ? ' district-plain-chat' : ''} ${layout === 'history' ? 'native-history-bubble relative' : 'newbubblehe absolute'} ${isVisible ? 'visible' : 'invisible'} w-max select-none pointer-events-auto`}
             style={{ '--chat-text-size': `${getNativeChatBaseFontSize(chat.styleId) * fontScale}px`, transition: 'none' } as CSSProperties}
             onClick={() => {
                 if (!anonymous) GetRoomEngine().selectRoomObject(chat.roomId, chat.senderId, RoomObjectCategory.UNIT);

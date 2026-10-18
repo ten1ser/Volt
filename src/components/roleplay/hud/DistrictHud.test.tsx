@@ -12,6 +12,7 @@ vi.mock('../../../hooks/roleplay/useCityStatus', () => ({ useCityStatus: () => (
 vi.mock('../../../hooks/rooms/useRoom', () => ({ useRoom: () => ({ roomSession: test.roomSession }) }));
 vi.mock('../../../hooks/navigator/useNavigatorData', () => ({ useNavigatorData: () => ({ navigatorData: { enteredGuestRoom: test.room } }) }));
 vi.mock('../stats/StatsHud', () => ({ StatsHud: () => <section aria-label="Your stats" /> }));
+vi.mock('../stats/TargetHud', () => ({ TargetHud: () => <section aria-label="Target stats" /> }));
 afterEach(() =>
 {
     cleanup(); test.credits = 50200; test.roomSession = test.room = null; test.link.mockClear();
@@ -43,6 +44,13 @@ describe('city-status HUD', () =>
         expect(screen.getByText('Entering room…')).toBeInTheDocument();
         test.roomSession = null; view.rerender(<DistrictHud />);
         expect(screen.getByText('DistrictRP City')).toBeInTheDocument();
+    });
+    it('places own and target vitals in the same district-vitals wrapper', () =>
+    {
+        render(<DistrictHud />);
+        const own = screen.getByLabelText('Your stats').closest('.district-vitals');
+        expect(own).not.toBeNull();
+        expect(screen.getByLabelText('Target stats').closest('.district-vitals')).toBe(own);
     });
     it('uses honest placeholders before synchronization', () =>
     {

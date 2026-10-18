@@ -1,0 +1,47 @@
+.rp-target-hud {
+    position: relative;
+    inset: auto;
+    top: auto;
+    left: auto;
+    width: 280px;
+    max-width: 100%;
+
+    .rp-stats-hud__identity { gap: 6px; }
+}
+
+.rp-target-hud__label {
+    flex: 0 0 auto;
+    color: #d9b96a;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-shadow: 0 1px 2px #000;
+}
+
+.rp-target-hud__clear {
+    flex: 0 0 18px;
+    box-sizing: border-box;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid #1a211e;
+    border-radius: 3px;
+    background: #27312fe6;
+    color: #e6e9e3;
+    font: 700 13px/14px sans-serif;
+    cursor: pointer;
+    pointer-events: auto;
+
+    &:hover { background: #3a4743; }
+    &:focus-visible { outline: 2px solid #b7dfbe; outline-offset: 2px; }
+}
+
+.rp-target-hud__loading {
+    margin: 0;
+    padding-left: 19px;
+    color: #e6e9e3;
+    font-size: 11px;
+    text-shadow: 0 1px 2px #000;
+}

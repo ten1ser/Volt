@@ -6,6 +6,7 @@ import { useCityStatus } from '../../../hooks/roleplay/useCityStatus';
 import { useRoom } from '../../../hooks/rooms/useRoom';
 import { useNavigatorData } from '../../../hooks/navigator/useNavigatorData';
 import { StatsHud } from '../stats/StatsHud';
+import { TargetHud } from '../stats/TargetHud';
 import './DistrictHud.scss';
 
 export const DistrictHud: FC = () =>
@@ -23,7 +24,10 @@ export const DistrictHud: FC = () =>
 
     return (
         <header className="district-hud-top" aria-label="DistrictRP player dashboard">
-            <StatsHud />
+            <div className="district-vitals">
+                <StatsHud />
+                <TargetHud />
+            </div>
             <div className="district-hud-brand" aria-label="DistrictRP">
                 <span>DISTRICT<span>RP</span></span>
                 <small>YOUR CITY. YOUR STORY.</small>

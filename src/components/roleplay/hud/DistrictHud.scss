@@ -15,15 +15,29 @@
     inset: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) auto max(12px, env(safe-area-inset-left));
     z-index: 10;
     display: grid;
-    grid-template-columns: 280px 1fr 340px;
+    grid-template-columns: minmax(0, 1fr) 340px;
     align-items: start;
     gap: 12px;
     pointer-events: none;
 
-    .rp-stats-hud { position: relative; inset: auto; width: 100%; }
+    .rp-stats-hud { position: relative; inset: auto; width: 280px; max-width: 100%; }
+}
+
+.district-vitals {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px;
+    grid-column: 1;
+    min-width: 0;
+    pointer-events: none;
 }
 
 .district-hud-brand {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
     justify-self: center;
     padding-top: 8px;
     color: #eeeee8;
@@ -37,7 +51,7 @@
 }
 
 .district-city {
-    grid-column: 3;
+    grid-column: 2;
     justify-self: end;
     width: 340px;
     max-width: 100%;
@@ -145,8 +159,10 @@
 
 .volt-room-tools-container.district-room-tools { bottom: 100px; }
 
+.district-hud-top:has(.rp-target-hud) .district-hud-brand { display: none; }
+
 @media (max-width: 900px) {
-    .district-hud-top { grid-template-columns: 280px 1fr 310px; }
+    .district-hud-top { grid-template-columns: minmax(0, 1fr) 310px; }
     .district-hud-brand { display: none; }
     .district-nav__brand { display: none; }
 }
@@ -154,7 +170,7 @@
 @media (max-width: 660px) {
     .district-city { grid-column: 1; justify-self: start; width: min(100%, 340px); }
     .district-hud-top { grid-template-columns: 1fr; gap: 7px; }
-    .district-hud-top .rp-stats-hud { width: min(100%, 300px); }
+    .district-vitals { gap: 7px; }
     .district-nav { gap: 0; padding: 2px 0; }
     .district-nav > button { flex-basis: 0; width: calc((100vw - 38px) / 5); height: 54px; padding: 2px 0; font-size: 9px; }
     .district-nav > .district-nav__secondary { display: none; }

@@ -3,7 +3,14 @@
   // never reaches history or Referer headers; the app reads it from memory.
   (() => {
     const url = new URL(location.href);
-    window.__voltLaunchCredentials = { ssoTicket: url.searchParams.get("sso") || "" };
+    const urlTicket = url.searchParams.get("sso") || "";
+    const credentials = window.__voltLaunchCredentials && typeof window.__voltLaunchCredentials === "object"
+      ? window.__voltLaunchCredentials
+      : {};
+    const handedOver = typeof credentials.ssoTicket === "string" ? credentials.ssoTicket : "";
+    // The website injects the ticket in memory; prefer it over any URL ticket.
+    credentials.ssoTicket = handedOver.length ? handedOver : urlTicket;
+    window.__voltLaunchCredentials = credentials;
     if(url.searchParams.has("sso")) {
       url.searchParams.delete("sso");
       history.replaceState(history.state, "", url.toString());

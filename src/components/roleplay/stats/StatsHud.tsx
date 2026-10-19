@@ -2,6 +2,7 @@ import { FC } from 'react';
 import { LocalizeText } from '../../../api/utils/LocalizeText';
 import { LayoutAvatarImageView } from '../../../common/layout/LayoutAvatarImageView';
 import { useRpStats } from '../../../hooks/roleplay/useRpStats';
+import { useRpHospitalTreatment } from '../../../hooks/roleplay/useRpHospitalTreatment';
 import { useUserDataSnapshot } from '../../../hooks/session/useSessionSnapshots';
 import './StatsHud.scss';
 
@@ -14,11 +15,16 @@ const label = (key: string, fallback: string) =>
 export const StatsHud: FC = () =>
 {
     const stats = useRpStats();
+    const treatment = useRpHospitalTreatment();
     const { userName, figure, gender } = useUserDataSnapshot();
     if(!stats) return null;
 
     const healthLabel = label('roleplay.stats.health', 'Health');
     const energyLabel = label('roleplay.stats.energy', 'Energy');
+    const treatmentLabel = label('roleplay.hospital.treatment', 'Hospital treatment');
+    const progress = treatment && Number.isFinite(treatment.progress) ? Math.min(100, Math.max(0, Math.round(treatment.progress))) : 0;
+    const remainingSeconds = treatment && Number.isFinite(treatment.remainingMs) && treatment.remainingMs > 0
+        ? Math.ceil(treatment.remainingMs / 1000) : 0;
 
     return (
         <section className="rp-stats-hud" aria-label={label('roleplay.stats.title', 'Your stats')}>
@@ -46,6 +52,26 @@ export const StatsHud: FC = () =>
                     </div>
                 </div>
             </div>
+            { treatment && treatment.phase !== 0 && (
+                <div className={ `rp-stats-hud__treatment rp-stats-hud__treatment--${ treatment.phase === 1 ? 'transfer' : 'healing' }` }>
+                    <div className="rp-stats-hud__treatment-row">
+                        <span className="rp-stats-hud__treatment-title">
+                            { treatment.phase === 1 ? label('roleplay.hospital.transfer', 'Hospital transfer') : treatmentLabel }
+                        </span>
+                        <span className="rp-stats-hud__treatment-meta" aria-hidden="true">
+                            { treatment.phase === 1 ? `${ remainingSeconds }s` : `${ progress }%` }
+                        </span>
+                    </div>
+                    { treatment.phase === 2 && (
+                        <>
+                            <div className="rp-stats-hud__treatment-track" role="progressbar" aria-label={ treatmentLabel } aria-valuenow={ progress } aria-valuemin={ 0 } aria-valuemax={ 100 }>
+                                <div className="rp-stats-hud__treatment-fill" style={ { width: `${ progress }%` } } />
+                            </div>
+                            <div className="rp-stats-hud__treatment-note">{ label('roleplay.hospital.locked', 'Movement and chat locked') }</div>
+                        </>
+                    ) }
+                </div>
+            ) }
         </section>
     );
 };

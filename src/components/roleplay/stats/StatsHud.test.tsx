@@ -2,8 +2,9 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StatsHud } from './StatsHud';
 
-const test = vi.hoisted(() => ({ authenticated: true, send: vi.fn(), receive: null, user: { userName: 'DistrictPlayer', figure: 'hr-100-61', gender: 'M' } }));
+const test = vi.hoisted(() => ({ authenticated: true, send: vi.fn(), receive: null, treatment: null as { phase: number; progress: number; remainingMs: number } | null, user: { userName: 'DistrictPlayer', figure: 'hr-100-61', gender: 'M' } }));
 vi.mock('../../../hooks/session/useSessionSnapshots', () => ({ useUserDataSnapshot: () => test.user }));
+vi.mock('../../../hooks/roleplay/useRpHospitalTreatment', () => ({ useRpHospitalTreatment: () => test.treatment }));
 vi.mock('../../../common/layout/LayoutAvatarImageView', () => ({ LayoutAvatarImageView: ({ figure, gender }: { figure: string; gender: string }) => <div data-testid="player-avatar" data-figure={figure} data-gender={gender} /> }));
 vi.mock('@volt/renderer', () => ({ RpStatsEvent: class
 {}, RpStatsRequestComposer: class
@@ -23,6 +24,7 @@ describe('DistrictRP stats HUD', () =>
     beforeEach(() =>
     {
         test.user = { userName: 'DistrictPlayer', figure: 'hr-100-61', gender: 'M' };
+        test.treatment = null;
         test.authenticated = true; test.send.mockClear(); vi.useFakeTimers();
     });
     afterEach(() =>
@@ -81,5 +83,42 @@ describe('DistrictRP stats HUD', () =>
         expect(screen.queryByRole('region')).toBeNull();
         act(() => vi.advanceTimersByTime(30000));
         expect(test.send).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows the hospital transfer countdown without a treatment bar', () =>
+    {
+        const view = render(<StatsHud />);
+        snapshot(0, 0);
+        test.treatment = { phase: 1, progress: 0, remainingMs: 7000 };
+        view.rerender(<StatsHud />);
+        expect(screen.getByText('Hospital transfer')).toBeInTheDocument();
+        expect(screen.getByText('7s')).toBeInTheDocument();
+        expect(screen.queryByRole('progressbar', { name: 'Hospital treatment' })).toBeNull();
+    });
+
+    it('shows authoritative treatment progress and the movement lock', () =>
+    {
+        const view = render(<StatsHud />);
+        snapshot(30, 20);
+        test.treatment = { phase: 2, progress: 20, remainingMs: 63000 };
+        view.rerender(<StatsHud />);
+        expect(screen.getByText('Hospital treatment')).toBeInTheDocument();
+        expect(screen.getByRole('progressbar', { name: 'Hospital treatment' })).toHaveAttribute('aria-valuenow', '20');
+        expect(screen.getByText('20%')).toBeInTheDocument();
+        expect(screen.getByText('Movement and chat locked')).toBeInTheDocument();
+        expect(screen.getByRole('progressbar', { name: 'Health' })).toHaveAttribute('aria-valuenow', '30');
+        expect(screen.getByRole('progressbar', { name: 'Energy' })).toHaveAttribute('aria-valuenow', '20');
+    });
+
+    it('hides the treatment strip for no treatment and clamps unexpected values', () =>
+    {
+        const view = render(<StatsHud />);
+        snapshot(100, 100);
+        expect(screen.queryByText('Hospital treatment')).toBeNull();
+        expect(screen.queryByText('Hospital transfer')).toBeNull();
+        test.treatment = { phase: 2, progress: 240, remainingMs: 0 };
+        view.rerender(<StatsHud />);
+        expect(screen.getByRole('progressbar', { name: 'Hospital treatment' })).toHaveAttribute('aria-valuenow', '100');
+        expect(screen.getByText('100%')).toBeInTheDocument();
     });
 });

@@ -24,6 +24,7 @@ import { FriendsView } from './friends/FriendsView';
 import { GameCenterView } from './game-center/GameCenterView';
 import { SnowWarView } from './game-center/views/snowwar/SnowWarView';
 import { GroupsView } from './groups/GroupsView';
+import { BusinessView } from './roleplay/jobs/BusinessView';
 import { GroupForumView } from './groups/views/forums/GroupForumView';
 import { GuideToolView } from './guide-tool/GuideToolView';
 import { HcCenterView } from './hc-center/HcCenterView';
@@ -132,6 +133,7 @@ export const MainView: FC<{}> = (props) =>
             <div className="hidden" data-localization-version={localizationVersion} />
             <NativeTextHaloFilter />
             <DistrictHud />
+            <BusinessView />
             <AnimatePresence>
                 {landingViewVisible && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

@@ -281,7 +281,7 @@ export const NavigatorView: FC<{}> = () => {
                 >
                     <div
                         ref={frameRef}
-                        className={`volt-navigator-air${isOpenSavesSearches ? ' is-quick-links' : ''}`}
+                        className={`volt-navigator-air theme-district${isOpenSavesSearches ? ' is-quick-links' : ''}`}
                         data-air-frame="ubuntu-3"
                         style={{ '--navigator-height': `${windowHeight || 628}px` } as CSSProperties}
                     >

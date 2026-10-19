@@ -1,15 +1,15 @@
 .district-business.volt-card {
-    --business-surface: #202a2a;
-    --business-raised: #2c3838;
-    --business-border: #536563;
-    --business-text: #f3f1e9;
-    --business-muted: #b9c9c0;
-    --business-accent: #94c9bb;
+    --business-surface: var(--district-ui-surface, #202a2a);
+    --business-raised: var(--district-ui-raised, #2c3838);
+    --business-border: var(--district-ui-border, #536563);
+    --business-text: var(--district-ui-text, #f3f1e9);
+    --business-muted: var(--district-ui-muted, #b9c9c0);
+    --business-accent: var(--district-ui-accent, #94c9bb);
     width: 620px;
     min-width: 0;
     max-width: calc(100vw - 24px);
     border: 1px solid var(--business-border);
-    border-radius: 8px;
+    border-radius: 5px;
     background: var(--business-surface);
     color: var(--business-text);
     font: 12px/17px HabboAirUbuntu, UbuntuRegular, sans-serif;
@@ -19,7 +19,7 @@
     > div[role='dialog'] { display: flex; flex-direction: column; max-height: calc(100dvh - 150px); min-height: 260px; }
     button, input, select { font: inherit; color: inherit; border: 1px solid var(--business-border); border-radius: 4px; background: var(--business-raised); }
     button { padding: 6px 10px; cursor: pointer; }
-    button:hover:not(:disabled) { background: #3c504c; }
+    button:hover:not(:disabled) { background: #484848; }
     :is(button, input, select):focus-visible { outline: 2px solid var(--business-accent); outline-offset: 2px; }
     button:disabled { opacity: .5; cursor: default; }
     input, select { min-width: 0; padding: 7px 8px; }
@@ -27,17 +27,32 @@
     select option { background: var(--business-surface); }
     p { margin: 0 0 10px; }
     h2, h3 { margin: 0 0 12px; color: var(--business-text); }
-    .business-titlebar { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: var(--business-raised); border-bottom: 1px solid var(--business-border); font-weight: 700; }
-    .business-close { font-size: 20px; line-height: 18px; padding: 3px 7px; }
-    .business-heading { display: flex; align-items: center; gap: 12px; padding: 18px 16px 14px; }
+    .business-titlebar { position: relative; display: flex; align-items: center; justify-content: center; min-height: 32px; padding: 3px 36px; background: var(--district-ui-titlebar); border-bottom: 1px solid #1a1a1a; box-shadow: inset 0 1px #ffffff35; font-size: 18px; line-height: 24px; text-shadow: 0 1px 2px #0009; font-weight: 700; }
+    .business-close { position: absolute; right: 7px; top: 6px; width: 19px; height: 19px; border: 1px solid #ffffff15; border-radius: 3px; background: #656970; font: 700 19px/15px var(--district-ui-font); padding: 0; color: #eee; text-shadow: none; }
+    .business-heading { display: flex; align-items: center; gap: 10px; padding: 9px; margin: 9px; background: var(--business-raised); border: 1px solid var(--business-border); border-radius: 3px; }
+    .business-heading-copy { flex: 1; min-width: 0; }
+    .business-heading h2 { margin: 0 0 5px; font-size: 16px; line-height: 20px; }
+    .business-summary { display: flex; flex-wrap: wrap; gap: 5px; }
+    .business-summary span { border: 1px solid #494949; border-radius: 3px; background: #282828; padding: 1px 5px; color: var(--business-muted); font-size: 11px; }
     .business-heading select { font-size: 18px; font-weight: 700; padding: 0; border: 0; background: transparent; opacity: 1; color: var(--business-text); appearance: none; }
     .business-heading p { margin: 5px 0 0; color: var(--business-muted); }
     .business-badge { display: grid; place-items: center; width: 48px; height: 48px; flex-shrink: 0; border: 1px solid var(--business-border); border-radius: 6px; background: var(--business-raised); }
     .business-link { margin-left: auto; }
-    .business-tabs { display: flex; gap: 18px; padding: 0 16px; border-bottom: 1px solid var(--business-border); }
-    .business-tabs button { padding: 9px 2px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: transparent; color: var(--business-muted); }
-    .business-tabs button[aria-selected='true'] { border-bottom-color: var(--business-accent); color: var(--business-text); font-weight: 700; }
-    .business-content { min-height: 220px; padding: 14px 16px; overflow-y: auto; flex: 1; }
+    .business-tabs { display: flex; gap: 4px; padding: 0 9px; border-bottom: 1px solid var(--business-border); }
+    .business-tabs button { padding: 6px 13px; border: 1px solid #444; border-bottom: 2px solid transparent; border-radius: 3px 3px 0 0; background: #292929; color: var(--business-muted); }
+    .business-tabs button[aria-selected='true'] { border-bottom-color: #989ba3; background: #414141; color: var(--business-text); font-weight: 700; }
+    .business-content { min-height: 0; height: 350px; padding: 9px; overflow-y: auto; flex: 1 1 auto; }
+    .business-rank-list { display: flex; flex-direction: column; gap: 8px; }
+    .business-rank-section { padding: 7px; border: 1px solid #464646; border-radius: 3px; background: #303030; box-shadow: inset 0 1px #ffffff08; }
+    .business-rank-section > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 8px; border: 1px solid #3c3c3c; border-radius: 3px; background: #262626; }
+    .business-rank-section h3 { margin: 0; font-size: 13px; line-height: 18px; }
+    .business-salary { flex-shrink: 0; padding: 0 5px; color: #9ad4b0; background: #304137; border: 1px solid #4a6553; border-radius: 3px; font-weight: 700; }
+    .business-salary small { font-size: 10px; color: #b0c4b5; font-weight: 400; }
+    .business-staff-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 7px 0 0; margin: 0; list-style: none; }
+    .business-staff-card { display: flex; align-items: center; min-width: 0; gap: 9px; padding: 6px; border: 1px solid #484848; border-radius: 3px; background: #2a2a2a; }
+    .business-staff-card > div { min-width: 0; }
+    .business-staff-card strong { display: block; overflow-wrap: anywhere; margin-bottom: 4px; }
+    .business-staff-portrait { position: relative; display: block; width: 48px; height: 64px; flex-shrink: 0; overflow: hidden; border: 1px solid #555; border-radius: 3px; background: #b9b9b9; }
     .business-filters { display: flex; gap: 8px; margin-bottom: 12px; }
     .business-filters label:first-child { flex: 1; min-width: 0; }
     .business-filters input { width: 100%; }
@@ -49,7 +64,8 @@
     .business-person:hover { background: #94c9bb08; }
     .business-identity { display: flex; gap: 8px; align-items: center; min-width: 0; }
     .business-identity strong { overflow-wrap: anywhere; }
-    .business-avatar { position: relative; flex-shrink: 0; overflow: hidden; width: 38px; height: 42px; background: var(--business-raised); border-radius: 4px; }
+    .business-avatar { position: relative; flex-shrink: 0; overflow: hidden; width: 48px; height: 64px; background: var(--business-raised); border-radius: 4px; }
+    :is(.business-avatar, .business-staff-portrait) .business-avatar-figure { position: absolute; left: -21px; top: -15px; width: 90px; height: 130px; }
     .business-rank { color: var(--business-muted); overflow-wrap: anywhere; }
     .business-rank select { width: 100%; }
     .business-duty { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--business-muted); white-space: nowrap; }
@@ -79,6 +95,7 @@
     .business-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 
     @media (max-width: 480px) {
+        .business-staff-grid { grid-template-columns: minmax(0, 1fr); }
         .business-heading { padding: 12px; gap: 8px; flex-wrap: wrap; }
         .business-content { padding: 12px; }
         .business-filters { flex-direction: column; }

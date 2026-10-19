@@ -12,7 +12,8 @@ interface VoltCardHeaderViewProps extends ColumnProps {
     onCloseClick: (event: MouseEvent) => void;
 }
 
-export const VoltCardHeaderView: FC<VoltCardHeaderViewProps> = (props) => {
+export const VoltCardHeaderView: FC<VoltCardHeaderViewProps> = (props) =>
+{
     const {
         headerText = null,
         isGalleryPhoto = false,
@@ -29,7 +30,8 @@ export const VoltCardHeaderView: FC<VoltCardHeaderViewProps> = (props) => {
         ...rest
     } = props;
 
-    const onMouseDown = (event: MouseEvent<HTMLDivElement>) => {
+    const onMouseDown = (event: MouseEvent<HTMLButtonElement>) =>
+    {
         event.stopPropagation();
         event.nativeEvent.stopImmediatePropagation();
     };
@@ -63,11 +65,13 @@ export const VoltCardHeaderView: FC<VoltCardHeaderViewProps> = (props) => {
                     <Base className="absolute right-8 volt-card-header-info-habbopages cursor-pointer" position="absolute" onClick={onClickInfoHabboPages} />
                 )}
                 {children}
-                <div
+                <button
+                    type="button"
+                    aria-label="Close window"
                     className="absolute flex items-center justify-center cursor-pointer right-2 volt-card-close-button"
                     onClick={onCloseClick}
                     onMouseDownCapture={onMouseDown}
-                ></div>
+                />
             </Flex>
         </Column>
     );

@@ -276,6 +276,7 @@ export const InventoryView: FC<{}> = () => {
     return (
         <>
             <VoltCardView
+                theme="district"
                 className={`volt-inventory-window max-w-[calc(100vw-16px)] ${isTrading ? (isTradeMinimized ? 'is-trading is-minimized' : `is-trading${hasCreditNote ? ' has-credit-note' : ''}`) : ''}`}
                 frameStyle={3}
                 resizeAxis="vertical"

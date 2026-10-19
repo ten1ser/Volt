@@ -1,34 +1,34 @@
-import { GroupInformationEvent, GroupInformationParser } from '@volt/renderer';
-import { FC, useState } from 'react';
-import { LocalizeText } from '../../../api';
-import { VoltCardHeaderView, VoltCardView } from '../../../common';
+import { AddLinkEventTracker, CreateLinkEvent, GroupInformationEvent, GroupInformationParser, ILinkEventTracker, RemoveLinkEventTracker } from '@volt/renderer';
+import { FC, useEffect, useState } from 'react';
 import { useMessageEvent } from '../../../hooks';
-import { GroupInformationView } from './GroupInformationView';
-import { GroupWindowTitle } from './GroupNativeLayout';
+import { BusinessView } from '../../roleplay/jobs/BusinessView';
 
-export const GroupInformationStandaloneView: FC<{}> = (props) => {
+export const GroupInformationStandaloneView: FC = () =>
+{
     const [groupInformation, setGroupInformation] = useState<GroupInformationParser>(null);
 
-    useMessageEvent<GroupInformationEvent>(GroupInformationEvent, (event) => {
+    useMessageEvent<GroupInformationEvent>(GroupInformationEvent, (event) =>
+    {
         const parser = event.getParser();
 
-        if ((groupInformation && groupInformation.id === parser.id) || parser.flag) setGroupInformation(parser);
+        if ((groupInformation && groupInformation.id === parser.id) || parser.flag)
+        {
+            if (parser.flag) CreateLinkEvent('businesses/hide');
+            setGroupInformation(parser);
+        }
     });
+
+    useEffect(() =>
+    {
+        const tracker: ILinkEventTracker = { eventUrlPrefix: 'businesses/', linkReceived: url =>
+        {
+            if (url === 'businesses/show' || url === 'businesses/toggle') setGroupInformation(null);
+        } };
+        AddLinkEventTracker(tracker);
+        return () => RemoveLinkEventTracker(tracker);
+    }, []);
 
     if (!groupInformation) return null;
 
-    return (
-        <VoltCardView
-            aria-label={LocalizeText('group.window.title')}
-            className="volt-group-info"
-            frameStyle={3}
-            isResizable={false}
-            role="dialog"
-            uniqueKey="group-information"
-        >
-            <VoltCardHeaderView headerText="" onCloseClick={() => setGroupInformation(null)} />
-            <GroupWindowTitle title={LocalizeText('group.window.title')} width={363} />
-            <GroupInformationView groupInformation={groupInformation} />
-        </VoltCardView>
-    );
+    return <BusinessView groupInformation={groupInformation} onClose={() => setGroupInformation(null)} />;
 };

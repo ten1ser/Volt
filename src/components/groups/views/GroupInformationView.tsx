@@ -19,6 +19,7 @@ import typeIconRegular from '../../../assets/images/groups/native/grouptype_icon
 import typeIconExclusive from '../../../assets/images/groups/native/grouptype_icon_1.png';
 import typeIconPrivate from '../../../assets/images/groups/native/grouptype_icon_2.png';
 import { LayoutBadgeImageView } from '../../../common';
+import { useVoltCardContext } from '../../../common/card/VoltCardContext';
 import { useGroupMemberRemoval, useMessageEvent, useNotification } from '../../../hooks';
 import { flatText, GroupBox, GroupButton, GroupText } from './GroupNativeLayout';
 
@@ -33,8 +34,10 @@ interface GroupInformationViewProps {
     groupInformation: GroupInformationParser;
 }
 
-export const GroupInformationView: FC<GroupInformationViewProps> = (props) => {
+export const GroupInformationView: FC<GroupInformationViewProps> = (props) =>
+{
     const { groupInformation = null } = props;
+    const district = useVoltCardContext().theme === 'district';
     const { showConfirm = null } = useNotification();
     const userId = GetSessionDataManager().userId;
     const shownGroupId = groupInformation?.id ?? 0;
@@ -42,23 +45,27 @@ export const GroupInformationView: FC<GroupInformationViewProps> = (props) => {
     const confirmOpenRef = useRef<boolean>(false);
 
     // Read by the confirmation callbacks; refreshed before any of them can run.
-    useLayoutEffect(() => {
+    useLayoutEffect(() =>
+    {
         shownGroupIdRef.current = shownGroupId;
     });
 
     // A confirmation belongs to the group it was asked for: showing another group (or closing the window) retires it.
-    useEffect(() => {
+    useEffect(() =>
+    {
         confirmOpenRef.current = false;
     }, [shownGroupId]);
 
-    useEffect(() => () => {
+    useEffect(() => () =>
+    {
         shownGroupIdRef.current = 0;
     }, []);
 
     const { request: requestMemberRemoval, claimReply, isCurrentSession } = useGroupMemberRemoval();
 
     // The reply names no group (see useGroupMemberRemoval): it is shown only when this window owns the one outstanding request for the group still on screen.
-    useMessageEvent<GroupConfirmMemberRemoveEvent>(GroupConfirmMemberRemoveEvent, (event) => {
+    useMessageEvent<GroupConfirmMemberRemoveEvent>(GroupConfirmMemberRemoveEvent, (event) =>
+    {
         const parser = event.getParser();
         const removal = claimReply(parser.userId);
 
@@ -69,7 +76,8 @@ export const GroupInformationView: FC<GroupInformationViewProps> = (props) => {
         confirmOpenRef.current = true;
         showConfirm(
             LocalizeText(parser.furnitureCount > 0 ? 'group.leaveconfirm.desc' : 'group.leaveconfirm_nofurni.desc', ['amount'], [parser.furnitureCount.toString()]),
-            () => {
+            () =>
+            {
                 confirmOpenRef.current = false;
 
                 // One removal per confirmation, whatever re-renders or repeated callback invocations happen, and only while that group is shown and the same user is signed in.
@@ -78,7 +86,8 @@ export const GroupInformationView: FC<GroupInformationViewProps> = (props) => {
                 isSent = true;
                 SendMessageComposer(new GroupRemoveMemberComposer(removal.groupId, removal.userId));
             },
-            () => {
+            () =>
+            {
                 confirmOpenRef.current = false;
             },
             LocalizeText('generic.ok'),
@@ -95,7 +104,8 @@ export const GroupInformationView: FC<GroupInformationViewProps> = (props) => {
     const isNotMember = groupInformation.membershipType === GroupMembershipType.NOT_MEMBER;
     const nameX = BASE_X + 125 + (groupInformation.canMembersDecorate ? 15 : 0);
 
-    const leaveGroup = () => {
+    const leaveGroup = () =>
+    {
         if (confirmOpenRef.current) return;
 
         requestMemberRemoval(groupInformation.id, userId);
@@ -105,12 +115,14 @@ export const GroupInformationView: FC<GroupInformationViewProps> = (props) => {
     const hasPendingLine = groupInformation.pendingRequestsCount > 0 && (groupInformation.isOwner || groupInformation.isAdmin);
     const leftLinksY = hasPendingLine ? 137 : 121;
 
-    const deleteGroup = () => {
+    const deleteGroup = () =>
+    {
         let isSent = false;
 
         showConfirm(
             LocalizeText('group.deleteconfirm.desc'),
-            () => {
+            () =>
+            {
                 // One deletion per confirmation, and only while that group is the one shown.
                 if (isSent || groupInformation.id !== shownGroupIdRef.current) return;
 
@@ -124,8 +136,10 @@ export const GroupInformationView: FC<GroupInformationViewProps> = (props) => {
         );
     };
 
-    const handleAction = (action: string) => {
-        switch (action) {
+    const handleAction = (action: string) =>
+    {
+        switch (action)
+        {
             case 'members':
                 GetGroupMembers(groupInformation.id, 0);
                 break;
@@ -149,6 +163,43 @@ export const GroupInformationView: FC<GroupInformationViewProps> = (props) => {
                 break;
         }
     };
+
+    if (district) return (
+        <div className="district-group-details">
+            <section className="district-group-identity">
+                <div className="district-group-badge"><LayoutBadgeImageView badgeCode={groupInformation.badge} isGroup scale={2} /></div>
+                <div>
+                    <h2>{groupInformation.title}</h2>
+                    <p>{groupInformation.description}</p>
+                    <img alt="" src={TYPE_ICONS[groupInformation.type]} title={LocalizeText(`group.edit.settings.type.${TYPE_HELP[groupInformation.type]}.help`)} />
+                    {groupInformation.canMembersDecorate && <img alt="" src={decorateIcon} title={LocalizeText('group.memberscandecorate')} />}
+                </div>
+            </section>
+            <div className="district-group-metadata">
+                <span>{LocalizeText('group.membercount', ['totalMembers'], [groupInformation.membersCount.toString()])}</span>
+                <span>{LocalizeText('group.created', ['date', 'owner'], [groupInformation.createdAt, groupInformation.ownerName])}</span>
+            </div>
+            <div className="district-group-actions">
+                <button type="button" onClick={() => handleAction('members')}>{LocalizeText('group.membercount', ['totalMembers'], [groupInformation.membersCount.toString()])}</button>
+                <button type="button" onClick={() => handleAction('homeroom')}>{LocalizeText('group.linktobase')}</button>
+                {hasPendingLine && <button type="button" onClick={() => handleAction('members_pending')}>{LocalizeText('group.pendingmembercount', ['amount'], [groupInformation.pendingRequestsCount.toString()])}</button>}
+                <button type="button" onClick={() => handleAction('furniture')}>{LocalizeText('group.buyfurni')}</button>
+                <button type="button" onClick={() => handleAction('popular_groups')}>{LocalizeText('group.showgroups')}</button>
+                {groupInformation.hasForum && <button type="button" onClick={() => handleAction('forum')}>{LocalizeText('group.showforum')}</button>}
+                {isRealOwner && <>
+                    <button type="button" onClick={() => handleAction('manage')}>{LocalizeText('group.manage')}</button>
+                    <button className="district-danger" type="button" onClick={deleteGroup}>{LocalizeText('group.delete')}</button>
+                </>}
+                {isMember && !isRealOwner && <button className="district-danger" type="button" onClick={leaveGroup}>{LocalizeText('group.leave')}</button>}
+                {isNotMember && groupInformation.type === GroupType.REGULAR && <button type="button" onClick={() => TryJoinGroup(groupInformation.id)}>{LocalizeText('group.join')}</button>}
+                {isNotMember && groupInformation.type === GroupType.EXCLUSIVE && <button type="button" onClick={() => TryJoinGroup(groupInformation.id)}>{LocalizeText('group.requestmembership')}</button>}
+            </div>
+            {(isRealOwner || isMember || isPending) && <div className="district-group-status">
+                {!isPending && <img alt="" src={isRealOwner ? ownerIcon : groupInformation.isAdmin ? adminIcon : memberIcon} />}
+                <span>{LocalizeText(isPending ? 'group.membershippending' : isRealOwner ? 'group.youareowner' : groupInformation.isAdmin ? 'group.youareadmin' : 'group.youaremember')}</span>
+            </div>}
+        </div>
+    );
 
     return (
         <>

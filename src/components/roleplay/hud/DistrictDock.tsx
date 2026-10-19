@@ -80,7 +80,7 @@ export const DistrictDock: FC<{ isInRoom: boolean }> = ({ isInRoom }) =>
                     <div className="district-drawer__actions">
                         {actionButton({ label: 'Friends', icon: 'friendall', run: link('friends/toggle'), count: requests.length })}
                         {actionButton({ label: 'Find people', icon: 'friendsearch', run: link('friends/search') })}
-                        {actionButton({ label: 'Businesses', icon: 'rooms', run: link('businesses/toggle') })}
+                        {actionButton({ label: 'Business/Corporation', icon: 'rooms', run: link('businesses/toggle') })}
                         {iconState !== MessengerIconState.HIDDEN && actionButton({ label: 'Messages', icon: 'message', run: () => OpenMessengerChat(), count: iconState === MessengerIconState.UNREAD ? 1 : 0 })}
                     </div>
                     <div id="toolbar-friend-bar-container-desktop" className="district-friendbar" />

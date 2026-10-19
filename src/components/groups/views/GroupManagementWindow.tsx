@@ -60,6 +60,7 @@ export const GroupManagementWindow: FC<GroupManagementWindowProps> = ({
     return (
         <GroupAlertContext.Provider value={setAlert}>
             <VoltCardView
+                theme="district"
                 aria-label={LocalizeText('group.window.title')}
                 className="volt-group-native"
                 frameStyle={3}

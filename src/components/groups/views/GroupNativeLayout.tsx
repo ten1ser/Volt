@@ -3,6 +3,7 @@ import guildColorBottom from '../../../assets/images/groups/native/group_guild_c
 import { NativeText } from '../../../common/native-text/NativeText';
 import { NativeFontStyle } from '../../../common/native-text/NativeFont';
 import { NativeTextStyleName } from '../../../common/native-text/NativeTextStyles';
+import { useVoltCardContext } from '../../../common/card/VoltCardContext';
 
 // groups_main_window client coordinates: the frame draws 33px of title above them.
 export const GROUP_SURFACE = 0xe9e9e1;
@@ -51,6 +52,7 @@ export const GroupText: FC<GroupTextProps> = ({
 }) =>
 {
     const textRef = useRef<HTMLDivElement>(null);
+    const district = useVoltCardContext().theme === 'district';
     const [centerOffset, setCenterOffset] = useState(0);
     const isCentered = align === 'center' && width !== undefined;
 
@@ -72,7 +74,7 @@ export const GroupText: FC<GroupTextProps> = ({
 
     // A TextField keeps its 2px gutter at the bottom: rows below height - 2 are clipped.
     const style: CSSProperties = {
-        mixBlendMode: blend,
+        mixBlendMode: district ? undefined : blend,
         left: x + (isCentered ? centerOffset : 0),
         top: y,
         width: wrap ? width : undefined,
@@ -81,14 +83,23 @@ export const GroupText: FC<GroupTextProps> = ({
 
     return (
         <div ref={textRef} className={`volt-group-native__text${height === undefined ? '' : ' is-clipped'} ${className}`} style={style} onClick={onClick}>
-            <NativeText
+            {district ? <span className="district-group-text" style={{
+                display: 'inline-block',
+                fontSize: overrides?.size ?? (textStyle === 'u_frame_title' ? 13 : 12),
+                fontWeight: overrides?.bold || textStyle.includes('bold') || textStyle === 'u_frame_title' ? 700 : 400,
+                fontStyle: overrides?.italic ? 'italic' : undefined,
+                color: overrides?.color === undefined || overrides.color === 0 || overrides.color === 0xffffff ? undefined : `#${overrides.color.toString(16).padStart(6, '0')}`,
+                whiteSpace: wrap ? 'pre-wrap' : 'pre',
+                maxWidth: wrap ? width : undefined,
+                lineHeight: leading === undefined ? '1.25' : `${(overrides?.size ?? 12) + leading}px`
+            }}>{toNativeText(text)}</span> : <NativeText
                 background={blend === 'multiply' ? 0xffffff : blend === 'screen' ? 0x000000 : background}
                 leading={leading}
                 maxWidth={wrap ? width : undefined}
                 overrides={overrides}
                 text={toNativeText(text)}
                 textStyle={textStyle}
-            />
+            />}
         </div>
     );
 };
@@ -170,6 +181,7 @@ interface GroupInputProps {
  */
 export const GroupInput: FC<GroupInputProps> = ({ label, value, maxLength, x, y, width, height, multiline = false, plain = false, fontSize = 13, inset = 1, onChange }) =>
 {
+    const district = useVoltCardContext().theme === 'district';
     const overlayRef = useRef<HTMLDivElement>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [rasterFits, setRasterFits] = useState(false);
@@ -202,7 +214,7 @@ export const GroupInput: FC<GroupInputProps> = ({ label, value, maxLength, x, y,
         };
     }, [value, width, height, multiline]);
 
-    const showRaster = !isEditing && rasterFits && value.length > 0;
+    const showRaster = !district && !isEditing && rasterFits && value.length > 0;
     const inputProps = {
         'aria-label': label,
         className: 'volt-group-native__input' + (showRaster ? ' is-raster' : ''),
@@ -220,9 +232,9 @@ export const GroupInput: FC<GroupInputProps> = ({ label, value, maxLength, x, y,
             ) : (
                 <input {...inputProps} type="text" onChange={(event) => onChange(event.target.value)} />
             )}
-            <div ref={overlayRef} aria-hidden="true" className={`volt-group-native__field-text${showRaster ? '' : ' is-hidden'}`} style={plain ? { top: 0, left: inset - 1 } : undefined}>
+            {!district && <div ref={overlayRef} aria-hidden="true" className={`volt-group-native__field-text${showRaster ? '' : ' is-hidden'}`} style={plain ? { top: 0, left: inset - 1 } : undefined}>
                 <NativeText background={0xffffff} maxWidth={multiline ? width - (plain ? 2 * (inset - 1) : 0) : undefined} overrides={flatText(fontSize)} text={value} textStyle="u_regular" />
-            </div>
+            </div>}
         </div>
     );
 };

@@ -38,7 +38,8 @@ import {
 import { useGroupMemberRemoval, useMessageEvent, useNotification } from '../../../hooks';
 import { classNames } from '../../../layout';
 
-export const GroupMembersView: FC<{}> = (props) => {
+export const GroupMembersView: FC = () =>
+{
     const [groupId, setGroupId] = useState<number>(-1);
     const [levelId, setLevelId] = useState<number>(-1);
     const [membersData, setMembersData] = useState<GroupMembersParser>(null);
@@ -59,10 +60,12 @@ export const GroupMembersView: FC<{}> = (props) => {
 
     const pendingActionsRef = useRef<Set<string>>(new Set());
 
-    const getRankDescription = (member: GroupMemberParser) => {
+    const getRankDescription = (member: GroupMemberParser) =>
+    {
         if (member.rank === GroupRank.OWNER) return 'group.members.owner';
 
-        if (isOwner) {
+        if (isOwner)
+        {
             if (member.rank === GroupRank.ADMIN) return 'group.members.removerights';
 
             if (member.rank === GroupRank.MEMBER) return 'group.members.giverights';
@@ -71,13 +74,15 @@ export const GroupMembersView: FC<{}> = (props) => {
         return '';
     };
 
-    const refreshMembers = useCallback(() => {
+    const refreshMembers = useCallback(() =>
+    {
         if (groupId === -1 || levelId === -1 || pageId === -1) return;
 
         SendMessageComposer(new GroupMembersComposer(groupId, pageId, searchQuery, levelId));
     }, [groupId, levelId, pageId, searchQuery]);
 
-    const toggleAdmin = (member: GroupMemberParser) => {
+    const toggleAdmin = (member: GroupMemberParser) =>
+    {
         if (!isOwner || member.rank === GroupRank.OWNER) return;
 
         const key = `admin_${member.id}`;
@@ -89,7 +94,8 @@ export const GroupMembersView: FC<{}> = (props) => {
         else SendMessageComposer(new GroupAdminTakeComposer(membersData.groupId, member.id));
     };
 
-    const acceptMembership = (member: GroupMemberParser) => {
+    const acceptMembership = (member: GroupMemberParser) =>
+    {
         if (!membersData.admin || member.rank !== GroupRank.REQUESTED) return;
 
         const key = `accept_${member.id}`;
@@ -103,7 +109,8 @@ export const GroupMembersView: FC<{}> = (props) => {
     // The server answers a removal request only for these members: never the owner or oneself, and an administrator only when the owner asks.
     const canRemoveMember = (member: GroupMemberParser) => !!membersData?.admin && member.rank !== GroupRank.OWNER && member.id !== GetSessionDataManager().userId && (member.rank !== GroupRank.ADMIN || isOwner);
 
-    const removeMemberOrDeclineMembership = (member: GroupMemberParser) => {
+    const removeMemberOrDeclineMembership = (member: GroupMemberParser) =>
+    {
         if (!canRemoveMember(member)) return;
 
         const key = `remove_${member.id}`;
@@ -111,7 +118,8 @@ export const GroupMembersView: FC<{}> = (props) => {
         pendingActionsRef.current.add(key);
         setTimeout(() => pendingActionsRef.current.delete(key), 2000);
 
-        if (member.rank === GroupRank.REQUESTED) {
+        if (member.rank === GroupRank.REQUESTED)
+        {
             SendMessageComposer(new GroupMembershipDeclineComposer(membersData.groupId, member.id));
 
             return;
@@ -121,7 +129,8 @@ export const GroupMembersView: FC<{}> = (props) => {
         if (requestMemberRemoval(membersData.groupId, member.id)) pendingRemoval.current = { groupId: membersData.groupId, userId: member.id, name: member.name };
     };
 
-    useMessageEvent<GroupMembersEvent>(GroupMembersEvent, (event) => {
+    useMessageEvent<GroupMembersEvent>(GroupMembersEvent, (event) =>
+    {
         const parser = event.getParser();
         const normalizedLevel = !parser.admin && levelId >= 2 && parser.level === 0;
 
@@ -139,19 +148,22 @@ export const GroupMembersView: FC<{}> = (props) => {
         if (parser.id === groupId) setIsOwner(parser.isOwner);
     });
 
-    useMessageEvent<GroupMemberUpdateEvent>(GroupMemberUpdateEvent, (event) => {
+    useMessageEvent<GroupMemberUpdateEvent>(GroupMemberUpdateEvent, (event) =>
+    {
         if (event.getParser().groupId !== groupId) return;
 
         refreshMembers();
     });
 
-    useMessageEvent<GroupMembersRefreshEvent>(GroupMembersRefreshEvent, (event) => {
+    useMessageEvent<GroupMembersRefreshEvent>(GroupMembersRefreshEvent, (event) =>
+    {
         if (event.getParser().groupId !== groupId) return;
 
         refreshMembers();
     });
 
-    useMessageEvent<GroupConfirmMemberRemoveEvent>(GroupConfirmMemberRemoveEvent, (event) => {
+    useMessageEvent<GroupConfirmMemberRemoveEvent>(GroupConfirmMemberRemoveEvent, (event) =>
+    {
         const parser = event.getParser();
         const owned = claimReply(parser.userId);
         const removal = pendingRemoval.current;
@@ -168,7 +180,8 @@ export const GroupMembersView: FC<{}> = (props) => {
                 ['user', 'amount'],
                 [removal.name, parser.furnitureCount.toString()]
             ),
-            () => {
+            () =>
+            {
                 // Valid only while this window still shows that group for the same signed-in user.
                 if (isSent || removal.groupId !== groupIdRef.current || !isCurrentSession(owned)) return;
 
@@ -184,9 +197,11 @@ export const GroupMembersView: FC<{}> = (props) => {
         if (event.getParser().groupId === groupId) setGroupId(-1);
     });
 
-    useEffect(() => {
+    useEffect(() =>
+    {
         const linkTracker: ILinkEventTracker = {
-            linkReceived: (url: string) => {
+            linkReceived: (url: string) =>
+            {
                 const parts = url.split('/');
 
                 if (parts.length < 2) return;
@@ -206,17 +221,20 @@ export const GroupMembersView: FC<{}> = (props) => {
         return () => RemoveLinkEventTracker(linkTracker);
     }, []);
 
-    useEffect(() => {
+    useEffect(() =>
+    {
         setPageId(0);
     }, [groupId, levelId, searchQuery]);
 
-    useEffect(() => {
+    useEffect(() =>
+    {
         if (groupId === -1 || levelId === -1 || pageId === -1) return;
 
         SendMessageComposer(new GroupMembersComposer(groupId, pageId, searchQuery, levelId));
     }, [groupId, levelId, pageId, searchQuery]);
 
-    useEffect(() => {
+    useEffect(() =>
+    {
         pendingRemoval.current = null;
 
         if (groupId === -1) return;
@@ -231,33 +249,35 @@ export const GroupMembersView: FC<{}> = (props) => {
     if (groupId === -1 || !membersData) return null;
 
     return (
-        <VoltCardView className="volt-groups-window volt-group-members" theme="primary-slim" isResizable={false}>
+        <VoltCardView className="volt-groups-window volt-group-members" theme="district" isResizable={false}>
             <VoltCardHeaderView
                 headerText={LocalizeText('group.members.title', ['groupName'], [membersData ? membersData.groupTitle : ''])}
                 onCloseClick={(event) => setGroupId(-1)}
             />
             <VoltCardContentView className="volt-groups-content" overflow="hidden">
+                <div className="district-members-summary">
+                    <LayoutBadgeImageView badgeCode={membersData.badge} isGroup={true} />
+                    <div><h2>{membersData.groupTitle}</h2><p>{membersData.totalMembersCount} members</p></div>
+                </div>
                 <div className="volt-group-members-search flex gap-2">
-                    <Flex center className="group-badge volt-group-members-search__badge">
-                        <LayoutBadgeImageView badgeCode={membersData.badge} className="mx-auto block" isGroup={true} />
-                    </Flex>
-                    <Column fullWidth gap={1} className="volt-group-members-search__controls">
-                        <input
-                            className="volt-groups-input min-h-[calc(1.5em+.5rem+2px)] px-[.5rem] py-[.25rem] text-[.7875rem] rounded-[.2rem] w-full"
-                            placeholder={LocalizeText('group.members.searchinfo')}
-                            type="text"
-                            value={searchQuery}
-                            onChange={(event) => setSearchQuery(event.target.value)}
-                        />
-                        <select className="volt-groups-select form-select form-select-sm w-full" value={levelId} onChange={(event) => setLevelId(parseInt(event.target.value))}>
-                            <option value="0">{LocalizeText('group.members.search.all')}</option>
-                            <option value="1">{LocalizeText('group.members.search.admins')}</option>
-                            {membersData.admin && <option value="2">{LocalizeText('group.members.search.pending')}</option>}
-                        </select>
-                    </Column>
+                    <input
+                        className="district-member-search"
+                        aria-label="Search group members"
+                        placeholder={LocalizeText('group.members.searchinfo')}
+                        type="text"
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                    />
+                    <select aria-label="Filter group members" className="district-member-filter" value={levelId} onChange={(event) => setLevelId(parseInt(event.target.value))}>
+                        <option value="0">{LocalizeText('group.members.search.all')}</option>
+                        <option value="1">{LocalizeText('group.members.search.admins')}</option>
+                        {membersData.admin && <option value="2">{LocalizeText('group.members.search.pending')}</option>}
+                    </select>
                 </div>
                 <Grid className="volt-group-members-list-grid" columnCount={2} overflow="auto">
-                    {membersData.result.map((member, index) => {
+                    {!membersData.result.length && <p className="district-members-empty">No matching members. Try another name or filter.</p>}
+                    {membersData.result.map((member, index) =>
+                    {
                         return (
                             <Flex key={index} alignItems="center" className="volt-group-member-row" gap={0} overflow="hidden">
                                 <div className="volt-group-member-row__avatar cursor-pointer" onClick={() => GetUserProfile(member.id)}>
@@ -275,6 +295,7 @@ export const GroupMembersView: FC<{}> = (props) => {
                                     <Text bold pointer small className="volt-group-member-row__name" onClick={(event) => GetUserProfile(member.id)}>
                                         {member.name}
                                     </Text>
+                                    <span className="district-member-rank">{member.rank === GroupRank.OWNER ? 'Owner' : member.rank === GroupRank.ADMIN ? 'Administrator' : member.rank === GroupRank.REQUESTED ? 'Membership requested' : 'Member'}</span>
                                     {member.rank !== GroupRank.REQUESTED && (
                                         <Text italics small variant="muted" className="volt-group-member-row__since">
                                             {LocalizeText('group.members.since', ['date'], [member.joinedAt])}
@@ -323,7 +344,7 @@ export const GroupMembersView: FC<{}> = (props) => {
                     </Button>
                     <div className="volt-group-members-footer__page">
                         <Text small className="volt-group-members-footer__label">
-                            {membersData.totalMembersCount} Habbo Membri. Pagina
+                            Page
                         </Text>
                         <input
                             className="volt-group-members-footer__input"
@@ -331,7 +352,8 @@ export const GroupMembersView: FC<{}> = (props) => {
                             min={1}
                             max={Math.max(1, totalPages)}
                             value={membersData.pageIndex + 1}
-                            onChange={(event) => {
+                            onChange={(event) =>
+                            {
                                 const value = Math.min(Math.max(parseInt(event.target.value) || 1, 1), Math.max(1, totalPages));
                                 setPageId(value - 1);
                             }}

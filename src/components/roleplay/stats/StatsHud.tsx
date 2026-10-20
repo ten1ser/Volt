@@ -28,10 +28,10 @@ export const StatsHud: FC = () =>
 
     return (
         <section className="rp-stats-hud" aria-label={label('roleplay.stats.title', 'Your stats')}>
+            <div className="rp-stats-hud__portrait" aria-hidden="true">
+                <LayoutAvatarImageView figure={figure} gender={gender} direction={2} className="rp-stats-hud__avatar" />
+            </div>
             <div className="rp-stats-hud__body">
-                <div className="rp-stats-hud__portrait" aria-hidden="true">
-                    <LayoutAvatarImageView figure={figure} gender={gender} direction={2} className="rp-stats-hud__avatar" />
-                </div>
                 <div className="rp-stats-hud__stats">
                     <div className="rp-stats-hud__identity">
                         <div className="rp-stats-hud__name" title={userName}>{userName}</div>

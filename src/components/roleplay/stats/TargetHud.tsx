@@ -21,10 +21,10 @@ export const TargetHud: FC = () =>
 
     return (
         <section className="rp-stats-hud rp-target-hud" aria-label={label('roleplay.target.title', 'Target')}>
+            <div className="rp-stats-hud__portrait" aria-hidden="true">
+                <LayoutAvatarImageView figure={target.figure} gender={target.sex} direction={2} className="rp-stats-hud__avatar" />
+            </div>
             <div className="rp-stats-hud__body">
-                <div className="rp-stats-hud__portrait" aria-hidden="true">
-                    <LayoutAvatarImageView figure={target.figure} gender={target.sex} direction={2} className="rp-stats-hud__avatar" />
-                </div>
                 <div className="rp-stats-hud__stats">
                     <div className="rp-stats-hud__identity">
                         <span className="rp-target-hud__label">{label('roleplay.target.label', 'Target')}</span>

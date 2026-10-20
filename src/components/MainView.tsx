@@ -25,6 +25,7 @@ import { GameCenterView } from './game-center/GameCenterView';
 import { SnowWarView } from './game-center/views/snowwar/SnowWarView';
 import { GroupsView } from './groups/GroupsView';
 import { BusinessView } from './roleplay/jobs/BusinessView';
+import { HealOfferView } from './roleplay/jobs/HealOfferView';
 import { GroupForumView } from './groups/views/forums/GroupForumView';
 import { GuideToolView } from './guide-tool/GuideToolView';
 import { HcCenterView } from './hc-center/HcCenterView';
@@ -134,6 +135,7 @@ export const MainView: FC<{}> = (props) =>
             <NativeTextHaloFilter />
             <DistrictHud />
             <BusinessView />
+            <HealOfferView />
             <AnimatePresence>
                 {landingViewVisible && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

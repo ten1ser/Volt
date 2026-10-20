@@ -3,45 +3,45 @@
     inset: auto;
     top: auto;
     left: auto;
-    width: 280px;
+    width: 240px;
     max-width: 100%;
+    padding-left: 76px;
 
-    .rp-stats-hud__identity { gap: 6px; }
+    .rp-stats-hud__identity { gap: 5px; height: 24px; }
+    .rp-stats-hud__name { font-size: 12px; }
 }
 
 .rp-target-hud__label {
     flex: 0 0 auto;
-    color: #d9b96a;
+    color: #d4b369;
     font-size: 10px;
     font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    text-shadow: 0 1px 2px #000;
+    line-height: 14px;
+    text-shadow: 0 1px 1px #000;
 }
 
 .rp-target-hud__clear {
-    flex: 0 0 18px;
+    flex: 0 0 24px;
     box-sizing: border-box;
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
     margin: 0;
     padding: 0;
-    border: 1px solid #1a211e;
-    border-radius: 3px;
-    background: #27312fe6;
-    color: #e6e9e3;
-    font: 700 13px/14px sans-serif;
+    border: 1px solid #3a3c42;
+    border-radius: 4px;
+    background: #17191d;
+    color: #f1eee6;
+    font: 700 15px/16px sans-serif;
     cursor: pointer;
     pointer-events: auto;
 
-    &:hover { background: #3a4743; }
-    &:focus-visible { outline: 2px solid #b7dfbe; outline-offset: 2px; }
+    &:hover { border-color: #53565c; background: #2a2c32; }
+    &:focus-visible { outline: 2px solid #d4b369; outline-offset: 1px; }
 }
 
 .rp-target-hud__loading {
     margin: 0;
-    padding-left: 19px;
-    color: #e6e9e3;
-    font-size: 11px;
-    text-shadow: 0 1px 2px #000;
+    color: #b1b1ad;
+    font-size: 10px;
+    text-shadow: 0 1px 1px #000;
 }

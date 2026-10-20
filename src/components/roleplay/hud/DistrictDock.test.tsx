@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DistrictDock } from './DistrictDock';
 
@@ -24,7 +24,11 @@ vi.mock('../../../hooks/session/useSessionSnapshots', () => ({ useUserDataSnapsh
 vi.mock('../../../state/groupForumUnreadStore', () => ({ useGroupForumUnreadStore: (select: (state: { unreadForumsCount: number }) => number) => select({ unreadForumsCount: 0 }) }));
 vi.mock('../../../state/perkAllowancesStore', () => ({ usePerkAllowed: (perk: string) => perk === 'camera' && test.camera }));
 
-describe('DistrictRP navigation', () =>
+const menuButton = () => screen.getByRole('button', { name: /^District menu/ });
+const openMenu = () => fireEvent.click(menuButton());
+const popup = () => document.getElementById('district-popup');
+
+describe('DistrictRP district menu', () =>
 {
     beforeEach(() =>
     {
@@ -33,21 +37,85 @@ describe('DistrictRP navigation', () =>
     });
     afterEach(cleanup);
 
-    it('keeps the room chat portal and routes main actions to existing features', () =>
+    it('starts closed with one aggregate unread badge and single chat/friendbar portals', () =>
     {
         render(<DistrictDock isInRoom />);
-        expect(document.getElementById('toolbar-chat-input-container')).toBeInTheDocument();
-        fireEvent.click(screen.getByRole('button', { name: 'Rooms' }));
-        expect(test.link).toHaveBeenLastCalledWith('navigator/toggle');
-        fireEvent.click(screen.getByRole('button', { name: /Inventory/ }));
-        expect(test.link).toHaveBeenLastCalledWith('inventory/toggle');
-        fireEvent.click(screen.getByRole('button', { name: 'City' }));
-        expect(test.visit).toHaveBeenCalledOnce();
+        const menu = screen.getByRole('button', { name: 'District menu, 3 unread' });
+        expect(menu).toHaveAttribute('aria-expanded', 'false');
+        expect(menu).toHaveAttribute('aria-controls', 'district-popup');
+        expect(popup()).toHaveAttribute('hidden');
+        expect(within(menu).getByText('3')).toBeInTheDocument();
+        expect(document.querySelectorAll('#toolbar-chat-input-container')).toHaveLength(1);
+        expect(document.querySelectorAll('#toolbar-friend-bar-container-desktop')).toHaveLength(1);
+        expect(screen.queryByRole('button', { name: 'Rooms' })).toBeNull();
     });
 
-    it('keeps Character and Progress out of navigation and the Tools drawer', () =>
+    it('opens from D and routes main actions to existing features', async () =>
     {
         render(<DistrictDock isInRoom />);
+        openMenu();
+        expect(menuButton()).toHaveAttribute('aria-expanded', 'true');
+        expect(popup()).not.toHaveAttribute('hidden');
+        await waitFor(() => expect(screen.getByRole('button', { name: 'City' })).toHaveFocus());
+        fireEvent.click(screen.getByRole('button', { name: 'Rooms' }));
+        expect(test.link).toHaveBeenLastCalledWith('navigator/toggle');
+        expect(popup()).toHaveAttribute('hidden');
+        openMenu();
+        fireEvent.click(screen.getByRole('button', { name: /Inventory/ }));
+        expect(test.link).toHaveBeenLastCalledWith('inventory/toggle');
+        openMenu();
+        fireEvent.click(screen.getByRole('button', { name: 'City' }));
+        expect(test.visit).toHaveBeenCalledOnce();
+        openMenu();
+        fireEvent.click(screen.getByRole('button', { name: 'Businesses' }));
+        expect(test.link).toHaveBeenLastCalledWith('businesses/toggle');
+    });
+
+    it('leaves focus on a feature opened by a menu action instead of stealing it back to D', async () =>
+    {
+        const external = document.createElement('input');
+        document.body.appendChild(external);
+        test.link.mockImplementationOnce(() => external.focus());
+        render(<DistrictDock isInRoom />);
+        openMenu();
+        fireEvent.click(screen.getByRole('button', { name: 'Rooms' }));
+        await act(async () =>
+        {
+            await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+        });
+        expect(external).toHaveFocus();
+        external.remove();
+    });
+
+    it('cancels pending open focus when the menu closes before the frame', async () =>
+    {
+        const external = document.createElement('input');
+        document.body.appendChild(external);
+        external.focus();
+        render(<DistrictDock isInRoom />);
+        openMenu();
+        fireEvent.click(menuButton());
+        await act(async () =>
+        {
+            await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+        });
+        expect(external).toHaveFocus();
+        expect(screen.queryByRole('button', { name: 'City' })).toBeNull();
+        external.remove();
+    });
+
+    it('hides the unread badge while open and keeps the count in the menu name', () =>
+    {
+        render(<DistrictDock isInRoom />);
+        openMenu();
+        const menu = screen.getByRole('button', { name: 'District menu, 3 unread' });
+        expect(menu.querySelector('.district-badge')).toBeNull();
+    });
+
+    it('keeps Character and Progress out of the menu and Tools subpanel', () =>
+    {
+        render(<DistrictDock isInRoom />);
+        openMenu();
         expect(screen.queryByRole('button', { name: 'Character' })).toBeNull();
         expect(screen.queryByRole('button', { name: /Progress/ })).toBeNull();
         fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
@@ -56,23 +124,46 @@ describe('DistrictRP navigation', () =>
         expect(document.getElementById('district-progress')).toBeNull();
     });
 
-    it('closes a drawer on Escape, restores trigger focus and dismisses outside clicks', () =>
+    it('closes the whole menu on Escape with focus restored, and on outside pointer', () =>
     {
         render(<DistrictDock isInRoom />);
-        const trigger = screen.getByRole('button', { name: 'Tools' });
-        fireEvent.click(trigger);
+        openMenu();
+        fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
         expect(screen.getByRole('region', { name: 'Tools' })).toBeVisible();
         fireEvent.keyDown(document, { key: 'Escape' });
-        expect(trigger).toHaveFocus();
-        expect(trigger).toHaveAttribute('aria-expanded', 'false');
-        fireEvent.click(trigger);
+        expect(popup()).toHaveAttribute('hidden');
+        expect(menuButton()).toHaveFocus();
+        expect(menuButton()).toHaveAttribute('aria-expanded', 'false');
+        openMenu();
         fireEvent.pointerDown(document.body);
-        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+        expect(popup()).toHaveAttribute('hidden');
+    });
+
+    it('opens Social and Tools subpanels and returns with Back to the initiating button', async () =>
+    {
+        render(<DistrictDock isInRoom />);
+        openMenu();
+        fireEvent.click(screen.getByRole('button', { name: 'Social' }));
+        const social = screen.getByRole('region', { name: 'Social' });
+        expect(within(social).getByRole('button', { name: 'Friends' })).toBeVisible();
+        expect(document.querySelectorAll('#toolbar-friend-bar-container-desktop')).toHaveLength(1);
+        fireEvent.click(within(social).getByRole('button', { name: 'Back to District menu' }));
+        expect(screen.queryByRole('region', { name: 'Social' })).toBeNull();
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Social' })).toHaveFocus());
+        expect(screen.getByRole('button', { name: 'City' })).not.toHaveFocus();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
+        const tools = screen.getByRole('region', { name: 'Tools' });
+        expect(within(tools).getByRole('button', { name: 'Settings' })).toBeVisible();
+        expect(within(tools).getByRole('button', { name: 'Help' })).toBeVisible();
+        fireEvent.click(within(tools).getByRole('button', { name: 'Back to District menu' }));
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Tools' })).toHaveFocus());
     });
 
     it('preserves permission and room gates for staff, camera and building tools', () =>
     {
         const view = render(<DistrictDock isInRoom />);
+        openMenu();
         fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
         expect(screen.queryByRole('button', { name: /Moderator tools/ })).toBeNull();
         expect(screen.queryByRole('button', { name: 'Camera' })).toBeNull();
@@ -84,7 +175,6 @@ describe('DistrictRP navigation', () =>
         fireEvent.click(tools.getByRole('button', { name: 'Wired tools' }));
         expect(test.monitor).toHaveBeenCalledOnce();
         view.rerender(<DistrictDock isInRoom={false} />);
-        fireEvent.click(screen.getByRole('button', { name: /Tools/ }));
         expect(screen.queryByRole('button', { name: 'Camera' })).toBeNull();
         expect(screen.queryByRole('button', { name: 'Build height' })).toBeNull();
         expect(document.getElementById('toolbar-chat-input-container')).toBeNull();

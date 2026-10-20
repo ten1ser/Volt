@@ -181,7 +181,7 @@ export const RoomToolsWidgetView: FC<{}> = (props) => {
             <div className="volt-room-tools">
                 <div className="room-tools-list">
                     <div className="room-tools-zoom-row">
-                        <span className="room-tools-zoom-text">{LocalizeText('room.zoom.text', ['zoom_level'], [getZoomText(zoomScale)])}</span>
+                        <span className="room-tools-zoom-text">{localizeWithFallback('room.zoom.text', `Zoom ${getZoomText(zoomScale)}`, ['zoom_level'], [getZoomText(zoomScale)])}</span>
                         <button
                             className="room-tools-zoom-button room-tools-zoom-in"
                             type="button"

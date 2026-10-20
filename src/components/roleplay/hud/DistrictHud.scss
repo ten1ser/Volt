@@ -18,116 +18,184 @@ $brass: #d4b369;
     image-rendering: var(--volt-pixel-art, pixelated);
 }
 
-.district-hud-top {
+.district-topbar {
     position: fixed;
     top: max(16px, env(safe-area-inset-top));
     right: max(16px, env(safe-area-inset-right));
-    z-index: 10;
-    display: flex;
-    justify-content: flex-end;
-    pointer-events: none;
-}
-
-.district-vitals {
-    position: fixed;
     left: max(16px, env(safe-area-inset-left));
-    bottom: max(16px, env(safe-area-inset-bottom));
     z-index: 10;
     display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: flex-end;
-    gap: 10px;
-    max-width: calc(100vw - 32px);
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
     pointer-events: none;
+
+    > * { pointer-events: auto; }
 }
 
-@media (max-width: 1499px) {
-    .district-vitals { flex-direction: column-reverse; align-items: flex-start; gap: 34px; }
-}
+.district-location {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    max-width: 42vw;
+    padding: 6px 10px;
+    border: 1px solid $edge;
+    border-radius: 6px;
+    background: $charcoal;
+    box-shadow: 0 3px 12px #00000080, inset 0 1px 0 #ffffff0f;
+    color: $text;
+    font: 700 13px/16px HabboAirUbuntu, UbuntuRegular, sans-serif;
 
-@media (max-width: 1099px) {
-    .district-vitals { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 68px); }
+    svg { width: 13px; height: 14px; flex: 0 0 13px; fill: none; stroke: $brass; stroke-width: 1.6px; }
+    span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 
 .district-city {
     box-sizing: border-box;
-    width: 300px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     max-width: calc(100vw - 32px);
-    padding: 8px 10px;
+    padding: 5px 5px 5px 10px;
     border: 1px solid $edge;
     border-radius: 6px;
     background: $charcoal;
     box-shadow: 0 3px 12px #00000080, inset 0 1px 0 #ffffff0f;
     color: $text;
     font: 12px/15px HabboAirUbuntu, UbuntuRegular, sans-serif;
-    pointer-events: auto;
 
-    &__head { display: flex; align-items: center; gap: 8px; }
-    &__room { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; color: $text; font-size: 14px; font-weight: 700; line-height: 18px; }
-    &__room > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    &__room svg { width: 13px; height: 14px; flex: 0 0 13px; fill: none; stroke: $brass; stroke-width: 1.6px; }
-    &__head > button {
+    &__clock { display: flex; align-items: center; gap: 4px; color: $text; }
+    &__clock time { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    &__sky { color: #e6c471; font: 14px/14px sans-serif; }
+    &__sky.is-night { color: #a8c9e5; }
+    &__phase { overflow: hidden; max-width: 160px; color: $muted; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    &__online { display: flex; align-items: center; gap: 4px; color: $muted; font-size: 11px; white-space: nowrap; }
+    &__online svg { width: 11px; height: 11px; fill: #a3a49e; }
+
+    > button {
         display: grid;
         place-items: center;
-        flex: 0 0 24px;
-        width: 24px;
-        height: 24px;
+        flex: 0 0 26px;
+        width: 26px;
+        height: 26px;
         padding: 0;
         border: 1px solid transparent;
         border-radius: 4px;
         background: transparent;
         cursor: pointer;
     }
-    &__head > button:hover { border-color: $edge; background: $charcoal-light; }
-    &__head > button:focus-visible { outline: 2px solid $brass; outline-offset: 1px; }
-    &__head > button .volt-icon { width: 16px; height: 16px; background-size: contain; }
-    &__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid $edge-dark; color: $muted; font-size: 11px; line-height: 14px; }
-    &__clock { display: flex; align-items: center; gap: 4px; color: $text; }
-    &__clock time { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
-    &__sky { color: #e6c471; font: 14px/14px sans-serif; }
-    &__sky.is-night { color: #a8c9e5; }
-    &__phase { overflow: hidden; max-width: 120px; text-overflow: ellipsis; white-space: nowrap; }
-    &__online { display: flex; align-items: center; gap: 4px; margin-left: auto; }
-    &__online svg { width: 11px; height: 11px; fill: #a3a49e; }
-    &__coins { display: flex; align-items: center; gap: 5px; min-width: 0; margin-top: 6px; padding-top: 6px; border-top: 1px solid $edge-dark; }
-    &__coins svg { width: 16px; height: 16px; flex: 0 0 16px; fill: #b99537; stroke: #f1d77f; stroke-width: 1.4px; }
-    &__coins strong { min-width: 0; overflow-wrap: anywhere; color: $brass; font-size: 15px; font-weight: 700; line-height: 18px; font-variant-numeric: tabular-nums; }
-    &__coins-label { color: $muted; font-size: 10px; line-height: 12px; letter-spacing: 0.4px; text-transform: uppercase; }
+    > button:hover { border-color: $edge; background: $charcoal-light; }
+    > button:focus-visible { outline: 2px solid $brass; outline-offset: 1px; }
+    > button .volt-icon { width: 16px; height: 16px; background-size: contain; }
 }
 
-.district-dock {
+.district-command-bar {
     position: fixed;
     right: max(16px, env(safe-area-inset-right));
     bottom: max(16px, env(safe-area-inset-bottom));
-    z-index: 73;
+    left: max(16px, env(safe-area-inset-left));
+    z-index: 72;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border: 1px solid $edge;
+    border-radius: 8px;
+    background: $charcoal;
+    box-shadow: 0 4px 16px #000000b3, inset 0 1px 0 #ffffff0f;
     font-family: HabboAirUbuntu, UbuntuRegular, sans-serif;
 
     button { color: inherit; cursor: pointer; }
     .volt-icon { pointer-events: none; image-rendering: var(--volt-pixel-art, pixelated); }
-}
 
-.district-menu-button {
-    position: relative;
-    box-sizing: border-box;
-    display: grid;
-    place-items: center;
-    width: 52px;
-    height: 52px;
-    padding: 0;
-    border: 1px solid $brass;
-    border-radius: 6px;
-    background: $charcoal;
-    color: $text;
-    box-shadow: 0 3px 12px #000000a6, inset 0 1px 0 #ffffff14;
-    font: 900 21px/1 HabboAirUbuntu, UbuntuRegular, sans-serif;
+    &__identity { position: relative; flex: 0 0 auto; width: 232px; max-width: 38vw; }
+    &__identity:has(.rp-target-hud) .rp-stats-hud__treatment { bottom: calc(100% + 72px); }
 
-    &::before { content: ''; position: absolute; inset: 4px; border: 1px solid $edge; border-radius: 4px; pointer-events: none; }
-    &::after { content: ''; position: absolute; top: -1px; right: -1px; width: 13px; height: 13px; border-top: 2px solid $brass; border-right: 2px solid $brass; border-top-right-radius: 6px; pointer-events: none; }
-    &__mark { position: relative; z-index: 1; }
-    &:hover { background: $charcoal-light; }
-    &:focus-visible { outline: 2px solid $brass; outline-offset: 2px; }
-    &[aria-expanded='true'] { border-color: #e6cf96; background: $charcoal-light; }
+    &__chat {
+        display: flex;
+        align-items: center;
+        flex: 1 1 auto;
+        min-width: 0;
+        height: 46px;
+
+        > div { display: flex; align-items: center; width: 100%; height: 100%; pointer-events: auto; }
+
+        .volt-chat-input-container.swf-chat-input {
+            width: 100% !important;
+            max-width: 100% !important;
+            height: 46px !important;
+            min-height: 46px;
+        }
+
+        .swf-chat-input .swf-chat-input-sizer,
+        .swf-chat-input .swf-chat-flood {
+            flex: 1 1 auto !important;
+            width: 100% !important;
+            height: 46px !important;
+            min-height: 46px !important;
+            max-height: 46px !important;
+            margin: 0;
+            padding-left: 14px !important;
+            padding-right: 40px !important;
+            border: 1px solid $edge !important;
+            border-radius: 5px !important;
+            background: $inset !important;
+            box-shadow: inset 0 1px 3px #000000a6, 0 2px 4px #00000073 !important;
+        }
+
+        .swf-chat-input .swf-chat-input-sizer::before,
+        .swf-chat-input .swf-chat-flood::before { content: none !important; display: none !important; }
+
+        .swf-chat-input .swf-chat-input-field {
+            height: 100% !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            padding: 0 !important;
+            color: $text !important;
+            font-size: 14px !important;
+            line-height: 44px !important;
+        }
+
+        .swf-chat-input .swf-chat-input-field::placeholder { color: #8f9092 !important; }
+        .swf-chat-input .swf-chat-help-button { left: auto !important; right: 12px !important; top: 13px !important; }
+    }
+
+    &__coins {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex: 0 0 auto;
+        min-width: 0;
+        padding: 0 4px;
+        color: $muted;
+        font-size: 10px;
+        line-height: 12px;
+    }
+    &__coins svg { width: 16px; height: 16px; flex: 0 0 16px; fill: #b99537; stroke: #f1d77f; stroke-width: 1.4px; }
+    &__coins strong { color: $brass; font-size: 15px; font-weight: 700; line-height: 18px; font-variant-numeric: tabular-nums; }
+    &__coins span { max-width: 76px; overflow: hidden; letter-spacing: 0.4px; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+
+    &__actions { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; }
+
+    &__button {
+        position: relative;
+        display: grid;
+        place-items: center;
+        box-sizing: border-box;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border: 1px solid $edge-dark;
+        border-radius: 5px;
+        background: $charcoal-light;
+    }
+    &__button:hover { border-color: $edge; background: #33363d; }
+    &__button:focus-visible { outline: 2px solid $brass; outline-offset: 1px; }
+    &__button[aria-expanded='true'] { border-color: $brass; }
+    &__button .volt-icon { width: 22px; height: 22px; background-size: contain; }
 }
 
 .district-popup {
@@ -137,43 +205,18 @@ $brass: #d4b369;
     box-sizing: border-box;
     width: 318px;
     max-width: calc(100vw - 24px);
-    max-height: min(70dvh, calc(100dvh - 120px));
+    max-height: min(70dvh, calc(100dvh - 140px));
     overflow: auto;
     padding: 10px;
     box-shadow: 0 8px 22px #000000b3;
 
     &[hidden] { display: none; }
-
-    &__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-    &__grid[hidden] { display: none; }
-    &__grid-button {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-        box-sizing: border-box;
-        min-height: 64px;
-        padding: 6px 4px;
-        border: 1px solid #44474e;
-        border-radius: 4px;
-        background: #2a2c32;
-        color: $text;
-        font: 10px/12px HabboAirUbuntu, UbuntuRegular, sans-serif;
-        text-align: center;
-    }
-    &__grid-button:hover { border-color: $edge; background: #33363d; }
-    &__grid-button:focus-visible { outline: 2px solid $brass; outline-offset: 1px; }
-    &__grid-button[aria-expanded='true'] { border-color: $brass; }
-    &__grid-button > span:not(.volt-icon) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    &__grid-button .volt-icon { width: 30px; height: 28px; background-size: contain; }
 }
 
 .district-subpanel {
     &[hidden] { display: none; }
-    &__head { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: 8px; padding-bottom: 7px; border-bottom: 1px solid $edge-dark; }
-    h2 { margin: 0; color: $text; font-size: 13px; font-weight: 700; }
+    h2 { margin: 0 0 8px; padding-bottom: 7px; border-bottom: 1px solid $edge-dark; color: $text; font-size: 13px; font-weight: 700; }
+
     &__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
     &__actions > button {
         position: relative;
@@ -194,112 +237,47 @@ $brass: #d4b369;
     &__actions .volt-icon { width: 24px; height: 24px; flex: 0 0 24px; background-size: contain; }
 }
 
-.district-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    min-height: 28px;
-    padding: 2px 8px 2px 4px;
-    border: 1px solid #44474e;
-    border-radius: 4px;
-    background: transparent;
-    color: $muted;
-    font: 10px/13px HabboAirUbuntu, UbuntuRegular, sans-serif;
-
-    &:hover { border-color: $edge; color: $text; }
-    &:focus-visible { outline: 2px solid $brass; outline-offset: 1px; }
-}
-
 .district-badge { position: absolute; top: -6px; right: -6px; min-width: 17px; padding: 0 4px; border: 1px solid #2b2d31; border-radius: 4px; background: #a65043; color: #fff; font-size: 10px; line-height: 16px; text-align: center; }
 
 .district-friendbar { margin-top: 10px; overflow-x: auto; min-height: 40px; }
 
-.district-chat {
-    position: fixed;
-    left: 50%;
-    bottom: max(16px, calc(env(safe-area-inset-bottom) + 8px));
-    z-index: 70;
-    width: 480px;
-    max-width: calc(100vw - 32px);
-    height: 44px;
-    transform: translateX(-50%);
-    pointer-events: none;
-
-    > div { display: flex; align-items: center; width: 100%; height: 100%; pointer-events: auto; }
-
-    .volt-chat-input-container.swf-chat-input {
-        width: 100% !important;
-        max-width: 100% !important;
-        height: 44px !important;
-        min-height: 44px;
-    }
-
-    .swf-chat-input .swf-chat-input-sizer,
-    .swf-chat-input .swf-chat-flood {
-        flex: 1 1 auto !important;
-        width: 100% !important;
-        height: 44px !important;
-        min-height: 44px !important;
-        max-height: 44px !important;
-        margin: 0;
-        padding-left: 14px !important;
-        padding-right: 40px !important;
-        border: 1px solid $edge !important;
-        border-radius: 5px !important;
-        background: $inset !important;
-        box-shadow: inset 0 1px 3px #000000a6, 0 2px 4px #00000073 !important;
-    }
-
-    .swf-chat-input .swf-chat-input-sizer::before,
-    .swf-chat-input .swf-chat-flood::before { content: none !important; display: none !important; }
-
-    .swf-chat-input .swf-chat-input-field {
-        height: 100% !important;
-        min-height: 0 !important;
-        max-height: none !important;
-        padding: 0 !important;
-        color: $text !important;
-        font-size: 14px !important;
-        line-height: 42px !important;
-    }
-
-    .swf-chat-input .swf-chat-input-field::placeholder { color: #8f9092 !important; }
-    .swf-chat-input .swf-chat-help-button { left: auto !important; right: 12px !important; top: 12px !important; }
-}
-
 .district-context-rail { position: fixed; top: 132px; right: 16px; z-index: 10; width: 230px; max-width: calc(100vw - 32px); pointer-events: none; }
 
-.volt-room-tools-container.district-room-tools { bottom: 80px; left: auto; right: 16px; }
+.volt-room-tools-container.district-room-tools {
+    top: max(60px, calc(env(safe-area-inset-top) + 60px));
+    bottom: auto;
+    left: max(16px, env(safe-area-inset-left));
+    right: auto;
+}
 
-@media (max-width: 760px) {
-    .district-hud-top { top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
-    .district-city { width: min(300px, calc(100vw - 24px)); }
-    .district-vitals { left: max(12px, env(safe-area-inset-left)); max-width: calc(100vw - 24px); }
-    .district-chat {
-        left: max(16px, env(safe-area-inset-left));
-        bottom: max(16px, env(safe-area-inset-bottom));
-        width: min(480px, calc(100vw - 94px));
-        transform: none;
+@media (max-width: 700px) {
+    .district-topbar { top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); left: max(12px, env(safe-area-inset-left)); }
+    .district-location { flex: 1 1 auto; max-width: none; }
+    .district-city { flex: 0 0 auto; padding-left: 8px; gap: 6px; }
+    .district-city__phase { display: none; }
+    .district-command-bar {
+        right: max(12px, env(safe-area-inset-right));
+        bottom: max(12px, env(safe-area-inset-bottom));
+        left: max(12px, env(safe-area-inset-left));
+        flex-wrap: wrap;
+        gap: 6px;
     }
-    .district-dock { right: max(12px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); }
-    .district-popup { width: min(318px, calc(100vw - 24px)); max-height: min(62dvh, calc(100dvh - 140px)); }
-    .district-context-rail { top: 150px; right: 12px; width: min(210px, calc(100vw - 24px)); }
-    .volt-room-tools-container.district-room-tools { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); right: 12px; left: auto; }
+    .district-command-bar__identity { flex: 1 1 auto; width: auto; max-width: none; }
+    .district-command-bar__chat { order: 3; flex: 1 0 100%; height: 44px; }
+    .district-command-bar__actions { order: 4; flex: 1 0 100%; justify-content: space-between; }
+    .district-command-bar__button { flex: 1 1 0; max-width: 52px; }
+    .district-popup { width: min(318px, calc(100vw - 24px)); max-height: min(62dvh, calc(100dvh - 160px)); }
+    .district-context-rail { top: 112px; right: 12px; width: min(210px, calc(100vw - 24px)); }
+    .volt-room-tools-container.district-room-tools {
+        top: max(56px, calc(env(safe-area-inset-top) + 56px));
+        left: max(12px, env(safe-area-inset-left));
+    }
 }
 
 @media (max-height: 560px) {
     .district-popup { max-height: min(64dvh, calc(100dvh - 100px)); }
 }
 
-@media (min-width: 761px) and (max-height: 560px) {
-    .district-vitals { flex-direction: row; align-items: flex-end; gap: 10px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 68px); }
-}
-
-@media (max-width: 760px) and (max-height: 450px) {
-    .district-vitals { max-height: max(80px, calc(100dvh - 230px)); overflow-y: auto; overflow-x: hidden; padding-top: 4px; pointer-events: auto; scrollbar-width: thin; }
-    .district-chat { bottom: max(12px, env(safe-area-inset-bottom)); }
-}
-
 @media (prefers-reduced-motion: reduce) {
-    .district-chat .swf-chat-input-field { transition: none; }
+    .district-command-bar .swf-chat-input-field { transition: none; }
 }

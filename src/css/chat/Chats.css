@@ -1965,9 +1965,11 @@
 }
 
 /* Ordinary room chat (styles 0/3/4): compact single-line bubble with a narrow avatar well.
-   14px body / 19px line box at font scale 1, proportional with the saved scale; 3px vertical
-   padding keeps the text inside the 26px minimum bubble. Only clamps the well; face size
-   stays on the inline imageScale pipeline. */
+   14px body / 19px line box at font scale 1, proportional with the saved scale. Reference
+   bubbles seat the text below the white top gloss (caps start ~0.39 of the height down,
+   baseline ~0.24 from the bottom) and close ~6px after the last letter, so the vertical
+   padding is 5px/1px and the right padding 6px inside the 26px minimum bubble. Only clamps
+   the well; face size stays on the inline imageScale pipeline. */
 .bubble-container.native-room-bubble.district-plain-chat .chat-bubble {
     box-sizing: border-box;
     min-height: 26px;
@@ -1986,7 +1988,7 @@
 .bubble-container.native-room-bubble.district-plain-chat .chat-content {
     margin: 0;
     min-height: 0;
-    padding: 3px 10px 3px 32px;
+    padding: 5px 6px 1px 32px;
     font-family: inherit;
     font-size: inherit;
     line-height: inherit;

@@ -1,13 +1,15 @@
 .rp-target-hud {
-    position: relative;
+    position: absolute;
     inset: auto;
     top: auto;
-    left: auto;
-    width: 240px;
+    left: 0;
+    right: 0;
+    bottom: calc(100% + 8px);
+    width: 100%;
     max-width: 100%;
-    padding-left: 76px;
+    padding-left: 62px;
 
-    .rp-stats-hud__identity { gap: 5px; height: 24px; }
+    .rp-stats-hud__identity { gap: 5px; height: 20px; }
     .rp-stats-hud__name { font-size: 12px; }
 }
 
@@ -21,10 +23,10 @@
 }
 
 .rp-target-hud__clear {
-    flex: 0 0 24px;
+    flex: 0 0 22px;
     box-sizing: border-box;
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     margin: 0;
     padding: 0;
     border: 1px solid #3a3c42;

@@ -71,7 +71,22 @@ $brass: #d4b369;
     &__sky { color: #e6c471; font: 14px/14px sans-serif; }
     &__sky.is-night { color: #a8c9e5; }
     &__phase { overflow: hidden; max-width: 160px; color: $muted; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-    &__online { display: flex; align-items: center; gap: 4px; color: $muted; font-size: 11px; white-space: nowrap; }
+    &__coins {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        min-width: 0;
+        padding-left: 8px;
+        border-left: 1px solid $edge-dark;
+        color: $brass;
+        font-size: 12px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+    &__coins svg { width: 14px; height: 14px; flex: 0 0 14px; fill: #b99537; stroke: #f1d77f; stroke-width: 1.4px; }
+    &__coins strong { color: $brass; font-size: 13px; line-height: 16px; }
+    &__online { display: flex; align-items: center; gap: 4px; color: $muted; font-size: 11px; padding-left: 8px; border-left: 1px solid $edge-dark; white-space: nowrap; }
     &__online svg { width: 11px; height: 11px; fill: #a3a49e; }
 
     > button {
@@ -93,57 +108,72 @@ $brass: #d4b369;
 
 .district-command-bar {
     position: fixed;
-    right: max(16px, env(safe-area-inset-right));
+    left: 50%;
     bottom: max(16px, env(safe-area-inset-bottom));
-    left: max(16px, env(safe-area-inset-left));
     z-index: 72;
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 6px 8px;
+    gap: 8px;
+    // 150px identity + six 40px tiles take ~490px; 820px leaves the chat field ~330px.
+    width: min(820px, calc(100vw - 32px));
+    padding: 6px;
     border: 1px solid $edge;
-    border-radius: 8px;
+    border-radius: 10px;
     background: $charcoal;
-    box-shadow: 0 4px 16px #000000b3, inset 0 1px 0 #ffffff0f;
+    box-shadow: 0 8px 24px #000000b3, inset 0 1px 0 #ffffff0f;
+    color: $text;
+    cursor: default;
     font-family: HabboAirUbuntu, UbuntuRegular, sans-serif;
+    transform: translateX(-50%);
 
     button { color: inherit; cursor: pointer; }
-    .volt-icon { pointer-events: none; image-rendering: var(--volt-pixel-art, pixelated); }
+    .volt-icon { image-rendering: var(--volt-pixel-art, pixelated); }
 
-    &__identity { position: relative; flex: 0 0 auto; width: 232px; max-width: 38vw; }
-    &__identity:has(.rp-target-hud) .rp-stats-hud__treatment { bottom: calc(100% + 72px); }
+    &__identity {
+        display: flex;
+        align-items: center;
+        flex: 0 0 150px;
+        box-sizing: border-box;
+        width: 150px;
+        min-width: 0;
+        height: 40px;
+    }
+    &__identity:empty { display: none; }
+    &__identity:empty + .district-command-bar__divider { display: none; }
+
+    &__divider { flex: 0 0 1px; width: 1px; height: 26px; background: $edge-dark; }
 
     &__chat {
         display: flex;
         align-items: center;
         flex: 1 1 auto;
         min-width: 0;
-        height: 46px;
+        height: 40px;
 
-        > div { display: flex; align-items: center; width: 100%; height: 100%; pointer-events: auto; }
+        > div { display: flex; align-items: center; width: 100%; height: 100%; }
 
         .volt-chat-input-container.swf-chat-input {
             width: 100% !important;
             max-width: 100% !important;
-            height: 46px !important;
-            min-height: 46px;
+            height: 40px !important;
+            min-height: 40px;
         }
 
         .swf-chat-input .swf-chat-input-sizer,
         .swf-chat-input .swf-chat-flood {
             flex: 1 1 auto !important;
             width: 100% !important;
-            height: 46px !important;
-            min-height: 46px !important;
-            max-height: 46px !important;
+            height: 40px !important;
+            min-height: 40px !important;
+            max-height: 40px !important;
             margin: 0;
-            padding-left: 14px !important;
-            padding-right: 40px !important;
-            border: 1px solid $edge !important;
-            border-radius: 5px !important;
+            padding-left: 13px !important;
+            padding-right: 36px !important;
+            border: 1px solid $edge-dark !important;
+            border-radius: 7px !important;
             background: $inset !important;
-            box-shadow: inset 0 1px 3px #000000a6, 0 2px 4px #00000073 !important;
+            box-shadow: inset 0 1px 3px #000000a6 !important;
         }
 
         .swf-chat-input .swf-chat-input-sizer::before,
@@ -156,40 +186,25 @@ $brass: #d4b369;
             padding: 0 !important;
             color: $text !important;
             font-size: 14px !important;
-            line-height: 44px !important;
+            line-height: 38px !important;
         }
 
         .swf-chat-input .swf-chat-input-field::placeholder { color: #8f9092 !important; }
-        .swf-chat-input .swf-chat-help-button { left: auto !important; right: 12px !important; top: 13px !important; }
+        .swf-chat-input .swf-chat-help-button { left: auto !important; right: 10px !important; top: 10px !important; }
     }
 
-    &__coins {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        flex: 0 0 auto;
-        min-width: 0;
-        padding: 0 4px;
-        color: $muted;
-        font-size: 10px;
-        line-height: 12px;
-    }
-    &__coins svg { width: 16px; height: 16px; flex: 0 0 16px; fill: #b99537; stroke: #f1d77f; stroke-width: 1.4px; }
-    &__coins strong { color: $brass; font-size: 15px; font-weight: 700; line-height: 18px; font-variant-numeric: tabular-nums; }
-    &__coins span { max-width: 76px; overflow: hidden; letter-spacing: 0.4px; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
-
-    &__actions { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; }
+    &__actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 
     &__button {
         position: relative;
         display: grid;
         place-items: center;
         box-sizing: border-box;
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
         padding: 0;
         border: 1px solid $edge-dark;
-        border-radius: 5px;
+        border-radius: 7px;
         background: $charcoal-light;
     }
     &__button:hover { border-color: $edge; background: #33363d; }
@@ -200,12 +215,13 @@ $brass: #d4b369;
 
 .district-popup {
     position: absolute;
-    right: 0;
-    bottom: calc(100% + 10px);
+    right: -6px;
+    bottom: 100%;
     box-sizing: border-box;
     width: 318px;
     max-width: calc(100vw - 24px);
     max-height: min(70dvh, calc(100dvh - 140px));
+    margin-bottom: 8px;
     overflow: auto;
     padding: 10px;
     box-shadow: 0 8px 22px #000000b3;
@@ -261,11 +277,13 @@ $brass: #d4b369;
         left: max(12px, env(safe-area-inset-left));
         flex-wrap: wrap;
         gap: 6px;
+        width: auto;
+        transform: none;
     }
-    .district-command-bar__identity { flex: 1 1 auto; width: auto; max-width: none; }
-    .district-command-bar__chat { order: 3; flex: 1 0 100%; height: 44px; }
-    .district-command-bar__actions { order: 4; flex: 1 0 100%; justify-content: space-between; }
-    .district-command-bar__button { flex: 1 1 0; max-width: 52px; }
+    .district-command-bar__identity { flex: 0 0 150px; width: 150px; }
+    .district-command-bar__divider { display: none; }
+    .district-command-bar__chat { order: 3; flex: 1 0 100%; }
+    .district-command-bar__actions { gap: 6px; margin-left: auto; }
     .district-popup { width: min(318px, calc(100vw - 24px)); max-height: min(62dvh, calc(100dvh - 160px)); }
     .district-context-rail { top: 112px; right: 12px; width: min(210px, calc(100vw - 24px)); }
     .volt-room-tools-container.district-room-tools {

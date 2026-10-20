@@ -47,7 +47,8 @@ describe('DistrictRP stats HUD', () =>
         snapshot(73, 29);
         expect(screen.getByRole('progressbar', { name: 'Health' })).toHaveAttribute('aria-valuenow', '73');
         expect(screen.getByRole('progressbar', { name: 'Energy' })).toHaveAttribute('aria-valuenow', '29');
-        expect(screen.getByText('73 / 100')).toBeInTheDocument();
+        expect(screen.getByRole('progressbar', { name: 'Health' })).toHaveAttribute('title', '73 / 100');
+        expect(screen.queryByText('73 / 100')).toBeNull();
     });
 
     it('refreshes periodically and stops polling when the HUD unmounts', () =>

@@ -3,7 +3,7 @@ import { FC, RefObject, useEffect, useRef, useState } from 'react';
 import { DispatchUiEvent, GetConfigurationValue, localizeWithFallback, MessengerIconState, OpenMessengerChat, VisitDesktop } from '../../../api';
 import { Permission } from '../../../api/permissions';
 import { GuideToolEvent } from '../../../events';
-import { useBuildHeight, useFriends, useHasPermission, useInventoryUnseenTracker, useMessenger, useOpenIssueCount, usePurse, useWiredTools } from '../../../hooks';
+import { useBuildHeight, useFriends, useHasPermission, useInventoryUnseenTracker, useMessenger, useOpenIssueCount, useWiredTools } from '../../../hooks';
 import { usePerkAllowed } from '../../../state/perkAllowancesStore';
 import { StatsHud } from '../stats/StatsHud';
 import { TargetHud } from '../stats/TargetHud';
@@ -17,7 +17,6 @@ export const DistrictDock: FC<{ isInRoom: boolean }> = ({ isInRoom }) =>
     const bar = useRef<HTMLDivElement>(null);
     const socialButton = useRef<HTMLButtonElement>(null);
     const moreButton = useRef<HTMLButtonElement>(null);
-    const { purse } = usePurse();
     const { getFullCount } = useInventoryUnseenTracker();
     const { requests } = useFriends();
     const { iconState } = useMessenger();
@@ -28,7 +27,6 @@ export const DistrictDock: FC<{ isInRoom: boolean }> = ({ isInRoom }) =>
     const cameraAllowed = usePerkAllowed(PerkEnum.CAMERA);
     const guideAllowed = usePerkAllowed(PerkEnum.USE_GUIDE_TOOL);
     const socialUnread = requests.length + (iconState === MessengerIconState.UNREAD ? 1 : 0);
-    const coinLabel = localizeWithFallback('roleplay.currency.coins', 'RP Coins');
 
     useEffect(() =>
     {
@@ -102,12 +100,13 @@ export const DistrictDock: FC<{ isInRoom: boolean }> = ({ isInRoom }) =>
                 <TargetHud />
                 <StatsHud />
             </div>
-            {isInRoom && <div className="district-command-bar__chat"><div id="toolbar-chat-input-container" /></div>}
-            <div className="district-command-bar__coins" aria-label={coinLabel} title={coinLabel}>
-                <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" /><path d="M10 5v10M7 7h5M7 10h6M8 13h5" /></svg>
-                <strong>{(purse?.credits ?? 0).toLocaleString()}</strong>
-                <span>{coinLabel}</span>
-            </div>
+            <span className="district-command-bar__divider" aria-hidden="true" />
+            {isInRoom && (
+                <>
+                    <div className="district-command-bar__chat"><div id="toolbar-chat-input-container" /></div>
+                    <span className="district-command-bar__divider" aria-hidden="true" />
+                </>
+            )}
             <div className="district-command-bar__actions" role="group" aria-label="District actions">
                 {barButton({ label: 'Businesses', icon: 'navigator-room-group', onClick: link('businesses/toggle') })}
                 {barButton({ label: 'Inventory', icon: 'inventory', count: getFullCount, onClick: link('inventory/toggle') })}

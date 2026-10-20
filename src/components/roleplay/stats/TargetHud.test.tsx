@@ -40,8 +40,9 @@ describe('target HUD', () =>
         expect(screen.getByTestId('target-avatar')).toHaveAttribute('data-gender', 'F');
         expect(screen.getByRole('progressbar', { name: 'Target health' })).toHaveAttribute('aria-valuenow', '60');
         expect(screen.getByRole('progressbar', { name: 'Target energy' })).toHaveAttribute('aria-valuenow', '40');
-        expect(screen.getByText('60 / 100')).toBeInTheDocument();
-        expect(screen.getByText('40 / 100')).toBeInTheDocument();
+        expect(screen.getByRole('progressbar', { name: 'Target health' })).toHaveAttribute('title', '60 / 100');
+        expect(screen.getByRole('progressbar', { name: 'Target energy' })).toHaveAttribute('title', '40 / 100');
+        expect(screen.queryByText('60 / 100')).toBeNull();
     });
 
     it('shows loading text and no fabricated vitals until a validated reply arrives', () =>

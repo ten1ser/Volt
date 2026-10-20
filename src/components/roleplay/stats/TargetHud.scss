@@ -1,41 +1,42 @@
 .rp-target-hud {
     position: absolute;
-    inset: auto;
-    top: auto;
     left: 0;
-    right: 0;
-    bottom: calc(100% + 8px);
-    width: 100%;
+    bottom: 100%;
+    width: 170px;
     max-width: 100%;
-    padding-left: 62px;
+    height: 40px;
+    margin-bottom: 8px;
 
-    .rp-stats-hud__identity { gap: 5px; height: 20px; }
+    .rp-stats-hud__identity { height: 16px; }
     .rp-stats-hud__name { font-size: 12px; }
 }
+
+// Keep the target clear of the dock-width hospital treatment strip.
+.district-command-bar:has(.rp-stats-hud__treatment) .rp-target-hud { margin-bottom: 62px; }
 
 .rp-target-hud__label {
     flex: 0 0 auto;
     color: #d4b369;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
-    line-height: 14px;
-    text-shadow: 0 1px 1px #000;
+    line-height: 12px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
 }
 
 .rp-target-hud__clear {
-    flex: 0 0 22px;
+    flex: 0 0 16px;
     box-sizing: border-box;
-    width: 22px;
-    height: 22px;
+    width: 16px;
+    height: 16px;
     margin: 0;
     padding: 0;
     border: 1px solid #3a3c42;
     border-radius: 4px;
     background: #17191d;
     color: #f1eee6;
-    font: 700 15px/16px sans-serif;
+    font: 700 12px/13px sans-serif;
     cursor: pointer;
-    pointer-events: auto;
 
     &:hover { border-color: #53565c; background: #2a2c32; }
     &:focus-visible { outline: 2px solid #d4b369; outline-offset: 1px; }
@@ -44,6 +45,6 @@
 .rp-target-hud__loading {
     margin: 0;
     color: #b1b1ad;
-    font-size: 10px;
-    text-shadow: 0 1px 1px #000;
+    font-size: 9px;
+    line-height: 12px;
 }

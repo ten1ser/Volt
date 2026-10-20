@@ -1,5 +1,7 @@
 import { CreateLinkEvent } from '@volt/renderer';
 import { FC } from 'react';
+import { localizeWithFallback } from '../../../api';
+import { usePurse } from '../../../hooks';
 import { useCityStatus } from '../../../hooks/roleplay/useCityStatus';
 import { useRoom } from '../../../hooks/rooms/useRoom';
 import { useNavigatorData } from '../../../hooks/navigator/useNavigatorData';
@@ -8,6 +10,7 @@ import './DistrictHud.scss';
 export const DistrictHud: FC = () =>
 {
     const { city } = useCityStatus();
+    const { purse } = usePurse();
     const { roomSession } = useRoom();
     const { navigatorData } = useNavigatorData();
     const room = navigatorData?.enteredGuestRoom;
@@ -16,6 +19,7 @@ export const DistrictHud: FC = () =>
         : 'DistrictRP City';
     const phase = city?.isDay ? 'Day' : 'Night';
     const phaseTitle = city ? `${phase} · ${Math.ceil(city.phaseRemainingMs / 60000)} min left` : 'Synchronizing city time';
+    const coinLabel = localizeWithFallback('roleplay.currency.coins', 'RP Coins');
 
     return (
         <header className="district-topbar" aria-label="DistrictRP city status">
@@ -29,6 +33,10 @@ export const DistrictHud: FC = () =>
                     <time aria-label="City time">{city?.time ?? '--:--'}</time>
                 </span>
                 <span className="district-city__phase">{phaseTitle}</span>
+                <span className="district-city__coins" title={coinLabel} aria-label={coinLabel}>
+                    <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" /><path d="M10 5v10M7 7h5M7 10h6M8 13h5" /></svg>
+                    <strong>{(purse?.credits ?? 0).toLocaleString()}</strong>
+                </span>
                 <span className="district-city__online" title="Players online across the hotel" aria-label="Players online across the hotel">
                     <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="4" r="3" /><path d="M2 14v-2a6 5 0 0 1 12 0v2Z" /></svg>
                     <span>{city ? city.onlinePlayers.toLocaleString() : '—'} online</span>

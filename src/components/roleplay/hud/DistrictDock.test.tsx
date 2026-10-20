@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DistrictDock } from './DistrictDock';
 
-const test = vi.hoisted(() => ({ link: vi.fn(), profile: vi.fn(), visit: vi.fn(), moderator: false, camera: false, wired: false, build: false, monitor: vi.fn(), toggleBuild: vi.fn(), credits: 50200 }));
+const test = vi.hoisted(() => ({ link: vi.fn(), profile: vi.fn(), visit: vi.fn(), moderator: false, camera: false, wired: false, build: false, monitor: vi.fn(), toggleBuild: vi.fn() }));
 vi.mock('@volt/renderer', () => ({ CreateLinkEvent: test.link, PerkEnum: { CAMERA: 'camera', USE_GUIDE_TOOL: 'guide' } }));
 vi.mock('../../../api', () => ({
     DispatchUiEvent: vi.fn(), GetConfigurationValue: (_key: string, fallback = false) => fallback,
@@ -19,8 +19,7 @@ vi.mock('../../../hooks', () => ({
     useHasPermission: () => test.moderator,
     useOpenIssueCount: () => 2,
     useWiredTools: () => ({ showToolbarButton: test.wired, openMonitor: test.monitor }),
-    useBuildHeight: () => ({ available: test.build, toggle: test.toggleBuild }),
-    usePurse: () => ({ purse: { credits: test.credits } })
+    useBuildHeight: () => ({ available: test.build, toggle: test.toggleBuild })
 }));
 vi.mock('../../../state/perkAllowancesStore', () => ({ usePerkAllowed: (perk: string) => perk === 'camera' && test.camera }));
 vi.mock('../stats/StatsHud', () => ({ StatsHud: () => <section aria-label="Your stats" /> }));
@@ -34,27 +33,42 @@ describe('DistrictRP command bar', () =>
     beforeEach(() =>
     {
         vi.clearAllMocks();
-        test.moderator = false; test.camera = false; test.wired = false; test.build = false; test.credits = 50200;
+        test.moderator = false; test.camera = false; test.wired = false; test.build = false;
     });
     afterEach(cleanup);
 
-    it('renders one bar with the citizen card, native RP Coins, icons and single portal hosts', () =>
+    it('renders one dock holding the identity, chat and icon sections with single portal hosts', () =>
     {
         render(<DistrictDock isInRoom />);
         const bar = document.querySelector('.district-command-bar');
         expect(bar).not.toBeNull();
-        expect(within(bar as HTMLElement).getByLabelText('Your stats')).toBeInTheDocument();
-        expect(within(bar as HTMLElement).getByLabelText('Target stats')).toBeInTheDocument();
-        expect(within(bar as HTMLElement).getByText('50,200')).toBeInTheDocument();
-        expect(within(bar as HTMLElement).getByText('RP Coins')).toBeInTheDocument();
-        for(const name of ['Businesses', 'Shop', 'Rooms']) expect(button(name)).toBeInTheDocument();
+        expect(bar.contains(screen.getByLabelText('Your stats'))).toBe(true);
+        expect(bar.contains(screen.getByLabelText('Target stats'))).toBe(true);
+        const actions = screen.getByRole('group', { name: 'District actions' });
+        expect(bar.contains(actions)).toBe(true);
+        for(const name of ['Businesses', 'Shop', 'Rooms']) expect(actions.contains(button(name))).toBe(true);
         expect(button(/^Inventory/)).toHaveTextContent('3');
         expect(button(/^Social/)).toBeInTheDocument();
         expect(button(/^More/)).toBeInTheDocument();
+        const chat = bar.querySelector('.district-command-bar__chat');
+        expect(chat).not.toBeNull();
+        expect(chat.querySelectorAll('#toolbar-chat-input-container')).toHaveLength(1);
         expect(document.querySelectorAll('#toolbar-chat-input-container')).toHaveLength(1);
         expect(document.querySelectorAll('#toolbar-friend-bar-container-desktop')).toHaveLength(1);
+        expect(bar.querySelectorAll('.district-command-bar__divider')).toHaveLength(2);
+        expect(screen.queryByText(/RP Coins/)).toBeNull();
+        expect(screen.queryByText('50,200')).toBeNull();
         expect(screen.queryByRole('button', { name: /District menu/ })).toBeNull();
         expect(document.querySelector('.district-menu-button')).toBeNull();
+    });
+
+    it('drops the chat section and its divider outside a room', () =>
+    {
+        render(<DistrictDock isInRoom={false} />);
+        const bar = document.querySelector('.district-command-bar');
+        expect(bar.querySelector('.district-command-bar__chat')).toBeNull();
+        expect(bar.querySelectorAll('.district-command-bar__divider')).toHaveLength(1);
+        expect(document.getElementById('toolbar-chat-input-container')).toBeNull();
     });
 
     it('routes every always-visible icon to its existing feature', () =>

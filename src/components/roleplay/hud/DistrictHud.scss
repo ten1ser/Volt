@@ -277,7 +277,7 @@ $brass: #d4b369;
     right: auto;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1300px) {
     .district-topbar { flex-wrap: wrap; }
     .district-location { max-width: 42vw; }
 
@@ -326,4 +326,58 @@ $brass: #d4b369;
 
 @media (prefers-reduced-motion: reduce) {
     .district-command-bar .swf-chat-input-field { transition: none; }
+}
+
+// Enlarged top-bar chips. Isolated overrides; dock, popups and existing media stay unchanged.
+.district-topbar .district-location {
+    gap: 8px;
+    min-height: 46px;
+    max-width: min(42vw, calc(50% - 120px));
+    padding: 10px 14px;
+    font: 700 16px/20px HabboAirUbuntu, UbuntuRegular, sans-serif;
+
+    svg { width: 17px; height: 18px; flex: 0 0 17px; }
+}
+
+.district-topbar .district-city {
+    gap: 10px;
+    min-width: 0;
+    max-width: calc(50% - 120px);
+    padding: 5px 8px 5px 14px;
+    font: 14px/20px HabboAirUbuntu, UbuntuRegular, sans-serif;
+
+    .district-city__clock time { font-size: 16px; }
+    .district-city__sky { flex: 0 0 auto; font: 18px/18px sans-serif; }
+    .district-city__phase { flex: 0 1 auto; min-width: 0; font-size: 13px; }
+    .district-city__coins { flex: 0 1 auto; min-width: 0; overflow: hidden; padding-left: 10px; font-size: 15px; }
+    .district-city__coins svg { width: 18px; height: 18px; flex: 0 0 18px; }
+    .district-city__coins strong { min-width: 0; overflow: hidden; font-size: 16px; line-height: 20px; text-overflow: ellipsis; }
+    .district-city__online { flex: 0 1 auto; min-width: 0; overflow: hidden; gap: 5px; padding-left: 10px; font-size: 13px; }
+    .district-city__online svg { width: 14px; height: 14px; flex: 0 0 14px; }
+
+    > button { flex: 0 0 36px; width: 36px; height: 36px; }
+    > button .volt-icon { width: 22px; height: 22px; }
+}
+
+@media (max-width: 1300px) {
+    .district-topbar .district-location { max-width: 42vw; }
+    .district-topbar .district-city { max-width: 100%; }
+}
+
+@media (max-width: 700px) {
+    .district-topbar { flex-direction: column; align-items: stretch; }
+    .district-topbar .district-location { flex: 0 0 auto; width: 100%; max-width: none; }
+    .district-topbar .district-city { flex: 0 0 auto; width: 100%; max-width: 100%; gap: 8px; padding-left: 12px; }
+    .district-topbar .district-city__phase { display: none; }
+    .district-topbar .district-brand { order: 3; flex: 0 0 auto; align-self: center; width: 100%; }
+    .district-topbar .district-brand img { width: min(150px, 60vw); }
+    .volt-room-tools-container.district-room-tools { top: max(72px, calc(env(safe-area-inset-top) + 72px)); }
+    .district-context-rail { top: 168px; }
+}
+
+.volt-room-tools-container.district-room-tools { top: max(72px, calc(env(safe-area-inset-top) + 72px)); }
+
+@media (max-width: 700px) {
+    .volt-room-tools-container.district-room-tools { top: max(184px, calc(env(safe-area-inset-top) + 184px)); }
+    .district-context-rail { top: max(184px, calc(env(safe-area-inset-top) + 184px)); }
 }

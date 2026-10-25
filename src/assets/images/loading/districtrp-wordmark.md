@@ -1,0 +1,7 @@
+# DistrictRP wordmark
+
+User-approved text-only logo, created with the built-in image-generation tool on 2026-10-25. Original PNG preserved at `C:/Users/richa/.codex/generated_images/01a144c5-eafa-7dc0-934c-d03b214ea585/exec-04eecded-e0f9-4492-b06a-86dd06fa8a79.png`; this PNG is an unchanged copy. Transparent alpha, 2172×724 pixels. Used by the loading screen and the top-centre city HUD.
+
+Generation prompt:
+
+> Use case: logo-brand. Create one polished text-only wordmark logo for an urban Habbo-style pixel-art roleplay game. Exact text: "DistrictRP" (capital D, lowercase istrict, capital RP), one horizontal line, no other text. Bespoke bold compact geometric lettering, subtle pixel-stepped cuts and squared corners, confident clean street-sign character with excellent readability. District in warm ivory, RP in muted brass gold, thin deep charcoal outline so the wordmark works on both light and dark UI. Very restrained shallow pixel bevel only, no bulky 3D extrusion. Carefully balanced kerning, consistent baseline, unified letter weight, recognizable D and R, high-quality professional game branding. Text only: NO symbol, icon, skyline, buildings, characters, weapons, badge, underline, frame, slogan, watermark, surrounding particles or extra decorations. Wide horizontal composition, logo occupies most of the canvas with comfortable transparent padding, every letter fully visible. Genuinely transparent background with alpha, no background panel, no white rectangle, no checkerboard baked into image, no glow or cast shadow outside lettering.

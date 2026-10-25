@@ -1,10 +1,7 @@
 import { FC, useEffect, useState } from 'react';
-import splashBackground from '@/assets/images/loading/splash_bg.png';
-import splashTop from '@/assets/images/loading/splash_top.png';
+import wordmark from '@/assets/images/loading/districtrp-wordmark.png';
 
-// Classic JS client loading screen (75_classic-js HabboAirLauncher: eSe + JRe).
-
-const USER_PHOTOS = Object.values(import.meta.glob('../../assets/images/loading/userphoto_*.png', { eager: true, import: 'default' }) as Record<string, string>);
+// DistrictRP client loading screen (75_classic-js HabboAirLauncher: eSe + JRe).
 
 // default_localizations_en client.starting.revolving
 const REVOLVING_MESSAGES = [
@@ -21,9 +18,6 @@ const REVOLVING_MESSAGES = [
     'Loading pixel universe.'
 ];
 
-const BAR_WIDTH = 400;
-const BAR_HEIGHT = 25;
-const BAR_INSET = 4;
 const BAR_TICK_MS = 750;
 
 // The loading screen opens once the bootstrap is done, so real progress fills the last 40%.
@@ -40,7 +34,6 @@ interface LoadingViewProps {
 
 export const LoadingView: FC<LoadingViewProps> = (props) => {
     const { backToHotelUrl, isError = false, message = '', progress = 0 } = props;
-    const [photo] = useState(() => USER_PHOTOS[randomBetween(0, USER_PHOTOS.length - 1)]);
     const [firstMessageIndex] = useState(() => randomBetween(0, REVOLVING_MESSAGES.length - 1));
     const [messageIndex, setMessageIndex] = useState(firstMessageIndex);
     const [barProgress, setBarProgress] = useState<number | null>(null);
@@ -77,26 +70,29 @@ export const LoadingView: FC<LoadingViewProps> = (props) => {
     }, [isError, firstMessageIndex]);
 
     const percent = Math.round(Math.min(1, BOOTSTRAP_PROGRESS + (Math.max(0, Math.min(100, progress)) / 100) * (1 - BOOTSTRAP_PROGRESS)) * 100);
-    const fillWidth = (BAR_WIDTH - BAR_INSET * 2) * (barProgress ?? 0);
-    const fillHeight = BAR_HEIGHT - BAR_INSET * 2;
 
     return (
         <div className={isError
             ? `classic-loading-screen classic-loading-screen--error${backToHotelUrl ? ' classic-loading-screen--recoverable' : ''}`
             : 'classic-loading-screen'}>
-            <div className="classic-loading-screen__photo">
-                <img src={splashBackground} alt="" draggable={false} />
-                <img src={photo} alt="" draggable={false} className="classic-loading-screen__userphoto" />
-                <img src={splashTop} alt="" draggable={false} />
-            </div>
+            <img
+                className="classic-loading-screen__logo"
+                src={wordmark}
+                alt="DistrictRP"
+                width={2172}
+                height={724}
+                draggable={false}
+            />
             <div className="classic-loading-screen__text">{isError ? 'Loading failed' : REVOLVING_MESSAGES[messageIndex]}</div>
             <div className="classic-loading-screen__bar">
                 {barProgress !== null && (
-                    <>
-                        <div className="classic-loading-screen__bar-back" />
-                        <div className="classic-loading-screen__bar-top" style={{ width: fillWidth, height: fillHeight / 2 }} />
-                        <div className="classic-loading-screen__bar-bottom" style={{ width: fillWidth, top: BAR_INSET + fillHeight / 2, height: fillHeight / 2 + 1 }} />
-                    </>
+                    <div
+                        className="classic-loading-screen__bar-fill"
+                        style={{ width: `${Math.round((barProgress ?? 0) * 100)}%` }}
+                    >
+                        <span className="classic-loading-screen__bar-top" />
+                        <span className="classic-loading-screen__bar-bottom" />
+                    </div>
                 )}
             </div>
             {!isError && <div className="classic-loading-screen__percent">{percent}%</div>}

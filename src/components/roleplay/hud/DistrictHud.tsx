@@ -1,5 +1,6 @@
 import { CreateLinkEvent } from '@volt/renderer';
 import { FC } from 'react';
+import wordmark from '../../../assets/images/loading/districtrp-wordmark.png';
 import { localizeWithFallback } from '../../../api';
 import { usePurse } from '../../../hooks';
 import { useCityStatus } from '../../../hooks/roleplay/useCityStatus';
@@ -23,6 +24,9 @@ export const DistrictHud: FC = () =>
 
     return (
         <header className="district-topbar" aria-label="DistrictRP city status">
+            <div className="district-brand">
+                <img src={wordmark} alt="DistrictRP" width={2172} height={724} draggable={false} />
+            </div>
             <div className="district-location" title={roomName}>
                 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 15s5-5.5 5-9A5 5 0 0 0 3 6c0 3.5 5 9 5 9Z" /><circle cx="8" cy="6" r="1.5" /></svg>
                 <span>{roomName}</span>

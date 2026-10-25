@@ -31,6 +31,17 @@ $brass: #d4b369;
     pointer-events: none;
 
     > * { pointer-events: auto; }
+
+    .district-brand {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: min(200px, 30vw);
+        pointer-events: none;
+        transform: translateX(-50%);
+
+        img { display: block; width: 100%; height: auto; }
+    }
 }
 
 .district-location {
@@ -39,7 +50,7 @@ $brass: #d4b369;
     align-items: center;
     gap: 6px;
     min-width: 0;
-    max-width: 42vw;
+    max-width: min(42vw, calc(50% - 120px));
     padding: 6px 10px;
     border: 1px solid $edge;
     border-radius: 6px;
@@ -264,6 +275,23 @@ $brass: #d4b369;
     bottom: auto;
     left: max(16px, env(safe-area-inset-left));
     right: auto;
+}
+
+@media (max-width: 1100px) {
+    .district-topbar { flex-wrap: wrap; }
+    .district-location { max-width: 42vw; }
+
+    .district-topbar .district-brand {
+        position: static;
+        order: 3;
+        display: flex;
+        flex: 0 0 100%;
+        justify-content: center;
+        width: auto;
+        transform: none;
+    }
+
+    .district-topbar .district-brand img { width: min(150px, 60vw); }
 }
 
 @media (max-width: 700px) {

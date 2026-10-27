@@ -46,16 +46,16 @@ describe('DistrictRP command bar', () =>
         expect(bar.contains(screen.getByLabelText('Target stats'))).toBe(true);
         const actions = screen.getByRole('group', { name: 'District actions' });
         expect(bar.contains(actions)).toBe(true);
-        for(const name of ['Businesses', 'Shop', 'Rooms']) expect(actions.contains(button(name))).toBe(true);
-        expect(button(/^Inventory/)).toHaveTextContent('3');
-        expect(button(/^Social/)).toBeInTheDocument();
+        for(const name of ['Businesses', 'Backpack', 'Rooms']) expect(actions.contains(button(name))).toBe(true);
+        expect(button(/^Phone/)).toHaveTextContent('3');
         expect(button(/^More/)).toBeInTheDocument();
+        for(const name of [/^Inventory/, /^Shop/, /^Social/]) expect(screen.queryByRole('button', { name })).toBeNull();
         const chat = bar.querySelector('.district-command-bar__chat');
         expect(chat).not.toBeNull();
         expect(chat.querySelectorAll('#toolbar-chat-input-container')).toHaveLength(1);
         expect(document.querySelectorAll('#toolbar-chat-input-container')).toHaveLength(1);
-        expect(document.querySelectorAll('#toolbar-friend-bar-container-desktop')).toHaveLength(1);
-        expect(bar.querySelectorAll('.district-command-bar__divider')).toHaveLength(2);
+        expect(document.querySelectorAll('#toolbar-friend-bar-container-desktop')).toHaveLength(0);
+        expect(bar.querySelectorAll('.district-command-bar__divider')).toHaveLength(3);
         expect(screen.queryByText(/RP Coins/)).toBeNull();
         expect(screen.queryByText('50,200')).toBeNull();
         expect(screen.queryByRole('button', { name: /District menu/ })).toBeNull();
@@ -67,7 +67,7 @@ describe('DistrictRP command bar', () =>
         render(<DistrictDock isInRoom={false} />);
         const bar = document.querySelector('.district-command-bar');
         expect(bar.querySelector('.district-command-bar__chat')).toBeNull();
-        expect(bar.querySelectorAll('.district-command-bar__divider')).toHaveLength(1);
+        expect(bar.querySelectorAll('.district-command-bar__divider')).toHaveLength(2);
         expect(document.getElementById('toolbar-chat-input-container')).toBeNull();
     });
 
@@ -76,29 +76,19 @@ describe('DistrictRP command bar', () =>
         render(<DistrictDock isInRoom />);
         fireEvent.click(button('Businesses'));
         expect(test.link).toHaveBeenLastCalledWith('businesses/toggle');
-        fireEvent.click(button(/^Inventory/));
-        expect(test.link).toHaveBeenLastCalledWith('inventory/toggle');
-        fireEvent.click(button('Shop'));
-        expect(test.link).toHaveBeenLastCalledWith('catalog/toggle/normal');
+        fireEvent.click(button('Backpack'));
+        expect(test.link).toHaveBeenLastCalledWith('backpack/toggle');
+        fireEvent.click(button(/^Phone/));
+        expect(test.link).toHaveBeenLastCalledWith('phone/toggle');
         fireEvent.click(button('Rooms'));
         expect(test.link).toHaveBeenLastCalledWith('navigator/toggle');
     });
 
-    it('opens Social with friends actions and the friendbar portal, and runs an action', async () =>
+    it('focuses the first More action when the popup opens', async () =>
     {
         render(<DistrictDock isInRoom />);
-        const social = button(/^Social/);
-        fireEvent.click(social);
-        expect(social).toHaveAttribute('aria-expanded', 'true');
-        expect(social).toHaveAttribute('aria-controls', 'district-social');
-        const region = panel('Social');
-        expect(within(region).getByRole('button', { name: 'Friends' })).toBeVisible();
-        expect(within(region).getByRole('button', { name: 'Find people' })).toBeVisible();
-        expect(document.querySelectorAll('#toolbar-friend-bar-container-desktop')).toHaveLength(1);
-        await waitFor(() => expect(within(region).getByRole('button', { name: 'Friends' })).toHaveFocus());
-        fireEvent.click(within(region).getByRole('button', { name: 'Find people' }));
-        expect(test.link).toHaveBeenLastCalledWith('friends/search');
-        expect(screen.queryByRole('region', { name: 'Social' })).toBeNull();
+        fireEvent.click(button(/^More/));
+        await waitFor(() => expect(within(panel('More')).getByRole('button', { name: 'City' })).toHaveFocus());
     });
 
     it('opens More with the City action and the existing tools list', () =>
@@ -118,20 +108,14 @@ describe('DistrictRP command bar', () =>
     it('closes on Escape with focus returned to the triggering icon', async () =>
     {
         render(<DistrictDock isInRoom />);
-        const social = button(/^Social/);
-        fireEvent.click(social);
+        const more = button(/^More/);
+        fireEvent.click(more);
         await act(async () =>
         {
             await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
         });
         fireEvent.keyDown(document, { key: 'Escape' });
-        expect(screen.queryByRole('region', { name: 'Social' })).toBeNull();
-        expect(social).toHaveFocus();
-        expect(social).toHaveAttribute('aria-expanded', 'false');
-
-        const more = button(/^More/);
-        fireEvent.click(more);
-        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(more).toHaveAttribute('aria-expanded', 'false');
         expect(screen.queryByRole('region', { name: 'More' })).toBeNull();
         expect(more).toHaveFocus();
     });

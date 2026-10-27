@@ -1,0 +1,691 @@
+// A modern full-screen phone: thin even bezel, camera pill, frosted dock, home indicator.
+.district-phone {
+    --phone-sky: #2a3348;
+    position: fixed;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    z-index: 70;
+    width: 300px;
+    height: 620px;
+    max-height: calc(100dvh - 110px);
+    padding: 8px;
+    border-radius: 52px;
+    background: linear-gradient(145deg, #4a4b50, #1d1e21 45%, #3a3b3f);
+    box-shadow: 0 18px 40px #000a, inset 0 0 0 1px #ffffff1f, inset 0 0 0 2px #0008;
+    color: #fff;
+    font-family: var(--district-ui-font, HabboAirUbuntu, UbuntuRegular, sans-serif);
+    transform: translateY(calc(100% + 100px));
+    opacity: 0;
+    visibility: hidden;
+    transition: transform .32s cubic-bezier(.2, .8, .2, 1), opacity .2s ease, visibility 0s linear .32s;
+
+    &.is-open {
+        transform: none;
+        opacity: 1;
+        visibility: visible;
+        transition: transform .32s cubic-bezier(.2, .8, .2, 1), opacity .2s ease, visibility 0s;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        &, &.is-open { transition: none; }
+    }
+
+    &__screen {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+        border-radius: 44px;
+        background:
+            radial-gradient(120% 70% at 25% 0%, var(--phone-sky) 0%, transparent 70%),
+            radial-gradient(90% 60% at 100% 100%, #5c4a26 0%, transparent 65%),
+            linear-gradient(180deg, #17181c, #0c0d0f);
+        transition: background .6s ease;
+    }
+
+    &__status {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex: 0 0 auto;
+        height: 42px;
+        padding: 0 24px 0 32px;
+        font-size: 13px;
+        font-weight: 700;
+
+        time { flex: 1; font-variant-numeric: tabular-nums; }
+    }
+
+    &__island {
+        position: absolute;
+        top: 11px;
+        left: 50%;
+        width: 88px;
+        height: 25px;
+        margin-left: -44px;
+        border-radius: 13px;
+        background: #000;
+    }
+
+    &__signal {
+        display: flex;
+        align-items: flex-end;
+        gap: 1.5px;
+        height: 9px;
+
+        i { width: 2.5px; border-radius: 1px; background: #fff; }
+        i:nth-child(1) { height: 3px; }
+        i:nth-child(2) { height: 5px; }
+        i:nth-child(3) { height: 7px; }
+        i:nth-child(4) { height: 9px; }
+    }
+
+    &__battery {
+        position: relative;
+        width: 20px;
+        height: 10px;
+        margin-left: 4px;
+        border: 1px solid #ffffffb0;
+        border-radius: 3px;
+
+        &::before { content: ''; position: absolute; inset: 1px 4px 1px 1px; border-radius: 1px; background: #fff; }
+        &::after { content: ''; position: absolute; top: 2.5px; right: -3px; width: 1.5px; height: 3px; border-radius: 0 1px 1px 0; background: #ffffffb0; }
+    }
+
+    &__widget {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 30px 0 34px;
+        text-shadow: 0 1px 6px #0006;
+
+        strong { font-size: 72px; line-height: 74px; font-weight: 700; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+        span { margin-top: 4px; font-size: 14px; color: #ffffffcc; }
+    }
+
+    &__grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        row-gap: 18px;
+        padding: 0 18px;
+    }
+
+    &__dock {
+        display: flex;
+        justify-content: space-around;
+        margin: auto 12px 26px;
+        padding: 12px 8px;
+        border-radius: 32px;
+        background: #ffffff21;
+        box-shadow: inset 0 0 0 1px #ffffff14;
+        backdrop-filter: blur(14px);
+
+        .district-phone__label { display: none; }
+    }
+
+    &__app {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: #fff;
+        cursor: pointer;
+
+        &:focus-visible { outline: none; }
+        &:focus-visible .district-phone__icon { outline: 2px solid var(--district-ui-accent, #d9b25a); outline-offset: 2px; }
+        &:active .district-phone__icon { transform: scale(.92); }
+    }
+
+    &__icon {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 15px;
+        box-shadow: inset 0 1px #ffffff40, 0 2px 6px #0006;
+        transition: transform .12s ease;
+
+        svg { width: 32px; height: 32px; fill: #fff; }
+
+        b {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            border-radius: 9px;
+            background: #ff3b30;
+            font-size: 11px;
+            line-height: 18px;
+            text-align: center;
+        }
+    }
+
+    &__label {
+        max-width: 100%;
+        overflow: hidden;
+        font-size: 11px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-shadow: 0 1px 3px #0009;
+    }
+
+    .is-messages .district-phone__icon { background: linear-gradient(#5fe07a, #2cb84c); }
+    .is-friends .district-phone__icon { background: linear-gradient(#5aa9ff, #1f6fe0); }
+    .is-inventory .district-phone__icon { background: linear-gradient(#e0bd6c, #b08a33); }
+    .is-shop .district-phone__icon { background: linear-gradient(#ff8a65, #e2522c); }
+    .is-settings .district-phone__icon { background: linear-gradient(#9a9ca3, #5f6168); }
+
+    &__home {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        z-index: 2;
+        width: 120px;
+        height: 14px;
+        margin-left: -60px;
+        padding: 0;
+        border: 0;
+        background: none;
+        cursor: pointer;
+
+        &::before { content: ''; position: absolute; left: 0; right: 0; top: 4px; height: 4px; border-radius: 2px; background: #fffc; }
+        &:focus-visible { outline: 2px solid var(--district-ui-accent, #d9b25a); outline-offset: 2px; border-radius: 6px; }
+    }
+
+    &__dnd { margin-right: 4px; font-size: 12px; color: #c9a7ff; }
+
+    // In-phone apps: dark system-style screens over the wallpaper.
+    &__app-screen {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+        padding-bottom: 26px;
+        background: #0c0d0f;
+        font-size: 13px;
+
+        &.is-thread { padding-bottom: 22px; }
+
+        button { font: inherit; color: inherit; }
+        input { font: inherit; }
+    }
+
+    &__header {
+        display: grid;
+        grid-template-columns: 44px 1fr 44px;
+        align-items: center;
+        flex: 0 0 auto;
+        min-height: 40px;
+        padding: 0 6px;
+
+        h2 { margin: 0; font-size: 16px; font-weight: 700; text-align: center; }
+
+        &.is-thread {
+            display: flex;
+            gap: 8px;
+            padding: 4px 10px 8px 6px;
+            border-bottom: 1px solid #1f2024;
+
+            .district-phone__row-text { flex: 1; }
+        }
+    }
+
+    &__back,
+    &__header-action {
+        width: 36px;
+        height: 32px;
+        padding: 0;
+        border: 0;
+        border-radius: 8px;
+        background: none;
+        color: #0a84ff !important;
+        font-size: 26px !important;
+        line-height: 30px;
+        cursor: pointer;
+
+        &:hover { background: #ffffff10; }
+        &:focus-visible { outline: 2px solid var(--district-ui-accent, #d9b25a); }
+    }
+
+    &__header-action { justify-self: end; font-size: 20px !important; }
+
+    &__segments {
+        display: flex;
+        flex: 0 0 auto;
+        gap: 2px;
+        margin: 4px 12px 8px;
+        padding: 2px;
+        border-radius: 9px;
+        background: #1f2024;
+
+        button {
+            flex: 1;
+            min-width: 0;
+            padding: 5px 4px;
+            border: 0;
+            border-radius: 7px;
+            background: none;
+            font-size: 12px !important;
+            white-space: nowrap;
+            cursor: pointer;
+
+            &.is-active { background: #3a3b40; font-weight: 700; }
+            &:focus-visible { outline: 2px solid var(--district-ui-accent, #d9b25a); outline-offset: -2px; }
+
+            b { margin-left: 4px; padding: 0 5px; border-radius: 8px; background: #ff3b30; font-size: 11px; }
+        }
+    }
+
+    &__search {
+        flex: 0 0 auto;
+        margin: 0 12px 8px;
+        padding: 7px 10px;
+        border: 0;
+        border-radius: 10px;
+        background: #1f2024;
+        color: #fff;
+
+        &::placeholder { color: #8e8e93; }
+        &:focus-visible { outline: 2px solid #0a84ff; }
+    }
+
+    &__search-form {
+        display: flex;
+        gap: 6px;
+        margin: 0 12px 8px;
+
+        .district-phone__search { flex: 1; min-width: 0; margin: 0; }
+    }
+
+    &__list {
+        flex: 1 1 auto;
+        min-height: 0;
+        margin: 0;
+        padding: 0;
+        overflow-y: auto;
+        list-style: none;
+    }
+
+    &__row-wrap {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding-right: 12px;
+        border-bottom: 1px solid #1c1d21;
+
+        .district-phone__row { flex: 1; min-width: 0; border-bottom: 0; }
+    }
+
+    &__row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 9px 12px;
+        border: 0;
+        border-bottom: 1px solid #1c1d21;
+        background: none;
+        text-align: left;
+
+        &:is(button) { cursor: pointer; }
+        &:is(button):hover { background: #ffffff08; }
+        &:focus-visible { outline: 2px solid var(--district-ui-accent, #d9b25a); outline-offset: -2px; }
+        &.is-unread strong { font-weight: 700; }
+    }
+
+    &__row-text {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        min-width: 0;
+
+        strong { overflow: hidden; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+        strong em { color: #ff6b81; font-style: normal; }
+        small { overflow: hidden; color: #8e8e93; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    }
+
+    &__row-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+
+        small { color: #8e8e93; font-size: 11px; }
+    }
+
+    &__row-action {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        flex: 0 0 32px;
+        padding: 0;
+        border: 0;
+        border-radius: 16px;
+        background: #1f2024;
+        cursor: pointer;
+
+        svg { width: 17px; height: 17px; fill: #0a84ff; }
+        &:focus-visible { outline: 2px solid var(--district-ui-accent, #d9b25a); }
+    }
+
+    &__dot { width: 9px; height: 9px; border-radius: 50%; background: #0a84ff; }
+
+    &__avatar {
+        position: relative;
+        display: grid;
+        flex: 0 0 auto;
+        place-items: center;
+        overflow: visible;
+        border-radius: 50%;
+        background: #2c2d32;
+
+        .avatar-image { border-radius: 50%; overflow: hidden; }
+
+        &.is-online::after {
+            content: '';
+            position: absolute;
+            right: -1px;
+            bottom: -1px;
+            width: 10px;
+            height: 10px;
+            border: 2px solid #0c0d0f;
+            border-radius: 50%;
+            background: #34c759;
+        }
+    }
+
+    &__initial { font-size: 15px; font-weight: 700; color: #d0d0d5; }
+
+    &__empty {
+        padding: 24px 18px;
+        color: #8e8e93;
+        font-size: 13px;
+        text-align: center;
+    }
+
+    &__pill {
+        flex: 0 0 auto;
+        padding: 6px 12px;
+        border: 0;
+        border-radius: 16px;
+        background: #2c2d32;
+        font-size: 12px !important;
+        font-weight: 700;
+        cursor: pointer;
+
+        &.is-primary { background: #0a84ff; }
+        &.is-danger { background: #ff3b30; }
+        &.is-muted { background: none; color: #8e8e93; cursor: default; }
+        &:focus-visible { outline: 2px solid var(--district-ui-accent, #d9b25a); outline-offset: 2px; }
+    }
+
+    &__link {
+        width: 100%;
+        padding: 10px 12px;
+        border: 0;
+        border-radius: 10px;
+        background: #1c1d21;
+        text-align: center;
+        cursor: pointer;
+
+        &.is-danger { color: #ff453a !important; }
+    }
+
+    &__profile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0 16px 12px;
+        text-align: center;
+
+        h3 { margin: 4px 0 0; font-size: 20px; font-weight: 700; }
+        small { color: #8e8e93; }
+        small.is-online { color: #34c759; }
+        p { margin: 8px 0 0; color: #d0d0d5; overflow-wrap: anywhere; }
+    }
+
+    &__figure {
+        position: relative;
+        display: block;
+        width: 90px;
+        height: 130px;
+        overflow: hidden;
+    }
+
+    &__actions {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 16px 12px;
+
+        .district-phone__pill { flex: 1; padding: 9px 12px; }
+    }
+
+    &__group {
+        flex: 0 0 auto;
+        margin: 0 12px 14px;
+
+        .district-phone__segments { margin: 0; }
+    }
+
+    &__group-label {
+        margin: 0 4px 6px;
+        color: #8e8e93;
+        font-size: 12px;
+        font-weight: 400;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+    }
+
+    &__group-card {
+        overflow: hidden;
+        border-radius: 12px;
+        background: #1c1d21;
+    }
+
+    &__setting {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        min-height: 44px;
+        padding: 8px 12px;
+        border: 0;
+        border-bottom: 1px solid #2a2b30;
+        background: none;
+        text-align: left;
+
+        &:last-child { border-bottom: 0; }
+        > span { flex: 1; }
+        > span small { margin-left: 6px; color: #8e8e93; }
+        > small { color: #8e8e93; }
+        > i { color: #5c5d63; font-size: 20px; font-style: normal; }
+
+        &.is-link { cursor: pointer; }
+        &.is-link:hover { background: #ffffff08; }
+        &:focus-visible { outline: 2px solid var(--district-ui-accent, #d9b25a); outline-offset: -2px; }
+
+        &.is-stacked {
+            flex-direction: column;
+            align-items: stretch;
+
+            .district-phone__segments { margin: 4px 0 0; background: #2a2b30; }
+            .district-phone__segments button.is-active { background: #4a4b52; }
+        }
+    }
+
+    &__switch {
+        position: relative;
+        flex: 0 0 auto;
+        width: 46px;
+        height: 28px;
+        margin: 0;
+        border-radius: 14px;
+        background: #3a3b40;
+        appearance: none;
+        cursor: pointer;
+        transition: background .2s ease;
+
+        &::after { content: ''; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px #0006; transition: transform .2s ease; }
+        &:checked { background: #34c759; }
+        &:checked::after { transform: translateX(18px); }
+        &:focus-visible { outline: 2px solid var(--district-ui-accent, #d9b25a); outline-offset: 2px; }
+    }
+
+    &__slider { width: 100%; margin-top: 6px; accent-color: #0a84ff; }
+
+    &__confirm {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #1c1d21;
+
+        span { flex: 1 1 100%; }
+    }
+
+    &__messages {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        gap: 4px;
+        min-height: 0;
+        padding: 10px 10px 4px;
+        overflow-y: auto;
+    }
+
+    &__bubble {
+        align-self: flex-start;
+        max-width: 78%;
+        padding: 7px 11px;
+        border-radius: 17px 17px 17px 5px;
+        background: #26272b;
+        line-height: 18px;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+
+        &.is-own { align-self: flex-end; border-radius: 17px 17px 5px 17px; background: #0a84ff; }
+        &.is-sticker { font-style: italic; color: #d0d0d5; }
+    }
+
+    &__notice { margin: 6px 12px; color: #8e8e93; font-size: 11px; text-align: center; }
+
+    &__invite {
+        display: flex;
+        flex-direction: column;
+        align-self: flex-start;
+        max-width: 82%;
+        padding: 8px 11px;
+        border: 1px solid #3a3b40;
+        border-radius: 14px;
+        background: #1c1d21;
+
+        strong { color: #d9b25a; font-size: 12px; }
+    }
+
+    &__receipt,
+    &__typing { align-self: flex-end; color: #8e8e93; font-size: 11px; }
+    &__typing { align-self: flex-start; }
+
+    &__composer {
+        display: flex;
+        flex: 0 0 auto;
+        gap: 6px;
+        align-items: center;
+        padding: 8px 10px 4px;
+
+        input {
+            flex: 1;
+            min-width: 0;
+            padding: 8px 12px;
+            border: 1px solid #2c2d32;
+            border-radius: 18px;
+            background: #141518;
+            color: #fff;
+
+            &::placeholder { color: #8e8e93; }
+            &:focus-visible { outline: 2px solid #0a84ff; outline-offset: -1px; }
+        }
+    }
+
+    &__send {
+        width: 32px;
+        height: 32px;
+        flex: 0 0 32px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: #0a84ff;
+        font-size: 18px !important;
+        font-weight: 700;
+        cursor: pointer;
+
+        &:disabled { background: #2c2d32; color: #6d6e74 !important; cursor: default; }
+        &:focus-visible { outline: 2px solid var(--district-ui-accent, #d9b25a); outline-offset: 2px; }
+    }
+}
+
+// New-message banner above the phone button while the phone is put away.
+.district-phone-banner {
+    position: fixed;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    z-index: 71;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 300px;
+    max-width: calc(100vw - 32px);
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 18px;
+    background: #1c1d21f2;
+    box-shadow: 0 10px 30px #0009, inset 0 0 0 1px #ffffff14;
+    color: #fff;
+    font-family: var(--district-ui-font, HabboAirUbuntu, UbuntuRegular, sans-serif);
+    text-align: left;
+    cursor: pointer;
+    animation: district-phone-banner-in .3s cubic-bezier(.2, .8, .2, 1);
+
+    &:focus-visible { outline: 2px solid var(--district-ui-accent, #d9b25a); outline-offset: 2px; }
+
+    &__icon {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+        border-radius: 9px;
+        background: linear-gradient(#5fe07a, #2cb84c);
+
+        svg { width: 20px; height: 20px; fill: #fff; }
+    }
+
+    &__text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+
+        strong { font-size: 13px; }
+        small { overflow: hidden; color: #d0d0d5; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    }
+
+    @media (prefers-reduced-motion: reduce) { animation: none; }
+}
+
+@keyframes district-phone-banner-in {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: none; }
+}

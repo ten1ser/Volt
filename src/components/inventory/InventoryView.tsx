@@ -54,7 +54,11 @@ const TAB_LABEL_FALLBACK: Record<string, string> = {
     [TAB_BOTS]: 'Bots'
 };
 
+// DistrictRP keeps the badge tab short so the four tabs fit without truncation.
+const TAB_LABEL_OVERRIDE: Record<string, string> = { [TAB_BADGES]: 'Badges' };
+
 const tabLabel = (name: string) => {
+    if (TAB_LABEL_OVERRIDE[name]) return TAB_LABEL_OVERRIDE[name];
     const value = LocalizeText(name);
 
     return value && value !== name ? value : TAB_LABEL_FALLBACK[name] || name;

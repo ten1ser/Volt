@@ -1,19 +1,9 @@
-import {
-    AddLinkEventTracker,
-    ILinkEventTracker,
-    VoltSettingsEvent,
-    RemoveLinkEventTracker,
-    UserSettingsCameraFollowComposer,
-    UserSettingsEvent,
-    UserSettingsOnlineIndicatorComposer,
-    UserSettingsRoomInvitesComposer,
-    UserSettingsSoundComposer
-} from '@volt/renderer';
+import { AddLinkEventTracker, ILinkEventTracker, RemoveLinkEventTracker } from '@volt/renderer';
 import { FC, useEffect, useRef, useState } from 'react';
-import { DispatchMainEvent, DispatchUiEvent, GetConfigurationValue, localizeWithFallback, SendMessageComposer } from '../../api';
+import { GetConfigurationValue, localizeWithFallback } from '../../api';
 import { HabboDropMenuView } from '../../common/dropmenu/HabboDropMenuView';
-import { useMessageEvent } from '../../hooks';
 import { useChatPreferences } from '../../hooks/useChatPreferences';
+import { useUserSettings } from '../../hooks/useUserSettings';
 import { AirSettingsVolumeRow } from './AirSettingsVolumeRow';
 import { CustomWordFilterSettingsView } from './CustomWordFilterSettingsView';
 import { SettingsWindow } from './SettingsWindow';
@@ -23,8 +13,6 @@ type VolumeAction = 'system_volume' | 'furni_volume' | 'trax_volume';
 
 const SECTIONS: SettingsSection[] = ['audio', 'chat', 'other', 'wordfilter'];
 const CLOSED: Record<SettingsSection, boolean> = { audio: false, chat: false, other: false, wordfilter: false };
-
-const clampVolume = (value: number) => Math.max(0, Math.min(100, Number(value)));
 
 const DropMenu: FC<{ label: string; left: number; top: number; width: number; value: number; options: string[]; onSelect: (value: number) => void }> = (props) => {
     const { label, left, top, width, value, options, onSelect } = props;
@@ -43,72 +31,17 @@ const DropMenu: FC<{ label: string; left: number; top: number; width: number; va
 
 export const UserSettingsView: FC<{}> = () => {
     const [open, setOpen] = useState<Record<SettingsSection, boolean>>(CLOSED);
-    const [userSettings, setUserSettings] = useState<VoltSettingsEvent>(null);
-    const [onlineIndicatorPreference, setOnlineIndicatorPreference] = useState<number>(null);
     const [disableWiredWhisper, setDisableWiredWhisper] = useState(false);
     const { chatPreferences, updateChatPreferences } = useChatPreferences();
+    const { userSettings, onlineIndicatorPreference, processAction, commitVolumes, saveOnlineIndicator } = useUserSettings();
     const wasAudioOpenRef = useRef(false);
 
     const close = (section: SettingsSection) => setOpen((previous) => ({ ...previous, [section]: false }));
-
-    const processAction = (type: string, value?: boolean | number) => {
-        const clone = userSettings.clone();
-
-        switch (type) {
-            case 'room_invites':
-                clone.roomInvites = value as boolean;
-                SendMessageComposer(new UserSettingsRoomInvitesComposer(clone.roomInvites));
-                break;
-            case 'camera_follow':
-                clone.cameraFollow = value as boolean;
-                SendMessageComposer(new UserSettingsCameraFollowComposer(clone.cameraFollow));
-                break;
-            case 'system_volume':
-                clone.volumeSystem = clampVolume(value as number);
-                break;
-            case 'furni_volume':
-                clone.volumeFurni = clampVolume(value as number);
-                break;
-            case 'trax_volume':
-                clone.volumeTrax = clampVolume(value as number);
-                break;
-        }
-
-        setUserSettings(clone);
-        DispatchMainEvent(clone);
-    };
 
     // v75: dragging a slider and the mute/maximum icons only update the volumes locally (processAction); FMe.dispose then sets
     // all three volumes, and each setter sends the same packet, so closing the sound window sends them even when nothing changed.
     // One equivalent packet is sent here.
     const changeVolume = (type: VolumeAction, value: number) => processAction(type, value);
-
-    const saveOnlineIndicator = (value: number) => {
-        setOnlineIndicatorPreference(value);
-        SendMessageComposer(new UserSettingsOnlineIndicatorComposer(value));
-    };
-
-    useMessageEvent<UserSettingsEvent>(UserSettingsEvent, (event) => {
-        const parser = event.getParser();
-        const settingsEvent = new VoltSettingsEvent();
-
-        settingsEvent.volumeSystem = parser.volumeSystem;
-        settingsEvent.volumeFurni = parser.volumeFurni;
-        settingsEvent.volumeTrax = parser.volumeTrax;
-        settingsEvent.oldChat = parser.oldChat;
-        settingsEvent.roomInvites = parser.roomInvites;
-        settingsEvent.cameraFollow = parser.cameraFollow;
-        settingsEvent.flags = parser.flags;
-        settingsEvent.chatType = parser.chatType;
-        settingsEvent.onlineStatusVisible = parser.onlineStatusVisible;
-        settingsEvent.friendsCanFollow = parser.friendsCanFollow;
-        settingsEvent.friendRequestsAllowed = parser.friendRequestsAllowed;
-        settingsEvent.profileVisible = parser.profileVisible;
-
-        setUserSettings(settingsEvent);
-        setOnlineIndicatorPreference(parser.onlineIndicatorPreference);
-        DispatchMainEvent(settingsEvent);
-    });
 
     useEffect(() => {
         const linkTracker: ILinkEventTracker = {
@@ -139,20 +72,12 @@ export const UserSettingsView: FC<{}> = () => {
         return () => RemoveLinkEventTracker(linkTracker);
     }, []);
 
-    useEffect(() => {
-        if (userSettings) DispatchUiEvent(userSettings);
-    }, [userSettings]);
-
     // Closing the sound window (Back, hide or toggle) is its dispose: send the current volumes once.
     useEffect(() => {
-        if (wasAudioOpenRef.current && !open.audio && userSettings) {
-            SendMessageComposer(
-                new UserSettingsSoundComposer(Math.round(userSettings.volumeSystem), Math.round(userSettings.volumeFurni), Math.round(userSettings.volumeTrax))
-            );
-        }
+        if (wasAudioOpenRef.current && !open.audio && userSettings) commitVolumes();
 
         wasAudioOpenRef.current = open.audio;
-    }, [open.audio, userSettings]);
+    }, [open.audio, userSettings, commitVolumes]);
 
     if (!userSettings || !chatPreferences) return null;
 

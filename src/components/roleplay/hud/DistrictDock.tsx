@@ -1,6 +1,6 @@
 import { CreateLinkEvent, PerkEnum } from '@volt/renderer';
 import { FC, RefObject, useEffect, useRef, useState } from 'react';
-import { DispatchUiEvent, GetConfigurationValue, localizeWithFallback, MessengerIconState, OpenMessengerChat, VisitDesktop } from '../../../api';
+import { DispatchUiEvent, GetConfigurationValue, localizeWithFallback, MessengerIconState, VisitDesktop } from '../../../api';
 import { Permission } from '../../../api/permissions';
 import { GuideToolEvent } from '../../../events';
 import { useBuildHeight, useFriends, useHasPermission, useInventoryUnseenTracker, useMessenger, useOpenIssueCount, useWiredTools } from '../../../hooks';
@@ -8,14 +8,14 @@ import { usePerkAllowed } from '../../../state/perkAllowancesStore';
 import { StatsHud } from '../stats/StatsHud';
 import { TargetHud } from '../stats/TargetHud';
 
-type Panel = 'social' | 'more';
+// Inventory, Shop, Friends and Messages live in the phone; the dock keeps the RP tools, Rooms and More.
+type Panel = 'more';
 type Action = { label: string; icon: string; run: () => void; count?: number };
 
 export const DistrictDock: FC<{ isInRoom: boolean }> = ({ isInRoom }) =>
 {
     const [panel, setPanel] = useState<Panel | null>(null);
     const bar = useRef<HTMLDivElement>(null);
-    const socialButton = useRef<HTMLButtonElement>(null);
     const moreButton = useRef<HTMLButtonElement>(null);
     const { getFullCount } = useInventoryUnseenTracker();
     const { requests } = useFriends();
@@ -26,7 +26,7 @@ export const DistrictDock: FC<{ isInRoom: boolean }> = ({ isInRoom }) =>
     const openIssues = useOpenIssueCount();
     const cameraAllowed = usePerkAllowed(PerkEnum.CAMERA);
     const guideAllowed = usePerkAllowed(PerkEnum.USE_GUIDE_TOOL);
-    const socialUnread = requests.length + (iconState === MessengerIconState.UNREAD ? 1 : 0);
+    const phoneUnread = requests.length + (iconState === MessengerIconState.UNREAD ? 1 : 0) + getFullCount;
 
     useEffect(() =>
     {
@@ -40,7 +40,7 @@ export const DistrictDock: FC<{ isInRoom: boolean }> = ({ isInRoom }) =>
         {
             if(event.key !== 'Escape') return;
             setPanel(null);
-            (panel === 'social' ? socialButton : moreButton).current?.focus();
+            moreButton.current?.focus();
         };
         document.addEventListener('pointerdown', dismiss);
         document.addEventListener('keydown', escape);
@@ -108,24 +108,14 @@ export const DistrictDock: FC<{ isInRoom: boolean }> = ({ isInRoom }) =>
                 </>
             )}
             <div className="district-command-bar__actions" role="group" aria-label="District actions">
-                {barButton({ label: 'Businesses', icon: 'navigator-room-group', onClick: link('businesses/toggle') })}
+                {barButton({ label: 'Businesses', icon: 'district-business', onClick: link('businesses/toggle') })}
                 {barButton({ label: 'Backpack', icon: 'district-backpack', onClick: link('backpack/toggle') })}
-                {barButton({ label: 'Inventory', icon: 'inventory', count: getFullCount, onClick: link('inventory/toggle') })}
-                {barButton({ label: 'Shop', icon: 'catalog', onClick: link('catalog/toggle/normal') })}
-                {barButton({ label: 'Social', icon: 'friendall', count: socialUnread, expanded: 'social', buttonRef: socialButton, onClick: togglePanel('social') })}
+                {barButton({ label: 'Phone', icon: 'district-phone', count: phoneUnread, onClick: link('phone/toggle') })}
+                <span className="district-command-bar__divider" aria-hidden="true" />
                 {barButton({ label: localizeWithFallback('toolbar.icon.label.navigator', 'Rooms'), icon: 'rooms', onClick: link('navigator/toggle') })}
                 {barButton({ label: 'More', icon: 'me-settings', count: isMod ? openIssues : 0, expanded: 'more', buttonRef: moreButton, onClick: togglePanel('more') })}
             </div>
             <section id="district-popup" className="district-popup district-panel" aria-label="District actions" hidden={panel === null}>
-                <section id="district-social" className="district-subpanel" aria-label="Social" hidden={panel !== 'social'}>
-                    <h2>Social</h2>
-                    <div className="district-subpanel__actions">
-                        {actionButton({ label: 'Friends', icon: 'friendall', run: link('friends/toggle'), count: requests.length })}
-                        {actionButton({ label: 'Find people', icon: 'friendsearch', run: link('friends/search') })}
-                        {iconState !== MessengerIconState.HIDDEN && actionButton({ label: 'Messages', icon: 'message', run: () => OpenMessengerChat(), count: iconState === MessengerIconState.UNREAD ? 1 : 0 })}
-                    </div>
-                    <div id="toolbar-friend-bar-container-desktop" className="district-friendbar" />
-                </section>
                 <section id="district-more" className="district-subpanel" aria-label="More" hidden={panel !== 'more'}>
                     <h2>More</h2>
                     <div className="district-subpanel__actions">

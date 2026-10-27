@@ -17,6 +17,7 @@ import { CatalogPostMarketplaceOfferEvent, DeleteItemConfirmEvent } from '../../
 import { useInventoryFurni, useInventoryTrade, useInventoryUnseenTracker, useNotification } from '../../../../hooks';
 import { VoltButton } from '../../../../layout';
 import { InventoryCategoryEmptyView } from '../InventoryCategoryEmptyView';
+import { furnitureDescription } from './furnitureDescription';
 import { InventoryFurnitureItemView } from './InventoryFurnitureItemView';
 import { offerGroupItemsToTrade } from './inventoryTradeOffer';
 
@@ -236,7 +237,7 @@ export const InventoryFurnitureView: FC<{
                 {selectedItem && (
                     <div className="volt-inventory-furni-details">
                         <div className="volt-inventory-furni-name">{selectedItem.name}</div>
-                        {selectedItem.description && <div className="volt-inventory-furni-desc">{selectedItem.description}</div>}
+                        <div className="volt-inventory-furni-desc">{furnitureDescription(selectedItem.description, selectedItem.getTotalCount())}</div>
                         <div className="volt-inventory-furni-actions">
                             <VoltButton
                                 disabled={!roomSession || isTrading || !selectedItem.getUnlockedCount()}

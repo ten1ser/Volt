@@ -58,13 +58,16 @@ export const VoltCardView: FC<VoltCardViewProps> = (props) => {
     const getClassNames = useMemo(() => {
         const newClassNames: string[] = [isResizable ? 'resize' : 'resize-none', 'volt-card', 'volt-card-shell', `theme-${theme}`];
 
+        // Every window shares the DistrictRP frame; only theme="district" also gets the dark body. Wired editors keep their own skin.
+        if (theme !== 'district' && !isWired) newClassNames.push('district-frame');
+
         // Frame 0 is the plain title bar, so it needs no class at all.
         if (resolvedFrameStyle) newClassNames.push(`volt-card-frame-${resolvedFrameStyle}`);
         newClassNames.push(classicScrollbar ? 'has-classic-scrollbar' : 'volt-scrollbar-native');
         if (classNames.length) newClassNames.push(...classNames);
 
         return newClassNames;
-    }, [classNames, classicScrollbar, isResizable, resolvedFrameStyle, theme]);
+    }, [classNames, classicScrollbar, isResizable, isWired, resolvedFrameStyle, theme]);
 
     return (
         <VoltCardContextProvider value={{ theme }}>

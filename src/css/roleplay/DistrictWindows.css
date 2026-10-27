@@ -1,4 +1,6 @@
-/* Opt-in DistrictRP window chrome. Game artwork keeps its own palette. */
+/* DistrictRP window chrome. theme-district windows get the full dark theme; every other window gets
+   district-frame (from VoltCardView): the same frame, title bar and close button over its native body
+   until that window's content is converted. Game artwork keeps its own palette. */
 :root {
     --district-ui-surface: #262626;
     --district-ui-raised: #323232;
@@ -6,8 +8,9 @@
     --district-ui-border: #4b4b4b;
     --district-ui-text: #f1f1ed;
     --district-ui-muted: #b6b6b3;
-    --district-ui-accent: #63b68a;
-    --district-ui-accent-hover: #7ac79d;
+    --district-ui-accent: #d9b25a;
+    --district-ui-accent-hover: #e4c477;
+    --district-ui-on-accent: #2a2008;
     --district-ui-danger: #b74d59;
     --district-ui-radius: 4px;
     --district-ui-font: HabboAirUbuntu, UbuntuRegular, sans-serif;
@@ -21,32 +24,40 @@
     --volt-card-surface-raised: var(--district-ui-raised);
     --volt-card-text: var(--district-ui-text);
     --volt-card-muted: var(--district-ui-muted);
-    --volt-card-focus: #bcc8d4;
+    --volt-card-focus: var(--district-ui-accent);
 }
-.volt-card-shell.theme-district { background: #262626 !important; border: 1px solid #515151; border-radius: 5px !important; filter: none !important; box-shadow: 0 3px 7px #0007, inset 0 0 0 1px #ffffff08 !important; }
-.volt-card-shell.theme-district.volt-card-frame-3::before { border-image: none !important; border: 1px solid #515151 !important; border-radius: 5px !important; background: #262626 !important; }
-.volt-card-shell.theme-district > .volt-card-header-shell { background: var(--district-ui-titlebar) !important; border: 0 !important; border-bottom: 1px solid #1a1a1a !important; border-radius: 4px 4px 0 0; min-height: 32px; max-height: 32px; box-shadow: inset 0 1px #ffffff35; }
-.volt-card-shell.theme-district .volt-card-header-shell .volt-card-title { color: #fff !important; font: 700 18px/24px var(--district-ui-font); text-shadow: 0 1px 2px #0009; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: calc(100% - 64px); }
-.volt-card-shell.theme-district .volt-card-header-shell .volt-card-close-button,
+.district-frame { --volt-card-focus: var(--district-ui-accent); }
+.volt-card-shell:is(.theme-district, .district-frame) { border: 1px solid #515151; border-radius: 5px !important; filter: none !important; box-shadow: 0 3px 7px #0007, inset 0 0 0 1px #ffffff08 !important; }
+.volt-card-shell.theme-district { background: #262626 !important; }
+.volt-card-shell:is(.theme-district, .district-frame).volt-card-frame-3::before { border-image: none !important; border: 1px solid #515151 !important; border-radius: 5px !important; }
+.volt-card-shell.theme-district.volt-card-frame-3::before { background: #262626 !important; }
+/* The native frame-3 bitmap also painted the title strip and body fill. */
+.volt-card-shell.district-frame.volt-card-frame-3::before { background: linear-gradient(#8a8e96, #8a8e96) top / 100% 33px no-repeat, var(--volt-card-surface) !important; }
+.volt-card-shell:is(.theme-district, .district-frame) > .volt-card-header-shell { background: var(--district-ui-titlebar) !important; border: 0 !important; border-bottom: 1px solid #1a1a1a !important; border-radius: 4px 4px 0 0; min-height: 32px; max-height: 32px; box-shadow: inset 0 1px #ffffff35; }
+.volt-card-shell:is(.theme-district, .district-frame) .volt-card-header-shell .volt-card-title { color: #fff !important; font: 700 18px/24px var(--district-ui-font); text-shadow: 0 1px 2px #0009; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: calc(100% - 64px); }
+.volt-card-shell:is(.theme-district, .district-frame) .volt-card-header-shell .volt-card-close-button,
 .theme-district.volt-navigator-air .volt-navigator-air__close:not(.volt-navigator-air__help) { width: 19px !important; height: 19px !important; min-height: 0 !important; padding: 0 !important; border-image: none !important; border: 1px solid #ffffff15 !important; border-radius: 3px !important; background: #656970 !important; box-shadow: none !important; }
-.volt-card-shell.theme-district .volt-card-header-shell .volt-card-close-button::before,
-.volt-card-shell.theme-district .volt-card-header-shell .volt-card-close-button::after,
+.volt-card-shell:is(.theme-district, .district-frame) .volt-card-header-shell .volt-card-close-button:is(:hover, :active) { background: #757a82 !important; }
+.volt-card-shell:is(.theme-district, .district-frame) .volt-card-header-shell .volt-card-close-button::before,
+.volt-card-shell:is(.theme-district, .district-frame) .volt-card-header-shell .volt-card-close-button::after,
 .theme-district.volt-navigator-air .volt-navigator-air__close:not(.volt-navigator-air__help)::before,
 .theme-district.volt-navigator-air .volt-navigator-air__close:not(.volt-navigator-air__help)::after { content: '' !important; display: block !important; position: absolute; inset: 0; width: 10px; height: 3px; margin: auto; background: #eee; border: 0; border-radius: 1px; transform: rotate(45deg); }
-.volt-card-shell.theme-district .volt-card-header-shell .volt-card-close-button::after,
+.volt-card-shell:is(.theme-district, .district-frame) .volt-card-header-shell .volt-card-close-button::after,
 .theme-district.volt-navigator-air .volt-navigator-air__close:not(.volt-navigator-air__help)::after { transform: rotate(-45deg); }
-.theme-district :is(button, input, select, textarea, [role='button']):focus-visible { outline: 2px solid #bcc8d4 !important; outline-offset: 2px !important; }
+.theme-district :is(button, input, select, textarea, [role='button']):focus-visible { outline: 2px solid var(--district-ui-accent) !important; outline-offset: 2px !important; }
 .theme-district :is(input, select, textarea) { border: 1px solid #4b4b4b !important; border-radius: 3px !important; background: #222 !important; color: #eee !important; box-shadow: inset 0 1px 2px #0005 !important; font-family: var(--district-ui-font); }
 .theme-district :is(input, textarea)::placeholder { color: #a7a7a4; opacity: 1; }
 .theme-district :is(button, input, select, textarea):disabled { opacity: .5; cursor: default; }
 .theme-district :is(.habbo-btn-primary, .habbo-btn-secondary, .habbo-btn-danger, .volt-groups-button, .volt-group-native__button) { border-image: none !important; border: 1px solid #555 !important; border-radius: 3px !important; background: linear-gradient(#404040, #333) !important; color: #eee !important; text-shadow: 0 1px #0006 !important; box-shadow: inset 0 1px #ffffff0d !important; }
-.theme-district .habbo-btn-primary { background: #28865b !important; border-color: #3d9a6b !important; }
+.theme-district .habbo-btn-primary { background: var(--district-ui-accent) !important; border-color: var(--district-ui-accent-hover) !important; color: var(--district-ui-on-accent) !important; text-shadow: none !important; }
 .theme-district .habbo-btn-danger { background: #b74d59 !important; border-color: #cd6772 !important; }
 .theme-district :is(.volt-card-tabs-shell, .volt-card-tabs, .volt-inventory-tabs-shell) { background: #222 !important; border-color: #4b4b4b !important; }
 .volt-card-shell.theme-district :is(.volt-card-tab-item, .volt-card-tabs-item),
 .volt-card-shell.theme-district.volt-inventory-window .volt-inventory-tabs-shell .volt-card-tab-item { border-image: none !important; background: #292929 !important; color: #b6b6b3 !important; box-shadow: inset 0 1px #ffffff0b !important; border: 1px solid #444 !important; border-radius: 3px 3px 0 0 !important; }
-.volt-card-shell.theme-district :is(.volt-card-tab-item, .volt-card-tabs-item):is(.active, .is-active, [aria-selected='true']),
-.volt-card-shell.theme-district.volt-inventory-window .volt-inventory-tabs-shell .volt-card-tab-item:is(.active, .is-active, [aria-selected='true']) { color: #fff !important; background: #414141 !important; border-bottom-color: #8e939c !important; }
+.volt-card-shell.theme-district :is(.volt-card-tab-item, .volt-card-tabs-item):is(.active, .is-active, .volt-card-tab-item-active, [aria-selected='true']),
+.volt-card-shell.theme-district.volt-inventory-window .volt-inventory-tabs-shell .volt-card-tab-item:is(.active, .is-active, .volt-card-tab-item-active, [aria-selected='true']) { color: #fff !important; background: #414141 !important; border-bottom-color: var(--district-ui-accent) !important; box-shadow: inset 0 -2px var(--district-ui-accent) !important; }
+/* Inventory measures each tab as label + 24px; the 1px theme border comes out of that padding so labels are not clipped. */
+.volt-card-shell.theme-district.volt-inventory-window .volt-inventory-tabs-shell .volt-card-tab-item { padding-left: 11px !important; padding-right: 11px !important; }
 /* Measured badge/color editors retain their coordinates; directories use flow layout. */
 .theme-district:is(.volt-group-info, .volt-groups-window) :is(.volt-groups-content, .volt-card-content-shell) { background: #262626 !important; color: #eee; }
 .theme-district .volt-group-native__header { background: #323232 !important; border-bottom: 1px solid #494949; }
@@ -90,12 +101,31 @@
 .theme-district.volt-group-members .volt-group-members-footer :is(.text, .volt-group-members-footer__label, .volt-group-members-footer__total) { width: auto; color: #bbb !important; }
 .theme-district .district-members-empty { grid-column: 1 / -1; padding: 24px 8px; color: #bbb; text-align: center; }
 /* Native inventory/trading geometry remains interactive under the new chrome. */
-.theme-district.volt-inventory-window { --inv-surface: #262626; --inv-beige: #303030; --inv-line: #4b4b4b; --inv-accent: #9ba3ad; --inv-empty-title: #ddd; --inv-place: #36875c; --inv-sell: #b74d59; --inv-border: #555; min-width: min(490px, calc(100vw - 16px)) !important; max-width: calc(100vw - 16px) !important; }
+.theme-district.volt-inventory-window { --inv-surface: #262626; --inv-beige: #303030; --inv-line: #4b4b4b; --inv-accent: #9ba3ad; --inv-empty-title: #ddd; --inv-place: #9a7a32; --inv-sell: #b74d59; --inv-border: #555; min-width: min(490px, calc(100vw - 16px)) !important; max-width: calc(100vw - 16px) !important; }
 .theme-district.volt-inventory-window :is(.volt-inventory-body, .volt-inventory-content) { background: #262626 !important; color: #eee; }
 .theme-district.volt-inventory-window :is(.bg-card-grid-item, .bg-white, .bg-light, .bg-muted) { background: #303030 !important; color: #eee !important; border-color: #484848 !important; border-radius: 3px; box-shadow: inset 0 1px #ffffff09; }
 .theme-district.volt-inventory-window .bg-card-grid-item-active { background: #464646 !important; }
 .theme-district.volt-inventory-window :is(.text-black, .text-dark) { color: #eee !important; }
 .theme-district.volt-inventory-window :is(.volt-inventory-furni-name, .volt-inventory-furni-desc) { color: #ddd; }
+.theme-district.volt-inventory-window :is(.volt-inventory-furni-desc, .volt-inventory-empty-desc) { color: var(--district-ui-muted); }
+/* Inventory bitmaps (filter frames, tile backgrounds, selection outline, count plates) replaced by flat theme surfaces. */
+.theme-district.volt-inventory-window .volt-inventory-filter-bar::before { border-image: none; border: 1px solid #424242; border-radius: 3px; background: #222; }
+.theme-district.volt-inventory-window :is(.volt-inventory-filter-search, .volt-inventory-filter-choice)::before { border-image: none; border: 1px solid #4b4b4b; border-radius: 3px; background: #2b2b2b; box-shadow: inset 0 1px 2px #0005; }
+.theme-district.volt-inventory-window .volt-inventory-filter-input::placeholder { color: #a7a7a4; opacity: 1; }
+.theme-district.volt-inventory-window .volt-inventory-filter-select { color: #eee; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23b6b6b3' stroke-width='1.5'/%3E%3C/svg%3E") right 7px center / 10px 6px no-repeat transparent !important; }
+.theme-district.volt-inventory-window .volt-inventory-filter-select:focus-visible { outline: 1px solid var(--district-ui-accent); outline-offset: -2px; }
+.volt-inventory-filter-menu { color: #eee; }
+.volt-inventory-filter-menu::before { border-image: none; border: 1px solid #4b4b4b; border-radius: 3px; background: #2b2b2b; box-shadow: 0 3px 7px #0007; }
+.volt-inventory-filter-menu .volt-inventory-filter-option { background: #2b2b2b; }
+.volt-inventory-filter-menu .volt-inventory-filter-option:is([aria-selected='true'], .is-active, :hover) { background: #414141; }
+.theme-district.volt-inventory-window .volt-inventory-thumb::before { background: #303030; border: 1px solid #484848; border-radius: 3px; }
+.theme-district.volt-inventory-window .volt-inventory-thumb.is-unseen::before { background: #3a3426; border-color: #6b5a2e; }
+.theme-district.volt-inventory-window .volt-inventory-thumb.is-selected::after { background: none; border: 1px solid var(--district-ui-accent); border-radius: 3px; box-shadow: inset 0 0 0 1px var(--district-ui-accent); }
+.theme-district.volt-inventory-window .volt-inventory-thumb > .bg-red-700 { background: #1b1c1f; border-color: #6b5a2e; color: var(--district-ui-accent-hover); }
+.theme-district.volt-inventory-window .volt-inventory-badges-footer { border: 3px solid transparent; border-radius: 3px; background: #303030; box-shadow: inset 0 0 0 1px #484848; }
+.theme-district.volt-inventory-window :is(.volt-inventory-badges-footer-name, .volt-inventory-badges-footer-desc) { color: #eee; }
+.theme-district.volt-inventory-window :is(.volt-inventory-btn-place, .volt-inventory-btn-wear):not(:disabled) { background: var(--district-ui-accent) !important; border-color: var(--district-ui-accent-hover) !important; color: var(--district-ui-on-accent) !important; text-shadow: none !important; }
+.theme-district.volt-inventory-window :is(.volt-inventory-btn-place, .volt-inventory-btn-wear):not(:disabled):hover { background: var(--district-ui-accent-hover) !important; }
 /* Navigator search and resize retain their handlers; bitmap chrome is replaced. */
 .theme-district.volt-navigator-air { --navigator-air-orange: #aaa; --navigator-air-row: #303030; --navigator-air-row-alt: #292929; --navigator-air-surface: #262626; --navigator-air-name: #eee; max-width: calc(100vw - 16px); min-width: min(425px, calc(100vw - 16px)); }
 .theme-district.volt-navigator-air .volt-navigator-air__skin { border-image: none !important; border: 1px solid #555 !important; border-radius: 5px !important; background: #262626 !important; box-shadow: 0 3px 7px #0007 !important; }
@@ -107,7 +137,7 @@
 .theme-district.volt-navigator-air .volt-navigator-air__help { right: 30px; }
 .theme-district.volt-navigator-air .volt-navigator-air__tab-shelf { background: #222 !important; }
 .theme-district.volt-navigator-air .volt-navigator-air__tab { background: #2d2d2d !important; color: #bbb !important; border: 1px solid #444 !important; border-radius: 3px 3px 0 0; }
-.theme-district.volt-navigator-air .volt-navigator-air__tab:is(.is-active, [aria-selected='true']) { background: #444 !important; color: #fff !important; border-bottom-color: #999 !important; }
+.theme-district.volt-navigator-air .volt-navigator-air__tab:is(.is-active, [aria-selected='true']) { background: #444 !important; color: #fff !important; border-bottom-color: var(--district-ui-accent) !important; }
 .theme-district.volt-navigator-air :is(.volt-navigator-air__category-header, .volt-navigator-air__quick-links, .volt-navigator-air__search-field) { background: #323232 !important; color: #eee !important; border-color: #4b4b4b !important; border-radius: 3px; }
 .theme-district.volt-navigator-air :is(.volt-navigator-air__row-name, .volt-navigator-air__tile-name, .volt-navigator-air__category-toggle) { color: #eee !important; }
 .theme-district.volt-navigator-air .volt-navigator-air__row:hover { background: #444 !important; }

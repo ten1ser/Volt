@@ -9,7 +9,7 @@
     .heal-offer-note { color: var(--district-ui-muted); font-size: 12px; }
     .heal-offer-actions { display: flex; justify-content: flex-end; gap: 8px; }
     .heal-offer-actions button { min-width: 72px; min-height: 32px; padding: 5px 12px; border: 1px solid #555; border-radius: 3px; color: #eee; background: #383838; font: 700 13px/19px var(--district-ui-font); cursor: pointer; }
-    .heal-offer-actions .heal-offer-yes { border-color: #3d9a6b; background: #28865b; }
+    .heal-offer-actions .heal-offer-yes { border-color: var(--district-ui-accent-hover); background: var(--district-ui-accent); color: var(--district-ui-on-accent); }
     .heal-offer-actions button:hover:not(:disabled) { filter: brightness(1.15); }
     .heal-offer-actions button:disabled { cursor: default; opacity: .5; }
 }

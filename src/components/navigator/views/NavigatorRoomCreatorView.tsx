@@ -238,7 +238,7 @@ export const NavigatorRoomCreatorView: FC = () => {
     const descriptionPlaceholder = LocalizeText('navigator.createroom.roomdescinfo');
     const tileSizeLabel = LocalizeText('navigator.createroom.tilesize');
 
-    const getRoomModelImage = (modelName: string) => `${GetConfigurationValue<string>('image.library.url', '')}newroom/model_${modelName}.png`;
+    const getRoomModelImage = (modelName: string) => `${GetConfigurationValue<string>('images.url', '').replace(/\/$/, '')}/navigator/models/model_${modelName}.png`;
 
     const closeCreator = () => useNavigatorUiStore.getState().closeCreator();
 

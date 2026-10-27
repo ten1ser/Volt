@@ -109,6 +109,7 @@ export const DistrictDock: FC<{ isInRoom: boolean }> = ({ isInRoom }) =>
             )}
             <div className="district-command-bar__actions" role="group" aria-label="District actions">
                 {barButton({ label: 'Businesses', icon: 'navigator-room-group', onClick: link('businesses/toggle') })}
+                {barButton({ label: 'Backpack', icon: 'district-backpack', onClick: link('backpack/toggle') })}
                 {barButton({ label: 'Inventory', icon: 'inventory', count: getFullCount, onClick: link('inventory/toggle') })}
                 {barButton({ label: 'Shop', icon: 'catalog', onClick: link('catalog/toggle/normal') })}
                 {barButton({ label: 'Social', icon: 'friendall', count: socialUnread, expanded: 'social', buttonRef: socialButton, onClick: togglePanel('social') })}

@@ -1,0 +1,192 @@
+// Dock button icon for the backpack (the dock sizes .volt-icon to 22px with background-size: contain).
+.volt-icon.icon-district-backpack {
+    background-image: url('../../../assets/images/roleplay/items/vest.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    image-rendering: pixelated;
+}
+
+.district-backpack {
+    width: 312px;
+
+    .backpack-titlebar {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 28px;
+        background: #8d9096;
+        border-bottom: 1px solid #0c0c0d;
+        color: #fff;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .backpack-close {
+        position: absolute;
+        right: 6px;
+        width: 18px;
+        height: 18px;
+        padding: 0;
+        background: #5a5c62;
+        border: 1px solid #0c0c0d;
+        color: #fff;
+        line-height: 14px;
+        cursor: pointer;
+    }
+
+    .backpack-body {
+        padding: 12px;
+        background: #2a2b2f;
+        box-shadow: inset 0 0 0 1px #45464c;
+    }
+
+    .backpack-label {
+        margin: 0 0 6px;
+        color: #b9bbc1;
+        font-size: 12px;
+        font-weight: normal;
+    }
+
+    .backpack-equipped {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .backpack-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 64px);
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .backpack-slot {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        padding: 0;
+        background: #1b1c1f;
+        border: 1px solid #0c0c0d;
+        box-shadow: inset 1px 1px 0 #000, inset -1px -1px 0 #3a3b40;
+        cursor: pointer;
+
+        &:hover { border-color: #8a8c93; }
+        &.is-selected { border-color: #d9b25a; }
+        &:focus-visible { outline: 1px solid #d9b25a; outline-offset: 1px; }
+    }
+
+    .backpack-number {
+        position: absolute;
+        top: 2px;
+        left: 4px;
+        color: #6d6f76;
+        font-size: 11px;
+    }
+
+    .backpack-icon {
+        max-width: 56px;
+        max-height: 44px;
+        image-rendering: pixelated;
+    }
+
+    .backpack-name {
+        padding: 0 4px;
+        color: #e8e8e8;
+        font-size: 11px;
+    }
+
+    .backpack-quantity {
+        position: absolute;
+        right: 4px;
+        bottom: 2px;
+        color: #e8e8e8;
+        font-size: 11px;
+    }
+
+    .backpack-caption {
+        position: absolute;
+        right: 0;
+        bottom: 2px;
+        left: 0;
+        color: #9a9ca3;
+        font-size: 11px;
+        text-align: center;
+    }
+
+    .backpack-durability {
+        position: absolute;
+        right: 6px;
+        bottom: 15px;
+        left: 6px;
+        height: 3px;
+        background: #0c0c0d;
+
+        span {
+            display: block;
+            height: 100%;
+            background: #d9b25a;
+        }
+    }
+
+    .backpack-info {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 0;
+        padding: 6px 8px;
+        background: #1b1c1f;
+        border: 1px solid #0c0c0d;
+
+        strong { color: #fff; font-size: 13px; }
+        span { color: #9a9ca3; font-size: 11px; line-height: 1.4; }
+    }
+
+    .backpack-notice,
+    .backpack-confirm {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 10px 0 0;
+        padding: 6px 8px;
+        background: #1b1c1f;
+        border: 1px solid #0c0c0d;
+        color: #e8e8e8;
+        font-size: 11px;
+
+        span { flex: 1; }
+    }
+
+    .backpack-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 12px;
+        padding-top: 8px;
+        border-top: 1px solid #0c0c0d;
+        color: #9a9ca3;
+        font-size: 11px;
+    }
+
+    .backpack-actions {
+        display: flex;
+        gap: 6px;
+    }
+
+    .backpack-notice button,
+    .backpack-confirm button,
+    .backpack-actions button {
+        padding: 3px 10px;
+        background: #5a5c62;
+        border: 1px solid #0c0c0d;
+        color: #fff;
+        font-size: 11px;
+        cursor: pointer;
+
+        &:disabled { opacity: 0.5; cursor: default; }
+    }
+}

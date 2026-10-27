@@ -1,8 +1,10 @@
-import { AddLinkEventTracker, CreateLinkEvent, GetSessionDataManager, ILinkEventTracker, RemoveLinkEventTracker } from '@volt/renderer';
+import { AddLinkEventTracker, CreateLinkEvent, GetSessionDataManager, ILinkEventTracker, PerkEnum, RemoveLinkEventTracker } from '@volt/renderer';
 import { CSSProperties, FC, ReactNode, useEffect, useRef, useState } from 'react';
 import { MessengerIconState, MessengerThread } from '../../../api';
 import { useFriends, useInventoryUnseenTracker, useMessenger } from '../../../hooks';
 import { useCityStatus } from '../../../hooks/roleplay/useCityStatus';
+import { useRoom } from '../../../hooks/rooms/useRoom';
+import { usePerkAllowed } from '../../../state/perkAllowancesStore';
 import { PhoneFriendsApp } from './PhoneFriendsApp';
 import { PhoneMessagesApp, threadPreview } from './PhoneMessagesApp';
 import { PhoneSettingsApp } from './PhoneSettingsApp';
@@ -47,6 +49,8 @@ export const PhoneView: FC = () =>
     const { requests } = useFriends();
     const { iconState, visibleThreads, getMessageThread } = useMessenger();
     const { getFullCount } = useInventoryUnseenTracker();
+    const { roomSession } = useRoom();
+    const cameraAllowed = usePerkAllowed(PerkEnum.CAMERA);
     const [seenThreads, setSeenThreads] = useState(visibleThreads);
 
     // A message arriving while its thread is not on screen shows a banner above the phone button.
@@ -148,6 +152,12 @@ export const PhoneView: FC = () =>
             close();
             CreateLinkEvent('catalog/toggle/normal');
         } },
+        // The camera photographs the current room, so it is only offered inside one (and with the camera perk).
+        ...(roomSession && cameraAllowed ? [{ id: 'camera', label: 'Camera', glyph: PHONE_GLYPHS.camera, run: () =>
+        {
+            close();
+            CreateLinkEvent('camera/toggle');
+        } }] : []),
         { id: 'settings', label: 'Settings', glyph: PHONE_GLYPHS.settings, run: () => setApp('settings') }
     ];
     const icon = (entry: App) => (

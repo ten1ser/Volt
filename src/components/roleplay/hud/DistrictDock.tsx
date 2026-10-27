@@ -1,6 +1,6 @@
 import { CreateLinkEvent, PerkEnum } from '@volt/renderer';
 import { FC, RefObject, useEffect, useRef, useState } from 'react';
-import { DispatchUiEvent, GetConfigurationValue, localizeWithFallback, MessengerIconState, VisitDesktop } from '../../../api';
+import { DispatchUiEvent, GetConfigurationValue, localizeWithFallback, MessengerIconState } from '../../../api';
 import { Permission } from '../../../api/permissions';
 import { GuideToolEvent } from '../../../events';
 import { useBuildHeight, useFriends, useHasPermission, useInventoryUnseenTracker, useMessenger, useOpenIssueCount, useWiredTools } from '../../../hooks';
@@ -93,6 +93,20 @@ export const DistrictDock: FC<{ isInRoom: boolean }> = ({ isInRoom }) =>
             {!!options.count && <b className="district-badge">{options.count}</b>}
         </button>
     );
+    // City, Help, Earnings, Settings and Club were removed: Settings lives in the phone and HC is disabled hotel-wide.
+    const moreCandidates: (Action | false)[] = [
+        isInRoom && cameraAllowed && { label: 'Camera', icon: 'camera', run: link('camera/toggle') },
+        !!GetConfigurationValue('games_icon_enabled', GetConfigurationValue('game.center.enabled', false)) && { label: 'Games', icon: 'game', run: link('games/toggle') },
+        !!GetConfigurationValue('toolbar.stories.enabled', false) && { label: 'Stories', icon: 'stories', run: link('stories/toggle') },
+        guideAllowed && !!GetConfigurationValue('guides.enabled') && { label: 'Helper tool', icon: 'me-helper-tool', run: () => DispatchUiEvent(new GuideToolEvent(GuideToolEvent.TOGGLE_GUIDE_TOOL)) },
+        isInRoom && !!showToolbarButton && { label: 'Wired tools', icon: 'wired-tools', run: openMonitor },
+        isInRoom && !!buildHeightAvailable && { label: 'Build height', icon: 'buildheight', run: toggleBuildHeight },
+        isMod && { label: 'Moderator tools', icon: 'modtools', run: link('mod-tools/show'), count: openIssues }
+    ];
+    const moreActions = moreCandidates.filter((action): action is Action => !!action);
+
+    if (panel && !moreActions.length) setPanel(null);
+    const moreCount = isMod ? openIssues : 0;
 
     return (
         <div className="district-command-bar" ref={bar}>
@@ -113,25 +127,25 @@ export const DistrictDock: FC<{ isInRoom: boolean }> = ({ isInRoom }) =>
                 {barButton({ label: 'Phone', icon: 'district-phone', count: phoneUnread, onClick: link('phone/toggle') })}
                 <span className="district-command-bar__divider" aria-hidden="true" />
                 {barButton({ label: localizeWithFallback('toolbar.icon.label.navigator', 'Rooms'), icon: 'rooms', onClick: link('navigator/toggle') })}
-                {barButton({ label: 'More', icon: 'me-settings', count: isMod ? openIssues : 0, expanded: 'more', buttonRef: moreButton, onClick: togglePanel('more') })}
+                {!!moreActions.length && (
+                    <button
+                        type="button"
+                        ref={moreButton}
+                        className="district-command-bar__button"
+                        aria-label={moreCount ? `More, ${moreCount}` : 'More'}
+                        title="More"
+                        aria-expanded={panel === 'more'}
+                        aria-controls="district-more"
+                        onClick={togglePanel('more')}>
+                        <span className="volt-icon icon-me-settings" aria-hidden="true" />
+                        {!!moreCount && <b className="district-badge">{moreCount}</b>}
+                    </button>
+                )}
             </div>
             <section id="district-popup" className="district-popup district-panel" aria-label="District actions" hidden={panel === null}>
                 <section id="district-more" className="district-subpanel" aria-label="More" hidden={panel !== 'more'}>
                     <h2>More</h2>
-                    <div className="district-subpanel__actions">
-                        {actionButton({ label: isInRoom ? 'City' : 'Home', icon: 'house', run: isInRoom ? () => VisitDesktop() : link('navigator/goto/home') })}
-                        {actionButton({ label: 'Settings', icon: 'me-settings', run: link('user-settings/show/other') })}
-                        {actionButton({ label: 'Help', icon: 'me-helper-tool', run: link('help/show') })}
-                        {isInRoom && cameraAllowed && actionButton({ label: 'Camera', icon: 'camera', run: link('camera/toggle') })}
-                        {actionButton({ label: 'Earnings', icon: 'catalog', run: link('habboUI/open/vault') })}
-                        {!GetConfigurationValue('hc.disabled', false) && actionButton({ label: 'Club', icon: 'catalogue-hc_small', run: link('habboUI/open/hccenter') })}
-                        {GetConfigurationValue('games_icon_enabled', GetConfigurationValue('game.center.enabled', false)) && actionButton({ label: 'Games', icon: 'game', run: link('games/toggle') })}
-                        {GetConfigurationValue('toolbar.stories.enabled', false) && actionButton({ label: 'Stories', icon: 'stories', run: link('stories/toggle') })}
-                        {guideAllowed && GetConfigurationValue('guides.enabled') && actionButton({ label: 'Helper tool', icon: 'me-helper-tool', run: () => DispatchUiEvent(new GuideToolEvent(GuideToolEvent.TOGGLE_GUIDE_TOOL)) })}
-                        {isInRoom && showToolbarButton && actionButton({ label: 'Wired tools', icon: 'wired-tools', run: openMonitor })}
-                        {isInRoom && buildHeightAvailable && actionButton({ label: 'Build height', icon: 'buildheight', run: toggleBuildHeight })}
-                        {isMod && actionButton({ label: 'Moderator tools', icon: 'modtools', run: link('mod-tools/show'), count: openIssues })}
-                    </div>
+                    <div className="district-subpanel__actions">{moreActions.map(actionButton)}</div>
                 </section>
             </section>
         </div>

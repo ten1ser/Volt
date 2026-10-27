@@ -6,7 +6,8 @@ type Thread = { threadId: number; unreadCount: number; unread: boolean; particip
 
 const test = vi.hoisted(() => ({
     tracker: null,
-    link: vi.fn(), iconState: 0, requests: [] as unknown[], unseen: 0, threads: [] as Thread[], rerender: null
+    link: vi.fn(), iconState: 0, requests: [] as unknown[], unseen: 0, threads: [] as Thread[], rerender: null,
+    inRoom: false, camera: false
 }));
 vi.mock('@volt/renderer', () => ({
     AddLinkEventTracker: (tracker: { linkReceived: (url: string) => void }) =>
@@ -15,8 +16,11 @@ vi.mock('@volt/renderer', () => ({
     },
     RemoveLinkEventTracker: vi.fn(),
     CreateLinkEvent: test.link,
-    GetSessionDataManager: () => ({ userId: 1 })
+    GetSessionDataManager: () => ({ userId: 1 }),
+    PerkEnum: { CAMERA: 'camera' }
 }));
+vi.mock('../../../hooks/rooms/useRoom', () => ({ useRoom: () => ({ roomSession: test.inRoom ? {} : null }) }));
+vi.mock('../../../state/perkAllowancesStore', () => ({ usePerkAllowed: (perk: string) => perk === 'camera' && test.camera }));
 vi.mock('../../../api', () => ({ MessengerIconState: { HIDDEN: 0, SHOW: 1, UNREAD: 2 } }));
 vi.mock('../../../hooks', () => ({
     useFriends: () => ({ requests: test.requests }),
@@ -41,7 +45,7 @@ describe('DistrictRP phone', () =>
 {
     beforeEach(() =>
     {
-        test.iconState = 0; test.requests = []; test.unseen = 0; test.threads = [];
+        test.iconState = 0; test.requests = []; test.unseen = 0; test.threads = []; test.inRoom = false; test.camera = false;
         test.link.mockClear();
         window.localStorage.clear();
     });
@@ -84,6 +88,18 @@ describe('DistrictRP phone', () =>
         render(<PhoneView />); open();
         fireEvent.click(screen.getByRole('button', { name: 'Shop' }));
         expect(test.link).toHaveBeenCalledWith('catalog/toggle/normal');
+        expect(phone()).not.toHaveClass('is-open');
+    });
+
+    it('offers the Camera only inside a room with the camera perk, and opens it', () =>
+    {
+        test.camera = true;
+        const view = render(<PhoneView />); open();
+        expect(screen.queryByRole('button', { name: 'Camera' })).toBeNull();
+        test.inRoom = true;
+        view.rerender(<PhoneView />);
+        fireEvent.click(screen.getByRole('button', { name: 'Camera' }));
+        expect(test.link).toHaveBeenCalledWith('camera/toggle');
         expect(phone()).not.toHaveClass('is-open');
     });
 

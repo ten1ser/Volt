@@ -48,7 +48,6 @@ describe('DistrictRP command bar', () =>
         expect(bar.contains(actions)).toBe(true);
         for(const name of ['Businesses', 'Backpack', 'Rooms']) expect(actions.contains(button(name))).toBe(true);
         expect(button(/^Phone/)).toHaveTextContent('3');
-        expect(button(/^More/)).toBeInTheDocument();
         for(const name of [/^Inventory/, /^Shop/, /^Social/]) expect(screen.queryByRole('button', { name })).toBeNull();
         const chat = bar.querySelector('.district-command-bar__chat');
         expect(chat).not.toBeNull();
@@ -84,29 +83,37 @@ describe('DistrictRP command bar', () =>
         expect(test.link).toHaveBeenLastCalledWith('navigator/toggle');
     });
 
-    it('focuses the first More action when the popup opens', async () =>
+    it('hides More when it has nothing to offer', () =>
     {
         render(<DistrictDock isInRoom />);
-        fireEvent.click(button(/^More/));
-        await waitFor(() => expect(within(panel('More')).getByRole('button', { name: 'City' })).toHaveFocus());
+        expect(screen.queryByRole('button', { name: /^More/ })).toBeNull();
     });
 
-    it('opens More with the City action and the existing tools list', () =>
+    it('focuses the first More action when the popup opens', async () =>
     {
+        test.camera = true;
+        render(<DistrictDock isInRoom />);
+        fireEvent.click(button(/^More/));
+        await waitFor(() => expect(within(panel('More')).getByRole('button', { name: 'Camera' })).toHaveFocus());
+    });
+
+    it('drops City, Settings, Help, Earnings and Club from More and runs a remaining action', () =>
+    {
+        test.camera = true;
         render(<DistrictDock isInRoom />);
         fireEvent.click(button(/^More/));
         expect(button(/^More/)).toHaveAttribute('aria-controls', 'district-more');
-        fireEvent.click(within(panel('More')).getByRole('button', { name: 'City' }));
-        expect(test.visit).toHaveBeenCalledOnce();
-        fireEvent.click(button(/^More/));
-        fireEvent.click(within(panel('More')).getByRole('button', { name: 'Settings' }));
-        expect(test.link).toHaveBeenLastCalledWith('user-settings/show/other');
+        const more = within(panel('More'));
+        for (const name of ['City', 'Home', 'Settings', 'Help', 'Earnings', 'Club']) expect(more.queryByRole('button', { name })).toBeNull();
+        fireEvent.click(more.getByRole('button', { name: 'Camera' }));
+        expect(test.link).toHaveBeenLastCalledWith('camera/toggle');
         expect(screen.queryByRole('region', { name: 'More' })).toBeNull();
         expect(button(/^More/)).toHaveFocus();
     });
 
     it('closes on Escape with focus returned to the triggering icon', async () =>
     {
+        test.camera = true;
         render(<DistrictDock isInRoom />);
         const more = button(/^More/);
         fireEvent.click(more);
@@ -122,6 +129,7 @@ describe('DistrictRP command bar', () =>
 
     it('closes an open popup on an outside pointer without losing the bar', () =>
     {
+        test.camera = true;
         render(<DistrictDock isInRoom />);
         fireEvent.click(button(/^More/));
         expect(panel('More')).toBeVisible();
@@ -132,6 +140,7 @@ describe('DistrictRP command bar', () =>
 
     it('keeps Character and Progress out of the bar and the More popup', () =>
     {
+        test.camera = true;
         render(<DistrictDock isInRoom />);
         expect(screen.queryByRole('button', { name: 'Character' })).toBeNull();
         expect(screen.queryByRole('button', { name: /Progress/ })).toBeNull();
@@ -144,11 +153,10 @@ describe('DistrictRP command bar', () =>
     it('preserves permission and room gates for staff, camera and building tools', () =>
     {
         const view = render(<DistrictDock isInRoom />);
-        fireEvent.click(button(/^More/));
-        expect(screen.queryByRole('button', { name: /Moderator tools/ })).toBeNull();
-        expect(screen.queryByRole('button', { name: 'Camera' })).toBeNull();
+        expect(screen.queryByRole('button', { name: /^More/ })).toBeNull();
         test.moderator = true; test.camera = true; test.wired = true; test.build = true;
         view.rerender(<DistrictDock isInRoom />);
+        fireEvent.click(button(/^More/));
         const more = within(panel('More'));
         expect(more.getByRole('button', { name: /Moderator tools/ })).toBeVisible();
         expect(more.getByRole('button', { name: 'Camera' })).toBeVisible();
@@ -161,7 +169,6 @@ describe('DistrictRP command bar', () =>
         const outsideRoom = within(panel('More'));
         expect(outsideRoom.queryByRole('button', { name: 'Camera' })).toBeNull();
         expect(outsideRoom.queryByRole('button', { name: 'Build height' })).toBeNull();
-        expect(outsideRoom.queryByRole('button', { name: 'City' })).toBeNull();
-        expect(outsideRoom.getByRole('button', { name: 'Home' })).toBeVisible();
+        expect(outsideRoom.getByRole('button', { name: /Moderator tools/ })).toBeVisible();
     });
 });

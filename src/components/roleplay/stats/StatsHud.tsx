@@ -12,6 +12,26 @@ const label = (key: string, fallback: string) =>
     return value && value !== key ? value : fallback;
 };
 
+/** Head portrait cropped to its visible pixels and centred in the frame, so the whole face shows whatever the figure. */
+export const HudPortrait: FC<{ figure: string; gender?: string; size: number }> = ({ figure, gender, size }) => (
+    <div className="rp-stats-hud__portrait" aria-hidden="true">
+        <LayoutAvatarImageView figure={figure} gender={gender} direction={2} headOnly compactHead compactHeadSize={size} compactHeadPadding={2} className="rp-stats-hud__avatar" />
+    </div>
+);
+
+/** One labelled bar with its value, shared by the own and target cards. */
+export const HudStat: FC<{ kind: 'health' | 'energy'; value: number; label: string }> = ({ kind, value, label }) => (
+    <div className={`rp-stats-hud__stat rp-stats-hud__stat--${kind}`}>
+        {kind === 'health'
+            ? <svg className="rp-stats-hud__icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14 1 7V3h2V1h4v2h2V1h4v2h2v4Z" /></svg>
+            : <svg className="rp-stats-hud__icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M9 1 2 9h5l-1 6 8-9H9Z" /></svg>}
+        <div className="rp-stats-hud__track" role="progressbar" aria-label={label} aria-valuenow={value} aria-valuemin={0} aria-valuemax={100} title={`${ value } / 100`}>
+            <div className="rp-stats-hud__fill" style={{ width: `${ value }%` }} />
+        </div>
+        <span className="rp-stats-hud__value" aria-hidden="true">{value}</span>
+    </div>
+);
+
 export const StatsHud: FC = () =>
 {
     const stats = useRpStats();
@@ -19,8 +39,6 @@ export const StatsHud: FC = () =>
     const { userName, figure, gender } = useUserDataSnapshot();
     if(!stats) return null;
 
-    const healthLabel = label('roleplay.stats.health', 'Health');
-    const energyLabel = label('roleplay.stats.energy', 'Energy');
     const treatmentLabel = label('roleplay.hospital.treatment', 'Hospital treatment');
     const progress = treatment && Number.isFinite(treatment.progress) ? Math.min(100, Math.max(0, Math.round(treatment.progress))) : 0;
     const remainingSeconds = treatment && Number.isFinite(treatment.remainingMs) && treatment.remainingMs > 0
@@ -28,24 +46,14 @@ export const StatsHud: FC = () =>
 
     return (
         <section className="rp-stats-hud" aria-label={label('roleplay.stats.title', 'Your stats')}>
-            <div className="rp-stats-hud__portrait" aria-hidden="true">
-                <LayoutAvatarImageView figure={figure} gender={gender} direction={2} className="rp-stats-hud__avatar" />
-            </div>
-            <div className="rp-stats-hud__body">
-                <div className="rp-stats-hud__identity">
-                    <div className="rp-stats-hud__name" title={userName}>{userName}</div>
-                </div>
-                <div className="rp-stats-hud__stat rp-stats-hud__stat--health">
-                    <svg className="rp-stats-hud__icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14 1 7V3h2V1h4v2h2V1h4v2h2v4Z" /></svg>
-                    <div className="rp-stats-hud__track" role="progressbar" aria-label={healthLabel} aria-valuenow={stats.health} aria-valuemin={0} aria-valuemax={100} title={`${ stats.health } / 100`}>
-                        <div className="rp-stats-hud__fill" style={{ width: `${ stats.health }%` }} />
+            <div className="rp-stats-hud__main">
+                <HudPortrait figure={figure} gender={gender} size={40} />
+                <div className="rp-stats-hud__body">
+                    <div className="rp-stats-hud__identity">
+                        <div className="rp-stats-hud__name" title={userName}>{userName}</div>
                     </div>
-                </div>
-                <div className="rp-stats-hud__stat rp-stats-hud__stat--energy">
-                    <svg className="rp-stats-hud__icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M9 1 2 9h5l-1 6 8-9H9Z" /></svg>
-                    <div className="rp-stats-hud__track" role="progressbar" aria-label={energyLabel} aria-valuenow={stats.energy} aria-valuemin={0} aria-valuemax={100} title={`${ stats.energy } / 100`}>
-                        <div className="rp-stats-hud__fill" style={{ width: `${ stats.energy }%` }} />
-                    </div>
+                    <HudStat kind="health" value={stats.health} label={label('roleplay.stats.health', 'Health')} />
+                    <HudStat kind="energy" value={stats.energy} label={label('roleplay.stats.energy', 'Energy')} />
                 </div>
             </div>
             { treatment && treatment.phase !== 0 && (

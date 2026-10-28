@@ -6,8 +6,14 @@ type Friend = { id: number; name: string; online: boolean; figure: string; motto
 
 const test = vi.hoisted(() => ({
     friends: [] as Friend[], requests: [] as { id: number; name: string; figureString: string }[],
-    send: vi.fn(), respond: vi.fn(), follow: vi.fn(), relationship: vi.fn(), requestFriend: vi.fn(),
-    search: { friends: [] as unknown[], others: [] as unknown[] }
+    send: vi.fn(), respond: vi.fn(), relationship: vi.fn(), requestFriend: vi.fn(),
+    search: { friends: [] as unknown[], others: [] as unknown[] },
+    phone: { hasSim: true }, addContact: vi.fn(), callContact: vi.fn(), locate: vi.fn(),
+    locations: {}
+}));
+vi.mock('../../../hooks/roleplay/useRpPhone', () => ({
+    LocationState: { Hidden: 0, InRoom: 1, NotInRoom: 2, Offline: 3 },
+    useRpPhone: () => ({ status: test.phone, notice: null, clearNotice: vi.fn(), addContact: test.addContact, callContact: test.callContact, locate: test.locate, locations: test.locations })
 }));
 vi.mock('@volt/renderer', () => ({
     GetSessionDataManager: () => ({ userId: 1 }),
@@ -37,7 +43,6 @@ vi.mock('../../../hooks', () => ({
         requests: test.requests,
         getFriend: (id: number) => test.friends.find(friend => friend.id === id) ?? null,
         requestResponse: test.respond,
-        followFriend: test.follow,
         updateRelationship: test.relationship,
         searchResults: test.search,
         searchValue: 'ma',
@@ -57,7 +62,9 @@ describe('Phone Friends app', () =>
         test.friends = [friend(2, 'Marco', true), friend(3, 'Jules', false)];
         test.requests = [];
         test.search = { friends: [], others: [] };
-        [test.send, test.respond, test.follow, test.relationship, test.requestFriend].forEach(fn => fn.mockClear());
+        [test.send, test.respond, test.relationship, test.requestFriend, test.addContact, test.callContact, test.locate].forEach(fn => fn.mockClear());
+        test.phone = { hasSim: true };
+        test.locations = {};
     });
     afterEach(cleanup);
 
@@ -91,18 +98,54 @@ describe('Phone Friends app', () =>
         expect(test.respond).toHaveBeenCalledWith(9, false);
     });
 
-    it('opens a profile with go to, relationship and a confirmed remove', () =>
+    it('opens a profile with call, live location, relationship and a confirmed remove', () =>
     {
-        render(<PhoneFriendsApp onMessage={vi.fn()} onHome={vi.fn()} />);
+        const view = render(<PhoneFriendsApp onMessage={vi.fn()} onHome={vi.fn()} />);
         fireEvent.click(screen.getByText('Marco'));
-        fireEvent.click(screen.getByRole('button', { name: 'Go to' }));
-        expect(test.follow).toHaveBeenCalledWith(test.friends[0]);
+        expect(screen.queryByRole('button', { name: 'Go to' })).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Call' }));
+        expect(test.callContact).toHaveBeenCalledWith(2);
+        fireEvent.click(screen.getByRole('button', { name: 'Live location' }));
+        expect(test.locate).toHaveBeenCalledWith(2);
+        test.locations = { 2: { userId: 2, state: 1, roomName: 'Main Street', message: '' } };
+        view.rerender(<PhoneFriendsApp onMessage={vi.fn()} onHome={vi.fn()} />);
+        expect(screen.getByText('Main Street')).toBeInTheDocument();
+        test.locations = { 2: { userId: 2, state: 0, roomName: '', message: 'Marco is not sharing their location.' } };
+        view.rerender(<PhoneFriendsApp onMessage={vi.fn()} onHome={vi.fn()} />);
+        expect(screen.getByText('Marco is not sharing their location.')).toBeInTheDocument();
         fireEvent.click(screen.getByRole('radio', { name: 'Heart' }));
         expect(test.relationship).toHaveBeenCalledWith(test.friends[0], 1);
         fireEvent.click(screen.getByRole('button', { name: 'Remove friend' }));
         expect(test.send).not.toHaveBeenCalled();
         fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
         expect(test.send).toHaveBeenCalledWith(expect.objectContaining({ ids: [2] }));
+    });
+
+    it('adds a contact by phone number and warns without a SIM card', () =>
+    {
+        render(<PhoneFriendsApp onMessage={vi.fn()} onHome={vi.fn()} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Find people' }));
+        expect(screen.queryByText(/need a SIM card/)).toBeNull();
+        fireEvent.change(screen.getByRole('textbox', { name: 'Add by phone number' }), { target: { value: '+12-345-6x' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Add number' }));
+        expect(test.addContact).toHaveBeenCalledWith('+12-345-6');
+    });
+
+    it('disables calling, messaging and live location without a SIM card', () =>
+    {
+        test.phone = { hasSim: false };
+        render(<PhoneFriendsApp onMessage={vi.fn()} onHome={vi.fn()} />);
+        fireEvent.click(screen.getByText('Marco'));
+        for (const name of ['Message', 'Call', 'Live location']) expect(screen.getByRole('button', { name })).toBeDisabled();
+        expect(screen.getByText('Needs a SIM card.')).toBeInTheDocument();
+    });
+
+    it('warns that contacts need a SIM card', () =>
+    {
+        test.phone = { hasSim: false };
+        render(<PhoneFriendsApp onMessage={vi.fn()} onHome={vi.fn()} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Find people' }));
+        expect(screen.getByText(/need a SIM card to add contacts/)).toBeInTheDocument();
     });
 
     it('searches the hotel and sends a friend request', () =>

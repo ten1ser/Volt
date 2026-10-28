@@ -14,6 +14,8 @@
     box-shadow: 0 18px 40px #000a, inset 0 0 0 1px #ffffff1f, inset 0 0 0 2px #0008;
     color: #fff;
     font-family: var(--district-ui-font, HabboAirUbuntu, UbuntuRegular, sans-serif);
+    // Where the user dragged it, as an offset from this resting corner.
+    translate: var(--phone-x, 0) var(--phone-y, 0);
     transform: translateY(calc(100% + 100px));
     opacity: 0;
     visibility: hidden;
@@ -56,7 +58,39 @@
         font-weight: 700;
 
         time { flex: 1; font-variant-numeric: tabular-nums; }
+
+        // The status bar is the phone's handle.
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+        &:active { cursor: grabbing; }
     }
+
+    &__no-sim-screen {
+        display: grid;
+        gap: 8px;
+        padding: 48px 24px;
+        text-align: center;
+        strong { font-size: 18px; }
+        p { margin: 0; color: #a1a1a6; font-size: 13px; line-height: 1.4; }
+    }
+
+    &__location {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #ffffff12;
+        font-size: 13px;
+        > span { flex: 1; min-width: 0; color: #d0d0d5; }
+        strong { color: #fff; }
+        .district-phone__pill { flex: 0 0 auto; }
+    }
+
+    &__call-direction { width: 18px; color: #8e8e93; font-size: 15px; text-align: center; }
+    &__call-ago { color: #8e8e93; font-size: 12px; }
+    &__row.is-missed strong { color: #ff453a; }
 
     &__island {
         position: absolute;
@@ -179,10 +213,17 @@
     }
 
     .is-messages .district-phone__icon { background: linear-gradient(#5fe07a, #2cb84c); }
+    .is-dialer .district-phone__icon { background: linear-gradient(#5fe07a, #1f9a3c); }
     .is-friends .district-phone__icon { background: linear-gradient(#5aa9ff, #1f6fe0); }
     .is-inventory .district-phone__icon { background: linear-gradient(#e0bd6c, #b08a33); }
     .is-shop .district-phone__icon { background: linear-gradient(#ff8a65, #e2522c); }
     .is-camera .district-phone__icon { background: linear-gradient(#5c5e66, #2c2d32); }
+    .is-modtools .district-phone__icon { background: linear-gradient(#ff6b6b, #c0392b); }
+    .is-wired .district-phone__icon { background: linear-gradient(#ffd166, #e09f1f); }
+    .is-build .district-phone__icon { background: linear-gradient(#7bdcb5, #2e9e7a); }
+    .is-games .district-phone__icon { background: linear-gradient(#a78bfa, #6d4fd6); }
+    .is-stories .district-phone__icon { background: linear-gradient(#f9a8d4, #db4d93); }
+    .is-helper .district-phone__icon { background: linear-gradient(#67e8f9, #1aa3c1); }
     .is-settings .district-phone__icon { background: linear-gradient(#9a9ca3, #5f6168); }
 
     &__home {
@@ -390,7 +431,18 @@
         border-radius: 50%;
         background: #2c2d32;
 
-        .avatar-image { border-radius: 50%; overflow: hidden; }
+        // The shared avatar image is sized for full figures elsewhere; inside the circle it fills it, head centred.
+        .avatar-image {
+            position: static;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            border-radius: 50%;
+            overflow: hidden;
+            transform: none;
+            background-position: center !important;
+            background-repeat: no-repeat;
+        }
 
         &.is-online::after {
             content: '';
@@ -636,6 +688,326 @@
         &:disabled { background: #2c2d32; color: #6d6e74 !important; cursor: default; }
         &:focus-visible { outline: 2px solid var(--district-ui-accent, #d9b25a); outline-offset: 2px; }
     }
+}
+
+// Phone camera (lives inside .district-phone; kept separate for readability).
+.district-phone {
+    &__app-screen.is-camera { background: #000; }
+
+    &__viewfinder {
+        position: relative;
+        margin: 6px 10px 0;
+        aspect-ratio: 1;
+        overflow: hidden;
+        border-radius: 6px;
+        background: #111;
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        canvas:active { cursor: grabbing; }
+    }
+
+    &__thirds {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+            linear-gradient(to right, transparent 33.1%, #ffffff40 33.3%, transparent 33.6%, transparent 66.4%, #ffffff40 66.6%, transparent 66.9%),
+            linear-gradient(to bottom, transparent 33.1%, #ffffff40 33.3%, transparent 33.6%, transparent 66.4%, #ffffff40 66.6%, transparent 66.9%);
+    }
+
+    &__flash {
+        position: absolute;
+        inset: 0;
+        background: #fff;
+        pointer-events: none;
+        animation: district-phone-flash .35s ease-out forwards;
+
+        @media (prefers-reduced-motion: reduce) { animation-duration: .01s; }
+    }
+
+    &__mode { margin: 10px 0 0; color: #ffd60a; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-align: center; }
+
+    &__notice { margin: 6px 14px 0; color: #ffd0cc; font-size: 12px; text-align: center; }
+
+    &__hint { margin: 8px 14px; color: #8e8e93; font-size: 12px; text-align: center; }
+
+    &__camera-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: auto 26px 6px;
+    }
+
+    &__last-photo {
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        overflow: hidden;
+        border: 2px solid #fff;
+        border-radius: 8px;
+        background: #222;
+        cursor: pointer;
+
+        img { display: block; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+        &:focus-visible { outline: 2px solid var(--district-ui-accent, #d9b25a); outline-offset: 2px; }
+    }
+
+    &__shutter {
+        width: 64px;
+        height: 64px;
+        padding: 0;
+        border: 4px solid #fff;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: inset 0 0 0 3px #000;
+        cursor: pointer;
+
+        &:active:not(:disabled) { transform: scale(.94); }
+        &:disabled { opacity: .5; cursor: default; }
+        &:focus-visible { outline: 2px solid var(--district-ui-accent, #d9b25a); outline-offset: 3px; }
+    }
+
+    &__recenter {
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: #2c2d32;
+        color: #fff;
+        font-size: 22px !important;
+        cursor: pointer;
+
+        &:focus-visible { outline: 2px solid var(--district-ui-accent, #d9b25a); outline-offset: 2px; }
+    }
+
+    &__photos {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+        padding: 6px 10px;
+    }
+
+    &__photo-tile {
+        aspect-ratio: 1;
+        padding: 0;
+        overflow: hidden;
+        border: 0;
+        border-radius: 4px;
+        background: #1c1d21;
+        cursor: pointer;
+
+        img { display: block; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+        &:focus-visible { outline: 2px solid var(--district-ui-accent, #d9b25a); outline-offset: -2px; }
+    }
+
+    &__photo-full {
+        display: block;
+        width: calc(100% - 20px);
+        margin: 6px 10px 12px;
+        aspect-ratio: 1;
+        border-radius: 6px;
+        image-rendering: pixelated;
+    }
+
+    &__pill:disabled { opacity: .5; cursor: default; }
+    &__pill.is-call { background: #30d158; color: #fff; }
+
+    // SIM card, Load and the Phone app.
+    &__no-sim { color: #8e8e93; font-size: 10px; font-weight: 700; }
+    &__line { display: block; margin-top: 4px; color: #ffffffcc; font-size: 11px; }
+    &__sim-warning { margin: 6px 12px; padding: 7px 10px; border-radius: 10px; background: #3a2c12; color: #ffd27a; font-size: 11px; line-height: 15px; }
+    &__phone-notice {
+        margin: 6px 12px;
+        color: #9be7a9;
+        font-size: 12px;
+        text-align: center;
+
+        &.is-refused { color: #ff8a80; }
+    }
+
+    &__dial-number {
+        margin: 10px 18px 0;
+        padding: 6px 0;
+        border: 0;
+        background: none;
+        color: #fff;
+        font-size: 26px;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 1px;
+        text-align: center;
+
+        &::placeholder { color: #48484d; }
+        &:focus-visible { outline: none; }
+    }
+
+    &__dial-notice { min-height: 16px; margin: 2px 14px; color: #ff8a80; font-size: 12px; text-align: center; }
+
+    &__keypad {
+        display: grid;
+        grid-template-columns: repeat(3, 58px);
+        justify-content: center;
+        gap: 10px 18px;
+        margin: 4px 0 10px;
+    }
+
+    &__key {
+        width: 58px;
+        height: 58px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: #2c2d32;
+        color: #fff;
+        font-size: 24px !important;
+        cursor: pointer;
+
+        &:active { background: #48494f; }
+        &:focus-visible { outline: 2px solid var(--district-ui-accent, #d9b25a); outline-offset: 2px; }
+    }
+
+    &__dial-actions {
+        display: grid;
+        grid-template-columns: repeat(3, 58px);
+        justify-content: center;
+        gap: 18px;
+
+        .district-phone__call-button { grid-column: 2; }
+    }
+
+    &__key-erase {
+        align-self: center;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: #8e8e93;
+        font-size: 20px !important;
+        cursor: pointer;
+
+        &:disabled { visibility: hidden; }
+    }
+
+    &__emergency { display: flex; justify-content: center; gap: 8px; margin: 12px 0 4px; }
+    &__dial-hint { margin: 6px 16px; color: #8e8e93; font-size: 11px; text-align: center; }
+
+    &__call-button {
+        width: 58px;
+        height: 58px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        color: #fff;
+        font-size: 26px !important;
+        cursor: pointer;
+
+        &.is-call { background: #30d158; }
+        &.is-end { background: #ff3b30; transform: rotate(135deg); }
+        &:disabled { opacity: .45; cursor: default; }
+        &:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+    }
+
+    // A call fills the screen until it ends.
+    &__call {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        min-height: 0;
+        padding: 26px 16px 18px;
+        background: linear-gradient(#1d2a3a, #0b0c0f);
+    }
+
+    &__call-who {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+
+        strong { margin-top: 8px; font-size: 22px; }
+        small { color: #c7c7cc; font-size: 13px; }
+    }
+
+    &__call-avatar {
+        display: grid;
+        place-items: center;
+        width: 74px;
+        height: 74px;
+        border-radius: 50%;
+        background: #3a3b40;
+        font-size: 30px;
+        font-weight: 700;
+    }
+
+    &__call-caption { margin-top: 6px; color: #c7c7cc; font-size: 14px; font-variant-numeric: tabular-nums; }
+
+    .is-state-2 &__call-caption { animation: district-phone-ring 1.2s ease-in-out infinite; }
+
+    &__call-lines {
+        flex: 1;
+        min-height: 0;
+        margin: 16px 0 10px;
+        padding: 0;
+        overflow-y: auto;
+        list-style: none;
+        font-size: 12px;
+        line-height: 17px;
+
+        li { margin-bottom: 5px; color: #e5e5ea; }
+        li.is-self { color: #9fcfff; }
+        b { margin-right: 4px; }
+    }
+
+    &__call-hint { color: #8e8e93 !important; text-align: center; }
+
+    &__call-actions { display: flex; justify-content: center; gap: 46px; margin-top: auto; }
+
+    // A staff sale offer sits over whatever the phone shows.
+    &__offer {
+        position: absolute;
+        right: 10px;
+        bottom: 26px;
+        left: 10px;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 12px;
+        border-radius: 16px;
+        background: #1c1d21f5;
+        box-shadow: 0 10px 30px #000a, inset 0 0 0 1px #ffffff1a;
+
+        strong { font-size: 13px; }
+        span { color: #c7c7cc; font-size: 12px; }
+    }
+
+    &__offer-actions { display: flex; gap: 8px; margin-top: 6px; }
+
+    &__reset-warning { margin: 10px 14px; color: #ffb4ab; font-size: 12px; line-height: 17px; }
+
+    &__reset-form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin: 0 14px;
+
+        label { display: flex; flex-direction: column; gap: 6px; color: #c7c7cc; font-size: 12px; }
+    }
+}
+
+@keyframes district-phone-ring {
+    50% { opacity: .35; }
+}
+
+@keyframes district-phone-flash {
+    from { opacity: .9; }
+    to { opacity: 0; }
 }
 
 // New-message banner above the phone button while the phone is put away.

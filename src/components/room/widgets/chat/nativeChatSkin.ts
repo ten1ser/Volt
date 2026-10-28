@@ -49,3 +49,7 @@ const ANONYMOUS_STYLES = new Set([1, 34, 200, 201, 202, 210, 211, 212, 220, 221,
 const LARGE_FONT_STYLES = new Set([33, 34, 200, 201, 202, 210, 211, 212, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 250, 251, 252]);
 export const isNativeAnonymousStyle = (id: number): boolean => ANONYMOUS_STYLES.has(id);
 export const getNativeChatBaseFontSize = (id: number): number => LARGE_FONT_STYLES.has(id) ? 17 : 12;
+// Ordinary talk (0) and the DistrictRP action colours (server RpChat: 3 injury, 4 combat, 5 work, 6 money, 7 crime,
+// 11 items, 12 medical, 13 phone) share the plain bold-name room text.
+const DISTRICT_PLAIN_STYLES = new Set([0, 3, 4, 5, 6, 7, 11, 12, 13]);
+export const isDistrictPlainStyle = (id: number): boolean => DISTRICT_PLAIN_STYLES.has(id);

@@ -6,7 +6,7 @@ import { useSessionInfo } from '../../../../hooks/session/useSessionInfo';
 import { ChatTextSize, getChatFontScale, getChatTextSize } from '../chat-input/chatTextSize';
 import { measureBubbleVisualOffsets } from './chatBubbleMetrics';
 import { getNativeChatCreation, getNativeChatGeometry } from './nativeChatScroller';
-import { getNativeChatBaseFontSize, getNativeDefaultSkin, isNativeAnonymousStyle } from './nativeChatSkin';
+import { getNativeChatBaseFontSize, getNativeDefaultSkin, isDistrictPlainStyle, isNativeAnonymousStyle } from './nativeChatSkin';
 import { NativeChatText } from './NativeChatText';
 
 interface ChatWidgetMessageViewProps {
@@ -42,7 +42,7 @@ export const ChatWidgetMessageView: FC<ChatWidgetMessageViewProps> = ({
     const [defaultSkin, setDefaultSkin] = useState<string>(null);
     const fontScale = getChatFontScale(chatTextSize);
     const anonymous = isNativeAnonymousStyle(chat.styleId);
-    const plainRoomChat = layout === 'room' && (chat.styleId === 0 || chat.styleId === 3 || chat.styleId === 4);
+    const plainRoomChat = layout === 'room' && isDistrictPlainStyle(chat.styleId);
     const elementRef = useRef<HTMLDivElement>(null);
     const makeRoomRef = useRef(makeRoom);
     const { onClickChat } = useOnClickChat();

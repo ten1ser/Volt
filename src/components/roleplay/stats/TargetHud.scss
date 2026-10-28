@@ -1,23 +1,18 @@
+// The target card matches the own card one size smaller, with a red frame so it reads as someone else.
 .rp-target-hud {
-    position: absolute;
-    left: 0;
-    bottom: 100%;
-    width: 170px;
-    max-width: 100%;
-    height: 40px;
-    margin-bottom: 8px;
+    padding: 6px 8px 7px 6px;
 
-    .rp-stats-hud__identity { height: 16px; }
+    .rp-stats-hud__main { gap: 8px; }
+    .rp-stats-hud__portrait { flex-basis: 36px; width: 36px; height: 36px; border-color: #e2675c; }
+    .rp-stats-hud__body { gap: 4px; }
     .rp-stats-hud__name { font-size: 12px; }
+    .rp-stats-hud__track { height: 6px; }
 }
-
-// Keep the target clear of the dock-width hospital treatment strip.
-.district-command-bar:has(.rp-stats-hud__treatment) .rp-target-hud { margin-bottom: 62px; }
 
 .rp-target-hud__label {
     flex: 0 0 auto;
-    color: #d4b369;
-    font-size: 9px;
+    color: #e2675c;
+    font-size: 10px;
     font-weight: 700;
     line-height: 12px;
     letter-spacing: 0.3px;
@@ -25,26 +20,28 @@
 }
 
 .rp-target-hud__clear {
-    flex: 0 0 16px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 18px;
     box-sizing: border-box;
-    width: 16px;
-    height: 16px;
-    margin: 0;
+    width: 18px;
+    height: 18px;
+    margin: 0 -2px 0 0;
     padding: 0;
-    border: 1px solid #3a3c42;
-    border-radius: 4px;
-    background: #17191d;
-    color: #f1eee6;
-    font: 700 12px/13px sans-serif;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: #8e8e93;
     cursor: pointer;
 
-    &:hover { border-color: #53565c; background: #2a2c32; }
-    &:focus-visible { outline: 2px solid #d4b369; outline-offset: 1px; }
+    svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+    &:hover { background: #ffffff14; color: #f1eee6; }
+    &:focus-visible { outline: 2px solid #d9b25a; outline-offset: 1px; }
 }
 
 .rp-target-hud__loading {
     margin: 0;
-    color: #b1b1ad;
-    font-size: 9px;
-    line-height: 12px;
+    color: #b9b9be;
+    font-size: 10px;
+    line-height: 13px;
 }

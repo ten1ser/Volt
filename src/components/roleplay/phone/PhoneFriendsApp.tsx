@@ -1,11 +1,14 @@
 import { GetSessionDataManager, HabboSearchComposer, RemoveFriendComposer } from '@volt/renderer';
-import { FC, FormEvent, useState } from 'react';
+import { FC, FormEvent, useEffect, useState } from 'react';
 import { MessengerFriend, SendMessageComposer } from '../../../api';
 import { LayoutAvatarImageView } from '../../../common/layout/LayoutAvatarImageView';
 import { useFriends } from '../../../hooks';
+import { LocationState, useRpPhone } from '../../../hooks/roleplay/useRpPhone';
 import { PHONE_GLYPHS, PhoneAvatar, PhoneHeader } from './PhoneShared';
 
 type Tab = 'online' | 'all' | 'requests';
+
+const LOCATION_REFRESH_MS = 5000;
 
 const RELATIONSHIPS = [
     { type: MessengerFriend.RELATIONSHIP_NONE, label: 'None', symbol: '–' },
@@ -91,12 +94,25 @@ const PhoneRequests: FC = () =>
 const PhoneFriendProfile: FC<{ friend: MessengerFriend; onBack: () => void; onMessage: (userId: number) => void }> = ({ friend, onBack, onMessage }) =>
 {
     const [confirmRemove, setConfirmRemove] = useState(false);
-    const { followFriend, updateRelationship } = useFriends();
+    const [tracking, setTracking] = useState(false);
+    const { updateRelationship } = useFriends();
+    const { status, callContact, locate, locations } = useRpPhone();
+    const hasSim = !!status?.hasSim;
+    const location = locations[friend.id];
     const remove = () =>
     {
         SendMessageComposer(new RemoveFriendComposer(friend.id));
         onBack();
     };
+
+    // Live location asks again every few seconds while it is open; the requests change no state until the reply.
+    useEffect(() =>
+    {
+        if (!tracking || !hasSim) return;
+        locate(friend.id);
+        const timer = window.setInterval(() => locate(friend.id), LOCATION_REFRESH_MS);
+        return () => window.clearInterval(timer);
+    }, [tracking, hasSim, friend.id, locate]);
 
     return (
         <div className="district-phone__app-screen">
@@ -108,8 +124,22 @@ const PhoneFriendProfile: FC<{ friend: MessengerFriend; onBack: () => void; onMe
                 {friend.motto && <p>{friend.motto}</p>}
             </div>
             <div className="district-phone__actions">
-                <button type="button" className="district-phone__pill is-primary" onClick={() => onMessage(friend.id)}>Message</button>
-                {friend.online && friend.followingAllowed && <button type="button" className="district-phone__pill" onClick={() => followFriend(friend)}>Go to</button>}
+                <button type="button" className="district-phone__pill is-primary" disabled={!hasSim} onClick={() => onMessage(friend.id)}>Message</button>
+                <button type="button" className="district-phone__pill is-call" disabled={!hasSim} onClick={() => callContact(friend.id)}>Call</button>
+            </div>
+            <div className="district-phone__group">
+                <span className="district-phone__group-label">Live location</span>
+                <div className="district-phone__location">
+                    <span role="status">
+                        {!hasSim ? 'Needs a SIM card.'
+                            : !tracking ? `See where ${friend.name} is, if they share their location.`
+                                : !location ? 'Locating…'
+                                    : location.state === LocationState.InRoom ? <>In <strong>{location.roomName}</strong></> : location.message}
+                    </span>
+                    <button type="button" className="district-phone__pill" disabled={!hasSim} aria-pressed={tracking} onClick={() => setTracking(value => !value)}>
+                        {tracking ? 'Stop' : 'Live location'}
+                    </button>
+                </div>
             </div>
             <div className="district-phone__group">
                 <span className="district-phone__group-label">Relationship</span>
@@ -144,6 +174,8 @@ const PhoneFriendProfile: FC<{ friend: MessengerFriend; onBack: () => void; onMe
 const PhoneFindPeople: FC<{ onBack: () => void; onMessage: (userId: number) => void }> = ({ onBack, onMessage }) =>
 {
     const { searchResults, searchValue, setSearchValue, sentRequests, requestFriend } = useFriends();
+    const { status, notice, clearNotice, addContact } = useRpPhone();
+    const [number, setNumber] = useState('');
     const ownUserId = GetSessionDataManager().userId;
     const results = [...searchResults.friends.map(result => ({ result, friend: true })), ...searchResults.others.map(result => ({ result, friend: false }))]
         .filter(({ result }) => result.avatarId > 0);
@@ -157,6 +189,20 @@ const PhoneFindPeople: FC<{ onBack: () => void; onMessage: (userId: number) => v
     return (
         <div className="district-phone__app-screen">
             <PhoneHeader title="Find people" backLabel="Friends" onBack={onBack} />
+            {status && !status.hasSim && <p className="district-phone__sim-warning">You need a SIM card to add contacts. Buy one from a store.</p>}
+            <form className="district-phone__search-form" onSubmit={event =>
+            {
+                event.preventDefault();
+                if (!number.trim()) return;
+                clearNotice();
+                addContact(number.trim());
+                setNumber('');
+            }}>
+                <input className="district-phone__search" value={number} inputMode="tel" maxLength={12} placeholder="+12-345-6" aria-label="Add by phone number"
+                    onChange={event => setNumber(event.target.value.replace(/[^\d+\- ]/g, ''))} />
+                <button type="submit" className="district-phone__pill is-primary">Add number</button>
+            </form>
+            {notice && <p className={`district-phone__phone-notice ${notice.refused ? 'is-refused' : ''}`} role="status">{notice.text}</p>}
             <form className="district-phone__search-form" onSubmit={submit}>
                 <input className="district-phone__search" value={searchValue} placeholder="Name" aria-label="Search people" onChange={event => setSearchValue(event.target.value)} />
                 <button type="submit" className="district-phone__pill is-primary">Search</button>

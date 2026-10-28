@@ -5,7 +5,10 @@ import { PhoneSettingsApp } from './PhoneSettingsApp';
 const test = vi.hoisted(() => ({
     settings: { volumeSystem: 40, volumeFurni: 60, volumeTrax: 80, roomInvites: false, cameraFollow: false },
     chat: { chatMode: 0, chatBubbleWidth: 1, chatScrollSpeed: 1 },
-    action: vi.fn(), commit: vi.fn(), online: vi.fn(), chatUpdate: vi.fn()
+    action: vi.fn(), commit: vi.fn(), online: vi.fn(), chatUpdate: vi.fn(), reset: vi.fn(), share: vi.fn()
+}));
+vi.mock('../../../hooks/roleplay/useRpPhone', () => ({
+    useRpPhone: () => ({ status: { hasSim: true, number: '+12-345-6', load: 14, shareLocation: false }, notice: null, clearNotice: vi.fn(), factoryReset: test.reset, setSharing: test.share })
 }));
 vi.mock('../../../api', () => ({ GetConfigurationValue: () => true }));
 vi.mock('../../../hooks/useUserSettings', () => ({
@@ -17,7 +20,7 @@ describe('Phone Settings app', () =>
 {
     beforeEach(() =>
     {
-        [test.action, test.commit, test.online, test.chatUpdate].forEach(fn => fn.mockClear());
+        [test.action, test.commit, test.online, test.chatUpdate, test.reset, test.share].forEach(fn => fn.mockClear());
         vi.useFakeTimers();
     });
     afterEach(() =>
@@ -33,6 +36,19 @@ describe('Phone Settings app', () =>
         expect(onDnd).toHaveBeenCalledWith(true);
         fireEvent.click(screen.getByRole('switch', { name: /focus on my avatar/ }));
         expect(test.action).toHaveBeenCalledWith('camera_follow', true);
+    });
+
+    it('shows the SIM card and Load, and factory resets only after RESET is typed', () =>
+    {
+        render(<PhoneSettingsApp doNotDisturb={false} onDoNotDisturb={vi.fn()} onHome={vi.fn()} />);
+        expect(screen.getByText('+12-345-6')).toBeInTheDocument();
+        expect(screen.getByText('14')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Factory reset' }));
+        const erase = screen.getByRole('button', { name: 'Erase phone' });
+        expect(erase).toBeDisabled();
+        fireEvent.change(screen.getByRole('textbox', { name: 'Type RESET to confirm' }), { target: { value: 'reset' } });
+        fireEvent.click(erase);
+        expect(test.reset).toHaveBeenCalledWith('RESET');
     });
 
     it('changes volume live and saves it once the slider settles', () =>
@@ -58,5 +74,12 @@ describe('Phone Settings app', () =>
         expect(test.action).toHaveBeenCalledWith('room_invites', true);
         fireEvent.click(screen.getByRole('radio', { name: 'Nobody' }));
         expect(test.online).toHaveBeenCalledWith(2);
+    });
+
+    it('turns location sharing on for friends', () =>
+    {
+        render(<PhoneSettingsApp doNotDisturb={false} onDoNotDisturb={vi.fn()} onHome={vi.fn()} />);
+        fireEvent.click(screen.getByRole('switch', { name: 'Share my location with friends' }));
+        expect(test.share).toHaveBeenCalledWith(true);
     });
 });

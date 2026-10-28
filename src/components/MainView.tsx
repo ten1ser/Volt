@@ -45,7 +45,7 @@ import { RoomView } from './room/RoomView';
 import { DistrictDock } from './roleplay/hud/DistrictDock';
 import { DistrictHud } from './roleplay/hud/DistrictHud';
 import { TraxEditorView } from './trax-editor/TraxEditorView';
-import { UserProfileView } from './user-profile/UserProfileView';
+import { RpProfileView } from './roleplay/profile/RpProfileView';
 import { UserSettingsView } from './user-settings/UserSettingsView';
 import { VariablesExplorerView } from './variables-explorer/VariablesExplorerView';
 import { VaultView } from './vault/VaultView';
@@ -170,7 +170,7 @@ export const MainView: FC<{}> = (props) =>
             <QuestCompletedView />
             <DailyTasksView />
             <RewardTrackView />
-            <UserProfileView />
+            <RpProfileView />
             <GroupsView />
             <GroupForumView />
             <CameraWidgetView />

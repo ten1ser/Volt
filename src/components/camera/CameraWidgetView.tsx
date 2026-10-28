@@ -8,7 +8,7 @@ import {
     RoomGeometry,
     RoomSessionEvent
 } from '@volt/renderer';
-import { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import { FC, useCallback, useEffect, useEffectEvent, useMemo, useState } from 'react';
 import { CameraEffectSelection, deleteTrustedCamera, GetConfigurationValue, LocalizeText, NotificationAlertType } from '../../api';
 import { useAchievements, useCamera, useNotification, useVoltEvent, useRoom } from '../../hooks';
 import { getCameraAchievementLevel } from './CameraAirUtilities';
@@ -138,6 +138,9 @@ export const CameraWidgetView: FC<{}> = (props) => {
         setMode(MODE_NONE);
     });
 
+    // Link events run outside render; read the latest checkout without re-registering the tracker.
+    const checkoutFromLink = useEffectEvent((pictureUrl: string) => checkoutPictureUrl(pictureUrl));
+
     useEffect(() => {
         const linkTracker: ILinkEventTracker = {
             linkReceived: (url: string) => {
@@ -159,6 +162,18 @@ export const CameraWidgetView: FC<{}> = (props) => {
                         if (mode === MODE_NONE) openCamera();
                         else setMode(MODE_NONE);
                         return;
+                    case 'edit': {
+                        // camera/edit/<slot>: the DistrictRP phone hands a captured photo to the editor and checkout.
+                        const index = Number(parts[2]);
+
+                        if (!Number.isInteger(index) || !cameraRoll[index]?.draftId) return;
+
+                        setSelectedPictureIndex(index);
+
+                        if (!GetConfigurationValue<boolean>('camera.effects.enabled', true)) checkoutFromLink(cameraRoll[index].imageUrl);
+                        else setMode(MODE_EDITOR);
+                        return;
+                    }
                 }
             },
             eventUrlPrefix: 'camera/'
@@ -167,7 +182,7 @@ export const CameraWidgetView: FC<{}> = (props) => {
         AddLinkEventTracker(linkTracker);
 
         return () => RemoveLinkEventTracker(linkTracker);
-    }, [mode, openCamera, setSelectedPictureIndex]);
+    }, [mode, openCamera, setSelectedPictureIndex, cameraRoll]);
 
     if (mode === MODE_NONE) return null;
 

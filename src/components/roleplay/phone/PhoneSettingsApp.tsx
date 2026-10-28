@@ -1,13 +1,15 @@
 import { FC, ReactNode, useEffect, useRef, useState } from 'react';
 import { GetConfigurationValue } from '../../../api';
+import { useRpPhone } from '../../../hooks/roleplay/useRpPhone';
 import { useChatPreferences } from '../../../hooks/useChatPreferences';
 import { useUserSettings } from '../../../hooks/useUserSettings';
 import { PhoneHeader } from './PhoneShared';
 
-type Page = 'main' | 'sound' | 'chat' | 'privacy';
+type Page = 'main' | 'sound' | 'chat' | 'privacy' | 'reset';
 type VolumeAction = 'system_volume' | 'furni_volume' | 'trax_volume';
 
 const VOLUME_COMMIT_DELAY_MS = 600;
+const RESET_WORD = 'RESET';
 
 const Toggle: FC<{ label: string; checked: boolean; onChange: (checked: boolean) => void }> = ({ label, checked, onChange }) => (
     <label className="district-phone__setting">
@@ -46,6 +48,8 @@ export const PhoneSettingsApp: FC<{ doNotDisturb: boolean; onDoNotDisturb: (valu
     const [page, setPage] = useState<Page>('main');
     const { userSettings, onlineIndicatorPreference, processAction, commitVolumes, saveOnlineIndicator } = useUserSettings();
     const { chatPreferences, updateChatPreferences } = useChatPreferences();
+    const { status, notice, clearNotice, factoryReset, setSharing } = useRpPhone();
+    const [confirmation, setConfirmation] = useState('');
     const commitTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
     // Volumes apply live; the server is told once the slider settles (and when leaving the page).
@@ -100,6 +104,27 @@ export const PhoneSettingsApp: FC<{ doNotDisturb: boolean; onDoNotDisturb: (valu
         </div>
     );
 
+    if (page === 'reset') return (
+        <div className="district-phone__app-screen">
+            <PhoneHeader title="Factory reset" backLabel="Settings" onBack={back} />
+            <p className="district-phone__reset-warning">This deletes your SIM card and number and removes every contact. Your Load stays. A new SIM card gets a new number.</p>
+            <form className="district-phone__reset-form" onSubmit={event =>
+            {
+                event.preventDefault();
+                if (confirmation !== RESET_WORD) return;
+                factoryReset(confirmation);
+                setConfirmation('');
+                setPage('main');
+            }}>
+                <label>
+                    <span>Type {RESET_WORD} to confirm</span>
+                    <input className="district-phone__search" value={confirmation} autoComplete="off" aria-label={`Type ${RESET_WORD} to confirm`} onChange={event => setConfirmation(event.target.value.toUpperCase())} />
+                </label>
+                <button type="submit" className="district-phone__pill is-danger" disabled={confirmation !== RESET_WORD}>Erase phone</button>
+            </form>
+        </div>
+    );
+
     if (page === 'privacy') return (
         <div className="district-phone__app-screen">
             <PhoneHeader title="Privacy" backLabel="Settings" onBack={back} />
@@ -115,8 +140,13 @@ export const PhoneSettingsApp: FC<{ doNotDisturb: boolean; onDoNotDisturb: (valu
     return (
         <div className="district-phone__app-screen">
             <PhoneHeader title="Settings" backLabel="Home" onBack={onHome} />
+            {notice && <p className={`district-phone__phone-notice ${notice.refused ? 'is-refused' : ''}`} role="status" onClick={clearNotice}>{notice.text}</p>}
             <Group title="Phone">
+                <div className="district-phone__setting"><span>SIM card</span><small>{status?.hasSim ? status.number : 'None'}</small></div>
+                <div className="district-phone__setting"><span>Load</span><small>{status?.load ?? 0}</small></div>
                 <Toggle label="Do not disturb" checked={doNotDisturb} onChange={onDoNotDisturb} />
+                {status?.hasSim && <Toggle label="Share my location with friends" checked={status.shareLocation} onChange={setSharing} />}
+                <Link label="Factory reset" onOpen={() => setPage('reset')} />
             </Group>
             <Group title="Hotel">
                 <Link label="Sound" detail={`${Math.round(userSettings.volumeSystem)}%`} onOpen={() => setPage('sound')} />

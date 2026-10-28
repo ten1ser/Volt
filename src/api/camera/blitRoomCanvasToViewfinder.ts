@@ -57,9 +57,22 @@ const toMasterLocal = (master: { worldTransform?: { applyInverse?: (point: { x: 
     return { x: screenX, y: screenY };
 };
 
-export const getViewfinderRoomFrame = (target: HTMLCanvasElement | null, width?: number, height?: number): InstanceType<typeof VoltRectangle> | null =>
+/** A viewport-space (CSS pixel) rectangle; the camera frame is taken from the room drawn under it. */
+export interface ViewfinderRect
 {
-    if(!target) return null;
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+}
+
+/**
+ * Room frame under the target element, or under `rect` when given (the DistrictRP phone camera aims at a point in
+ * the room rather than at what lies behind its own screen).
+ */
+export const getViewfinderRoomFrame = (target: HTMLCanvasElement | null, width?: number, height?: number, rect?: ViewfinderRect): InstanceType<typeof VoltRectangle> | null =>
+{
+    if(!target && !rect) return null;
 
     try
     {
@@ -70,7 +83,7 @@ export const getViewfinderRoomFrame = (target: HTMLCanvasElement | null, width?:
         if(!master || !source) return null;
 
         const srcRect = source.getBoundingClientRect();
-        const dstRect = target.getBoundingClientRect();
+        const dstRect = rect ?? target.getBoundingClientRect();
 
         if(srcRect.width <= 0 || srcRect.height <= 0 || dstRect.width <= 0 || dstRect.height <= 0) return null;
 
@@ -100,7 +113,7 @@ export const getViewfinderRoomFrame = (target: HTMLCanvasElement | null, width?:
     }
 };
 
-export const blitRoomCanvasToViewfinder = (target: HTMLCanvasElement | null, width?: number, height?: number, minIntervalMs: number = 0, now: number = performance.now()): boolean =>
+export const blitRoomCanvasToViewfinder = (target: HTMLCanvasElement | null, width?: number, height?: number, minIntervalMs: number = 0, now: number = performance.now(), rect?: ViewfinderRect): boolean =>
 {
     if(!target) return false;
     if((typeof document !== 'undefined') && document.hidden) return false;
@@ -118,7 +131,7 @@ export const blitRoomCanvasToViewfinder = (target: HTMLCanvasElement | null, wid
 
         if((now - state.lastBlitAt) < minIntervalMs) return false;
 
-        const frame = getViewfinderRoomFrame(target, width, height);
+        const frame = getViewfinderRoomFrame(target, width, height, rect);
 
         if(!frame) return false;
 

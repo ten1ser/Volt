@@ -1,64 +1,49 @@
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DistrictDock } from './DistrictDock';
 
-const test = vi.hoisted(() => ({ link: vi.fn(), profile: vi.fn(), visit: vi.fn(), moderator: false, camera: false, wired: false, build: false, monitor: vi.fn(), toggleBuild: vi.fn() }));
-vi.mock('@volt/renderer', () => ({ CreateLinkEvent: test.link, PerkEnum: { CAMERA: 'camera', USE_GUIDE_TOOL: 'guide' } }));
+const test = vi.hoisted(() => ({ link: vi.fn(), moderator: false }));
+vi.mock('@volt/renderer', () => ({ CreateLinkEvent: test.link }));
 vi.mock('../../../api', () => ({
-    DispatchUiEvent: vi.fn(), GetConfigurationValue: (_key: string, fallback = false) => fallback,
-    GetUserProfile: test.profile, localizeWithFallback: (_key: string, fallback: string) => fallback,
-    MessengerIconState: { HIDDEN: 0, UNREAD: 2 }, OpenMessengerChat: vi.fn(), VisitDesktop: test.visit
+    localizeWithFallback: (_key: string, fallback: string) => fallback,
+    MessengerIconState: { HIDDEN: 0, UNREAD: 2 }
 }));
 vi.mock('../../../api/permissions', () => ({ Permission: { ModerationTool: 'moderator' } }));
-vi.mock('../../../events', () => ({ GuideToolEvent: class
-{} }));
 vi.mock('../../../hooks', () => ({
     useFriends: () => ({ requests: [] }),
     useInventoryUnseenTracker: () => ({ getFullCount: 3 }),
     useMessenger: () => ({ iconState: 0 }),
     useHasPermission: () => test.moderator,
-    useOpenIssueCount: () => 2,
-    useWiredTools: () => ({ showToolbarButton: test.wired, openMonitor: test.monitor }),
-    useBuildHeight: () => ({ available: test.build, toggle: test.toggleBuild })
+    useOpenIssueCount: () => 2
 }));
-vi.mock('../../../state/perkAllowancesStore', () => ({ usePerkAllowed: (perk: string) => perk === 'camera' && test.camera }));
 vi.mock('../stats/StatsHud', () => ({ StatsHud: () => <section aria-label="Your stats" /> }));
 vi.mock('../stats/TargetHud', () => ({ TargetHud: () => <section aria-label="Target stats" /> }));
 
 const button = (name: RegExp | string) => screen.getByRole('button', { name });
-const panel = (name: string) => screen.getByRole('region', { name });
 
 describe('DistrictRP command bar', () =>
 {
     beforeEach(() =>
     {
         vi.clearAllMocks();
-        test.moderator = false; test.camera = false; test.wired = false; test.build = false;
+        test.moderator = false;
     });
     afterEach(cleanup);
 
-    it('renders one dock holding the identity, chat and icon sections with single portal hosts', () =>
+    it('stacks the target above the own card beside a dock with chat and the four icons', () =>
     {
         render(<DistrictDock isInRoom />);
         const bar = document.querySelector('.district-command-bar');
-        expect(bar).not.toBeNull();
-        expect(bar.contains(screen.getByLabelText('Your stats'))).toBe(true);
-        expect(bar.contains(screen.getByLabelText('Target stats'))).toBe(true);
+        const vitals = document.querySelector('.district-vitals');
+        expect([...vitals.children].map(card => card.getAttribute('aria-label'))).toEqual(['Target stats', 'Your stats']);
+        expect(bar.contains(vitals)).toBe(false);
         const actions = screen.getByRole('group', { name: 'District actions' });
-        expect(bar.contains(actions)).toBe(true);
-        for(const name of ['Businesses', 'Backpack', 'Rooms']) expect(actions.contains(button(name))).toBe(true);
+        for (const name of ['Businesses', 'Backpack', 'Rooms']) expect(actions.contains(button(name))).toBe(true);
         expect(button(/^Phone/)).toHaveTextContent('3');
-        for(const name of [/^Inventory/, /^Shop/, /^Social/]) expect(screen.queryByRole('button', { name })).toBeNull();
-        const chat = bar.querySelector('.district-command-bar__chat');
-        expect(chat).not.toBeNull();
-        expect(chat.querySelectorAll('#toolbar-chat-input-container')).toHaveLength(1);
+        for (const name of [/^Inventory/, /^Shop/, /^Social/, /^More/]) expect(screen.queryByRole('button', { name })).toBeNull();
         expect(document.querySelectorAll('#toolbar-chat-input-container')).toHaveLength(1);
-        expect(document.querySelectorAll('#toolbar-friend-bar-container-desktop')).toHaveLength(0);
-        expect(bar.querySelectorAll('.district-command-bar__divider')).toHaveLength(3);
-        expect(screen.queryByText(/RP Coins/)).toBeNull();
-        expect(screen.queryByText('50,200')).toBeNull();
-        expect(screen.queryByRole('button', { name: /District menu/ })).toBeNull();
-        expect(document.querySelector('.district-menu-button')).toBeNull();
+        expect(document.getElementById('district-popup')).toBeNull();
+        expect(bar.querySelectorAll('.district-command-bar__divider')).toHaveLength(2);
     });
 
     it('drops the chat section and its divider outside a room', () =>
@@ -66,11 +51,10 @@ describe('DistrictRP command bar', () =>
         render(<DistrictDock isInRoom={false} />);
         const bar = document.querySelector('.district-command-bar');
         expect(bar.querySelector('.district-command-bar__chat')).toBeNull();
-        expect(bar.querySelectorAll('.district-command-bar__divider')).toHaveLength(2);
-        expect(document.getElementById('toolbar-chat-input-container')).toBeNull();
+        expect(bar.querySelectorAll('.district-command-bar__divider')).toHaveLength(1);
     });
 
-    it('routes every always-visible icon to its existing feature', () =>
+    it('routes every icon to its feature', () =>
     {
         render(<DistrictDock isInRoom />);
         fireEvent.click(button('Businesses'));
@@ -83,92 +67,10 @@ describe('DistrictRP command bar', () =>
         expect(test.link).toHaveBeenLastCalledWith('navigator/toggle');
     });
 
-    it('hides More when it has nothing to offer', () =>
+    it('adds open moderation issues to the phone badge for moderators', () =>
     {
+        test.moderator = true;
         render(<DistrictDock isInRoom />);
-        expect(screen.queryByRole('button', { name: /^More/ })).toBeNull();
-    });
-
-    it('focuses the first More action when the popup opens', async () =>
-    {
-        test.camera = true;
-        render(<DistrictDock isInRoom />);
-        fireEvent.click(button(/^More/));
-        await waitFor(() => expect(within(panel('More')).getByRole('button', { name: 'Camera' })).toHaveFocus());
-    });
-
-    it('drops City, Settings, Help, Earnings and Club from More and runs a remaining action', () =>
-    {
-        test.camera = true;
-        render(<DistrictDock isInRoom />);
-        fireEvent.click(button(/^More/));
-        expect(button(/^More/)).toHaveAttribute('aria-controls', 'district-more');
-        const more = within(panel('More'));
-        for (const name of ['City', 'Home', 'Settings', 'Help', 'Earnings', 'Club']) expect(more.queryByRole('button', { name })).toBeNull();
-        fireEvent.click(more.getByRole('button', { name: 'Camera' }));
-        expect(test.link).toHaveBeenLastCalledWith('camera/toggle');
-        expect(screen.queryByRole('region', { name: 'More' })).toBeNull();
-        expect(button(/^More/)).toHaveFocus();
-    });
-
-    it('closes on Escape with focus returned to the triggering icon', async () =>
-    {
-        test.camera = true;
-        render(<DistrictDock isInRoom />);
-        const more = button(/^More/);
-        fireEvent.click(more);
-        await act(async () =>
-        {
-            await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
-        });
-        fireEvent.keyDown(document, { key: 'Escape' });
-        expect(more).toHaveAttribute('aria-expanded', 'false');
-        expect(screen.queryByRole('region', { name: 'More' })).toBeNull();
-        expect(more).toHaveFocus();
-    });
-
-    it('closes an open popup on an outside pointer without losing the bar', () =>
-    {
-        test.camera = true;
-        render(<DistrictDock isInRoom />);
-        fireEvent.click(button(/^More/));
-        expect(panel('More')).toBeVisible();
-        fireEvent.pointerDown(document.body);
-        expect(screen.queryByRole('region', { name: 'More' })).toBeNull();
-        expect(button(/^More/)).toBeInTheDocument();
-    });
-
-    it('keeps Character and Progress out of the bar and the More popup', () =>
-    {
-        test.camera = true;
-        render(<DistrictDock isInRoom />);
-        expect(screen.queryByRole('button', { name: 'Character' })).toBeNull();
-        expect(screen.queryByRole('button', { name: /Progress/ })).toBeNull();
-        fireEvent.click(button(/^More/));
-        expect(screen.queryByRole('button', { name: /Progress/ })).toBeNull();
-        expect(document.getElementById('district-character')).toBeNull();
-        expect(document.getElementById('district-progress')).toBeNull();
-    });
-
-    it('preserves permission and room gates for staff, camera and building tools', () =>
-    {
-        const view = render(<DistrictDock isInRoom />);
-        expect(screen.queryByRole('button', { name: /^More/ })).toBeNull();
-        test.moderator = true; test.camera = true; test.wired = true; test.build = true;
-        view.rerender(<DistrictDock isInRoom />);
-        fireEvent.click(button(/^More/));
-        const more = within(panel('More'));
-        expect(more.getByRole('button', { name: /Moderator tools/ })).toBeVisible();
-        expect(more.getByRole('button', { name: 'Camera' })).toBeVisible();
-        fireEvent.click(more.getByRole('button', { name: 'Wired tools' }));
-        expect(test.monitor).toHaveBeenCalledOnce();
-        expect(button(/^More/)).toHaveTextContent('2');
-        view.rerender(<DistrictDock isInRoom={false} />);
-        expect(document.getElementById('toolbar-chat-input-container')).toBeNull();
-        fireEvent.click(button(/^More/));
-        const outsideRoom = within(panel('More'));
-        expect(outsideRoom.queryByRole('button', { name: 'Camera' })).toBeNull();
-        expect(outsideRoom.queryByRole('button', { name: 'Build height' })).toBeNull();
-        expect(outsideRoom.getByRole('button', { name: /Moderator tools/ })).toBeVisible();
+        expect(button(/^Phone/)).toHaveTextContent('5');
     });
 });

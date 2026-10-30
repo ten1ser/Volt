@@ -231,16 +231,16 @@ $brass: #d4b369;
     &__button[aria-expanded='true'] { border-color: $brass; }
     &__button .volt-icon { width: 22px; height: 22px; background-size: contain; }
 
-    // DistrictRP pixel-art icons (scripts/ui-assets/dock-icons) at their exact 1x size so pixels stay crisp.
+    // DistrictRP pixel-art icons (scripts/ui-assets/district-icons) at their exact 1x size so pixels stay crisp.
     &__button .volt-icon:is(.icon-district-business, .icon-district-backpack, .icon-district-phone) {
         background-repeat: no-repeat;
         background-position: center;
         background-size: auto;
         image-rendering: pixelated;
     }
-    &__button .volt-icon.icon-district-business { width: 29px; height: 33px; background-image: url('../../../assets/images/roleplay/dock/business.png'); }
-    &__button .volt-icon.icon-district-backpack { width: 21px; height: 27px; background-image: url('../../../assets/images/roleplay/dock/backpack.png'); }
-    &__button .volt-icon.icon-district-phone { width: 20px; height: 35px; background-image: url('../../../assets/images/roleplay/dock/phone.png'); }
+    &__button .volt-icon.icon-district-business { width: 30px; height: 30px; background-image: url('../../../assets/images/roleplay/dock/business.png'); }
+    &__button .volt-icon.icon-district-backpack { width: 23px; height: 31px; background-image: url('../../../assets/images/roleplay/dock/backpack.png'); }
+    &__button .volt-icon.icon-district-phone { width: 15px; height: 36px; background-image: url('../../../assets/images/roleplay/dock/phone.png'); }
 }
 
 .district-badge { position: absolute; top: -6px; right: -6px; min-width: 17px; padding: 0 4px; border: 1px solid #2b2d31; border-radius: 4px; background: #a65043; color: #fff; font-size: 10px; line-height: 16px; text-align: center; }

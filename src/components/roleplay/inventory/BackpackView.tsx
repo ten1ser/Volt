@@ -1,14 +1,19 @@
 import type { RpInventorySlot } from '@volt/renderer';
 import { AddLinkEventTracker, ILinkEventTracker, RemoveLinkEventTracker } from '@volt/renderer';
 import { useEffect, useId, useRef, useState } from 'react';
+import emptyArmorIcon from '../../../assets/images/roleplay/items/empty_armor.png';
+import emptyWeaponIcon from '../../../assets/images/roleplay/items/empty_weapon.png';
 import mp5Icon from '../../../assets/images/roleplay/items/mp5.png';
 import pistolIcon from '../../../assets/images/roleplay/items/pistol.png';
+import magazineIcon from '../../../assets/images/roleplay/items/pistol_ammo.png';
 import vestIcon from '../../../assets/images/roleplay/items/vest.png';
 import { VoltCardView } from '../../../common';
 import { useRpInventory, useSelectedUserId } from '../../../hooks/roleplay/useRpInventory';
 import './BackpackView.scss';
 
-const ITEM_ICONS: Record<string, string> = { pistol: pistolIcon, mp5: mp5Icon, vest: vestIcon };
+const ITEM_ICONS: Record<string, string> = { pistol: pistolIcon, mp5: mp5Icon, vest: vestIcon, pistol_ammo: magazineIcon };
+// A faint outline of what belongs in each empty equipment slot.
+const EMPTY_ICONS: Record<number, string> = { 1: emptyWeaponIcon, 2: emptyArmorIcon };
 const WEAPON = 1;
 const ARMOR = 2;
 const BAG_SLOTS = [3, 4, 5, 6, 7, 8, 9, 10];
@@ -78,6 +83,7 @@ export const BackpackView = () =>
             }}>
             <span className="backpack-number">{slot}</span>
             {item?.key && (icon ? <img className="backpack-icon" src={icon} alt="" /> : <span className="backpack-name">{item.name}</span>)}
+            {!item?.key && EMPTY_ICONS[slot] && <img className="backpack-icon is-empty" src={EMPTY_ICONS[slot]} alt="" />}
             {item && item.quantity > 1 && <span className="backpack-quantity">x{item.quantity}</span>}
             {item?.kind === ARMOR && item.maxDurability > 0 && <span className="backpack-durability" aria-hidden="true"><span style={{ width: `${Math.round(item.durability / item.maxDurability * 100)}%` }} /></span>}
             {caption && <span className="backpack-caption">{caption}</span>}

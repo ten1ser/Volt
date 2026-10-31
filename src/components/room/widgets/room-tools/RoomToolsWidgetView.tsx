@@ -1,4 +1,4 @@
-import { CreateLinkEvent, GetGuestRoomResultEvent, GetRoomEngine, GetSessionDataManager, RateFlatMessageComposer, RoomEngineEvent } from '@volt/renderer';
+import { CreateLinkEvent, GetGuestRoomResultEvent, GetRoomEngine, RateFlatMessageComposer, RoomEngineEvent } from '@volt/renderer';
 import { CSSProperties, FC, useEffect, useState } from 'react';
 import { GetConfigurationValue, LocalizeText, SendMessageComposer, TryVisitRoom } from '../../../../api';
 import { localizeWithFallback } from '../../../../api/utils/localizeWithFallback';
@@ -6,23 +6,17 @@ import { useAchievements, useMessageEvent, useNavigatorData, useVoltEvent, useRo
 import { classNames } from '../../../../layout';
 import { getRegisteredPlugins, IVoltPlugin, subscribePlugins } from '../../../plugins/VoltPluginApi';
 import { getRoomHistoryList, useRoomToolsHistoryStore } from './roomToolsHistoryStore';
+import { useRoomToolsMenuStore } from './roomToolsMenuStore';
 import { applyRoomZoom, getLogicalRoomZoomScale, getNearestZoomScale, getNextZoomScale } from './roomZoom.helpers';
-
-// UI flag 2 (SessionDataManager.setRoomToolsState): set while the room tools are expanded; new users start collapsed.
-const ROOM_TOOLS_UI_FLAG = 2;
-
-const readRoomToolsOpen = () => {
-    const sessionData = GetSessionDataManager();
-
-    return !(sessionData?.isNoob || !((sessionData?.uiFlags ?? 0) & ROOM_TOOLS_UI_FLAG));
-};
 
 const getZoomText = (scale: number) => (Math.round(Math.log(getNearestZoomScale(scale)) / Math.LN2) + 1).toString();
 
 export const RoomToolsWidgetView: FC<{}> = (props) => {
     const [zoomScale, setZoomScale] = useState<number>(1);
     const [hasLikedRoom, setHasLikedRoom] = useState<boolean>(false);
-    const [isToolsOpen, setIsToolsOpen] = useState<boolean>(readRoomToolsOpen);
+    // DistrictRP: the tools are a menu opened from the room name chip (DistrictHud), not a side rail.
+    const isToolsOpen = useRoomToolsMenuStore((state) => state.open);
+    const setToolsOpen = useRoomToolsMenuStore((state) => state.setOpen);
     const [isOpenHistory, setIsOpenHistory] = useState<boolean>(false);
     const historyEntries = useRoomToolsHistoryStore((state) => state.entries);
     const historyIndex = useRoomToolsHistoryStore((state) => state.index);
@@ -80,6 +74,9 @@ export const RoomToolsWidgetView: FC<{}> = (props) => {
     const handleToolClick = (action: string, value?: string) => {
         if (!roomSession) return;
 
+        // Tools that open another window put the menu away; zoom and room history keep it open.
+        if (!action.startsWith('zoom') && !action.startsWith('room_history')) setToolsOpen(false);
+
         switch (action) {
             case 'achievements':
                 CreateLinkEvent('questengine/achievements/wired_games');
@@ -136,7 +133,28 @@ export const RoomToolsWidgetView: FC<{}> = (props) => {
     useEffect(() => {
         setHasLikedRoom(false);
         updateZoomScale();
+        setToolsOpen(false);
     }, [roomSession?.roomId]);
+
+    // Escape or a click outside the menu and its chip closes it.
+    useEffect(() => {
+        if (!isToolsOpen) return;
+
+        const onKey = (event: KeyboardEvent) => event.key === 'Escape' && setToolsOpen(false);
+        const onPointer = (event: PointerEvent) => {
+            const target = event.target as Element | null;
+
+            if (!target?.closest?.('.volt-room-tools-container, .district-location')) setToolsOpen(false);
+        };
+
+        window.addEventListener('keydown', onKey);
+        window.addEventListener('pointerdown', onPointer);
+
+        return () => {
+            window.removeEventListener('keydown', onKey);
+            window.removeEventListener('pointerdown', onPointer);
+        };
+    }, [isToolsOpen, setToolsOpen]);
 
     // The renderer can be zoomed from outside this toolbar (keyboard shortcuts,
     // other widgets), so resync the displayed level whenever the engine reports it.
@@ -158,13 +176,6 @@ export const RoomToolsWidgetView: FC<{}> = (props) => {
         { action: 'toggle_room_link', icon: 'icon-room-link', label: LocalizeText('navigator.embed.caption') }
     ];
 
-    const toggleTools = () => {
-        const next = !isToolsOpen;
-
-        setIsToolsOpen(next);
-        GetSessionDataManager()?.setRoomToolsState(next);
-    };
-
     const canZoomIn = getNextZoomScale(zoomScale, 1) !== getNearestZoomScale(zoomScale);
     const canZoomOut = getNextZoomScale(zoomScale, -1) !== getNearestZoomScale(zoomScale);
 
@@ -175,8 +186,10 @@ export const RoomToolsWidgetView: FC<{}> = (props) => {
 
     return (
         <div
+            id="district-room-tools-menu"
             className={classNames('volt-room-tools-container district-room-tools', !isToolsOpen && 'is-collapsed')}
             style={{ '--room-tools-height': `${windowHeight}px` } as CSSProperties}
+            hidden={!isToolsOpen}
         >
             <div className="volt-room-tools">
                 <div className="room-tools-list">
@@ -249,9 +262,6 @@ export const RoomToolsWidgetView: FC<{}> = (props) => {
                     </div>
                 </div>
             </div>
-            <button className="room-tools-collapse-toggle" type="button" onClick={toggleTools}>
-                <span className="room-tools-collapse-arrow" />
-            </button>
             {historyOpen && (
                 <div className="volt-room-tools-history">
                     {roomHistory.map((history) => (

@@ -1,9 +1,15 @@
 import { AddLinkEventTracker, CreateLinkEvent, GetSessionDataManager, ILinkEventTracker, PerkEnum, RemoveLinkEventTracker } from '@volt/renderer';
 import { CSSProperties, FC, PointerEvent as ReactPointerEvent, ReactNode, useEffect, useRef, useState } from 'react';
+import coinIcon from '../../../assets/images/roleplay/phone/coin.png';
+import loadIcon from '../../../assets/images/roleplay/phone/load.png';
+import moonIcon from '../../../assets/images/roleplay/phone/moon.png';
+import onlineIcon from '../../../assets/images/roleplay/phone/online.png';
+import simIcon from '../../../assets/images/roleplay/phone/sim.png';
+import sunIcon from '../../../assets/images/roleplay/phone/sun.png';
 import { DispatchUiEvent, GetConfigurationValue, MessengerIconState, MessengerThread } from '../../../api';
 import { Permission } from '../../../api/permissions';
 import { GuideToolEvent } from '../../../events';
-import { useBuildHeight, useFriends, useHasPermission, useInventoryUnseenTracker, useMessenger, useOpenIssueCount, useWiredTools } from '../../../hooks';
+import { useBuildHeight, useFriends, useHasPermission, useInventoryUnseenTracker, useMessenger, useOpenIssueCount, usePurse, useWiredTools } from '../../../hooks';
 import { useCityStatus } from '../../../hooks/roleplay/useCityStatus';
 import { CallState, useRpPhone } from '../../../hooks/roleplay/useRpPhone';
 import { useRoom } from '../../../hooks/rooms/useRoom';
@@ -27,6 +33,9 @@ const EDGE = 8;
 const BANNER_MS = 4500;
 
 const hex = (color: number) => `#${color.toString(16).padStart(6, '0')}`;
+
+/** Pixel icon at its exact 1x size, decorative (the text beside it carries the meaning). */
+const PixelIcon: FC<{ src: string }> = ({ src }) => <img className="district-phone__pixel" src={src} alt="" width={16} height={16} draggable={false} />;
 
 const readDoNotDisturb = () =>
 {
@@ -91,6 +100,7 @@ export const PhoneView: FC = () =>
     const drag = useRef<{ pointerId: number; startX: number; startY: number; origin: Offset; restLeft: number; restTop: number; last: Offset } | null>(null);
     const [offset, setOffset] = useState<Offset>(readPosition);
     const { city } = useCityStatus();
+    const { purse } = usePurse();
     const { requests } = useFriends();
     const { iconState, visibleThreads, getMessageThread } = useMessenger();
     const { getFullCount } = useInventoryUnseenTracker();
@@ -240,6 +250,11 @@ export const PhoneView: FC = () =>
         { id: 'dialer', label: 'Phone', glyph: PHONE_GLYPHS.phone, run: () => setApp('dialer') },
         { id: 'messages', label: 'Messages', glyph: PHONE_GLYPHS.messages, count: unreadThreads || (iconState === MessengerIconState.UNREAD ? 1 : 0), run: () => setApp('messages') },
         { id: 'friends', label: 'Friends', glyph: PHONE_GLYPHS.friends, count: requests.length, run: () => setApp('friends') },
+        // The former dock tools: each puts the phone away and opens its window.
+        { id: 'business', label: 'Businesses', glyph: PHONE_GLYPHS.business, run: launch(() => CreateLinkEvent('businesses/toggle')) },
+        { id: 'gang', label: 'Gang', glyph: PHONE_GLYPHS.gang, run: launch(() => CreateLinkEvent('gangs/toggle')) },
+        { id: 'backpack', label: 'Backpack', glyph: PHONE_GLYPHS.backpack, run: launch(() => CreateLinkEvent('backpack/toggle')) },
+        { id: 'rooms', label: 'Rooms', glyph: PHONE_GLYPHS.rooms, run: launch(() => CreateLinkEvent('navigator/toggle')) },
         { id: 'inventory', label: 'Inventory', glyph: PHONE_GLYPHS.inventory, count: getFullCount, run: () =>
         {
             close();
@@ -304,8 +319,13 @@ export const PhoneView: FC = () =>
                         <>
                             <div className="district-phone__widget">
                                 <strong>{city?.time ?? '--:--'}</strong>
-                                <span>{phase}</span>
-                                <span className="district-phone__line">{status ? (status.hasSim ? `${status.number} · ${status.load} Load` : `No SIM card · ${status.load} Load`) : ''}</span>
+                                <span className="district-phone__phase">{city && <PixelIcon src={city.isDay ? sunIcon : moonIcon} />}{phase}</span>
+                                <div className="district-phone__stats">
+                                    <span className="district-phone__stat" title="RP Coins"><PixelIcon src={coinIcon} /><b>{(purse?.credits ?? 0).toLocaleString()}</b> RP Coins</span>
+                                    <span className="district-phone__stat" title="Players online"><PixelIcon src={onlineIcon} /><b>{city ? city.onlinePlayers.toLocaleString() : '—'}</b> online</span>
+                                    {status && <span className="district-phone__stat" title="Phone number"><PixelIcon src={simIcon} /><b>{status.hasSim ? status.number : 'No SIM card'}</b></span>}
+                                    {status && <span className="district-phone__stat" title="Load"><PixelIcon src={loadIcon} /><b>{status.load.toLocaleString()}</b> Load</span>}
+                                </div>
                             </div>
                             <div className="district-phone__grid">{apps.slice(3).map(icon)}</div>
                             <div className="district-phone__dock">{apps.slice(0, 3).map(icon)}</div>

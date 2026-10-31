@@ -1,18 +1,17 @@
-// The target card matches the own card one size smaller, with a red frame so it reads as someone else.
+// The target matches the own vitals one size smaller, with a red ring so it reads as someone else.
 .rp-target-hud {
-    padding: 6px 8px 7px 6px;
-
-    .rp-stats-hud__main { gap: 8px; }
-    .rp-stats-hud__portrait { flex-basis: 36px; width: 36px; height: 36px; border-color: #e2675c; }
-    .rp-stats-hud__body { gap: 4px; }
-    .rp-stats-hud__name { font-size: 12px; }
-    .rp-stats-hud__track { height: 6px; }
+    .rp-stats-hud__main { gap: 10px; }
+    .rp-stats-hud__portrait { flex-basis: 50px; width: 50px; height: 50px; border-color: #e5534b; }
+    .rp-stats-hud__body { gap: 5px; }
+    .rp-stats-hud__name { font-size: 14px; }
+    .rp-stats-hud__track { height: 9px; }
+    .rp-stats-hud__value { font-size: 12px; }
 }
 
 .rp-target-hud__label {
     flex: 0 0 auto;
-    color: #e2675c;
-    font-size: 10px;
+    color: #ff7a70;
+    font-size: 11px;
     font-weight: 700;
     line-height: 12px;
     letter-spacing: 0.3px;
@@ -30,9 +29,10 @@
     padding: 0;
     border: 0;
     border-radius: 9px;
-    background: transparent;
-    color: #8e8e93;
+    background: #00000059;
+    color: #fff;
     cursor: pointer;
+    pointer-events: auto;
 
     svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
     &:hover { background: #ffffff14; color: #f1eee6; }
@@ -41,7 +41,7 @@
 
 .rp-target-hud__loading {
     margin: 0;
-    color: #b9b9be;
-    font-size: 10px;
+    color: #e6e6e6;
+    font-size: 11px;
     line-height: 13px;
 }

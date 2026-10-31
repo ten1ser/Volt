@@ -6,11 +6,12 @@ describe('RoomToolsWidgetView AIR toolbar', () => {
 const source = readFileSync(join(process.cwd(), 'src/components/room/widgets/room-tools/RoomToolsWidgetView.tsx'), 'utf8');
 const helpers = readFileSync(join(process.cwd(), 'src/components/room/widgets/room-tools/roomZoom.helpers.ts'), 'utf8');
 
-    it('renders level controls and a collapsible side rail', () => {
+    it('renders level controls in a menu opened from the room name chip', () => {
         expect(source).toContain('room-tools-zoom-row');
         expect(source).toContain('room-tools-zoom-button');
-        expect(source).toContain('room-tools-collapse-toggle');
-        expect(source).toContain("LocalizeText('room.zoom.text', ['zoom_level'], [getZoomText(zoomScale)])");
+        expect(source).not.toContain('room-tools-collapse-toggle');
+        expect(source).toContain('useRoomToolsMenuStore((state) => state.open)');
+        expect(source).toContain("localizeWithFallback('room.zoom.text', `Zoom ${getZoomText(zoomScale)}`, ['zoom_level'], [getZoomText(zoomScale)])");
     });
 
     it('keeps renderer zoom side effects outside React state updaters', () => {

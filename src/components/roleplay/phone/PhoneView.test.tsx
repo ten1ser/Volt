@@ -52,10 +52,11 @@ vi.mock('../../../hooks', () => ({
     useInventoryUnseenTracker: () => ({ getFullCount: test.unseen }),
     useHasPermission: () => test.moderator,
     useOpenIssueCount: () => 2,
+    usePurse: () => ({ purse: { credits: 50200 } }),
     useWiredTools: () => ({ showToolbarButton: test.wired, openMonitor: test.monitor }),
     useBuildHeight: () => ({ available: test.build, toggle: test.toggleBuild })
 }));
-vi.mock('../../../hooks/roleplay/useCityStatus', () => ({ useCityStatus: () => ({ city: { time: '13:46', isDay: true, phaseRemainingMs: 360000, backdropColor: 0xabd5e9 } }) }));
+vi.mock('../../../hooks/roleplay/useCityStatus', () => ({ useCityStatus: () => ({ city: { time: '13:46', isDay: true, phaseRemainingMs: 360000, onlinePlayers: 32, backdropColor: 0xabd5e9 } }) }));
 vi.mock('./PhoneMessagesApp', () => ({
     PhoneMessagesApp: ({ threadId }: { threadId: number }) => <div>Messages app {threadId}</div>,
     threadPreview: () => 'See you at the bank'
@@ -88,6 +89,20 @@ describe('DistrictRP phone', () =>
         open();
         expect(phone()).toHaveClass('is-open');
         expect(screen.getByText('Day · 6 min left')).toBeInTheDocument();
+        expect(screen.getByTitle('RP Coins')).toHaveTextContent('50,200 RP Coins');
+        expect(screen.getByTitle('Players online')).toHaveTextContent('32 online');
+    });
+
+    it('launches the former dock tools and puts the phone away', () =>
+    {
+        render(<PhoneView />); open();
+        for (const [name, url] of [['Businesses', 'businesses/toggle'], ['Gang', 'gangs/toggle'], ['Backpack', 'backpack/toggle'], ['Rooms', 'navigator/toggle']])
+        {
+            fireEvent.click(screen.getByRole('button', { name }));
+            expect(test.link).toHaveBeenLastCalledWith(url);
+            expect(phone()).not.toHaveClass('is-open');
+            open();
+        }
     });
 
     it('shows unread counts on the apps', () =>
@@ -158,7 +173,8 @@ describe('DistrictRP phone', () =>
         fireEvent.click(screen.getByRole('button', { name: 'Phone' }));
         expect(screen.getByText('Dialer app')).toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: 'Home' }));
-        expect(screen.getByText('+12-345-6 · 9 Load')).toBeInTheDocument();
+        expect(screen.getByTitle('Phone number')).toHaveTextContent('+12-345-6');
+        expect(screen.getByTitle('Load')).toHaveTextContent('9 Load');
         expect(screen.getByLabelText('Signal')).toBeInTheDocument();
     });
 
@@ -167,7 +183,8 @@ describe('DistrictRP phone', () =>
         test.phone = { ...test.phone, status: { hasSim: false, number: '', load: 5 } };
         render(<PhoneView />); open();
         expect(screen.getByText('No SIM')).toBeInTheDocument();
-        expect(screen.getByText('No SIM card · 5 Load')).toBeInTheDocument();
+        expect(screen.getByTitle('Phone number')).toHaveTextContent('No SIM card');
+        expect(screen.getByTitle('Load')).toHaveTextContent('5 Load');
     });
 
     it('keeps Messages and Friends behind the SIM card', () =>

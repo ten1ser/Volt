@@ -19,7 +19,7 @@ export const TargetHud: FC = () =>
     return (
         <section className="rp-stats-hud rp-target-hud" aria-label={label('roleplay.target.title', 'Target')}>
             <div className="rp-stats-hud__main">
-                <HudPortrait figure={target.figure} gender={target.sex} size={32} />
+                <HudPortrait figure={target.figure} gender={target.sex} size={44} />
                 <div className="rp-stats-hud__body">
                     <div className="rp-stats-hud__identity">
                         <span className="rp-target-hud__label">{label('roleplay.target.label', 'Target')}</span>

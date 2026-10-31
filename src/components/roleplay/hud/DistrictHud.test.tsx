@@ -1,63 +1,48 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DistrictHud } from './DistrictHud';
+import { useRoomToolsMenuStore } from '../../room/widgets/room-tools/roomToolsMenuStore';
 
 interface TestState
 {
-    link: ReturnType<typeof vi.fn>;
     city: { time: string; isDay: boolean; phaseRemainingMs: number; onlinePlayers: number } | null;
     roomSession: { roomId: number } | null;
     room: { roomId: number; roomName: string } | null;
-    credits: number;
 }
 
-const test: TestState = vi.hoisted(() => ({ link: vi.fn(),
+const test: TestState = vi.hoisted(() => ({
     city: { time: '12:30', isDay: true, phaseRemainingMs: 450000, onlinePlayers: 32 },
-    roomSession: null, room: null, credits: 50200 }));
-vi.mock('@volt/renderer', () => ({ CreateLinkEvent: test.link }));
-vi.mock('../../../api', () => ({ localizeWithFallback: (_key: string, fallback: string) => fallback }));
-vi.mock('../../../hooks', () => ({ usePurse: () => ({ purse: { credits: test.credits } }) }));
+    roomSession: null, room: null }));
 vi.mock('../../../hooks/roleplay/useCityStatus', () => ({ useCityStatus: () => ({ city: test.city }) }));
 vi.mock('../../../hooks/rooms/useRoom', () => ({ useRoom: () => ({ roomSession: test.roomSession }) }));
 vi.mock('../../../hooks/navigator/useNavigatorData', () => ({ useNavigatorData: () => ({ navigatorData: { enteredGuestRoom: test.room } }) }));
+vi.mock('../stats/StatsHud', () => ({ StatsHud: () => <section aria-label="Your stats" /> }));
+vi.mock('../stats/TargetHud', () => ({ TargetHud: () => <section aria-label="Target stats" /> }));
 afterEach(() =>
 {
-    cleanup(); test.roomSession = test.room = null; test.link.mockClear(); test.credits = 50200;
+    cleanup(); test.roomSession = test.room = null;
     test.city = { time: '12:30', isDay: true, phaseRemainingMs: 450000, onlinePlayers: 32 };
 });
-describe('city-status top bar', () =>
+describe('phone-first HUD', () =>
 {
-    it('shows the location chip and the city chip with RP Coins, online count and settings', () =>
+    it('shows only the clock and the room name at the top; coins, online count and logo live in the phone', () =>
     {
         render(<DistrictHud />);
         expect(screen.getByText('DistrictRP City')).toBeInTheDocument();
-        expect(screen.getByText('12:30')).toBeInTheDocument();
-        expect(screen.getByText('Day · 8 min left')).toBeInTheDocument();
-        expect(screen.getByTitle('RP Coins')).toHaveTextContent('50,200');
-        expect(screen.getByText('32 online')).toBeInTheDocument();
-        expect(screen.queryByText('Diamonds')).toBeNull();
-        expect(screen.queryByText('Duckets')).toBeNull();
-        fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
-        expect(test.link).toHaveBeenCalledWith('user-settings/show/other');
+        expect(screen.getByTitle('City time · Day')).toHaveTextContent('12:30');
+        expect(screen.queryByText(/min left/)).toBeNull();
+        expect(screen.queryByTitle('RP Coins')).toBeNull();
+        expect(screen.queryByText(/online/)).toBeNull();
+        expect(screen.queryByAltText('DistrictRP')).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Settings' })).toBeNull();
     });
-    it('keeps the RP Coins amount between the phase and the online count', () =>
+    it('puts the own vitals above the target card, outside the top-right bar', () =>
     {
-        const view = render(<DistrictHud />);
-        const coins = screen.getByTitle('RP Coins');
-        const phase = screen.getByText('Day · 8 min left');
-        const online = screen.getByText('32 online');
-        expect(phase.compareDocumentPosition(coins) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        expect(coins.compareDocumentPosition(online) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        test.credits = 0;
-        view.rerender(<DistrictHud />);
-        expect(screen.getByTitle('RP Coins')).toHaveTextContent('0');
-    });
-    it('renders only the top bar so the command bar and room stay clear', () =>
-    {
-        const view = render(<DistrictHud />);
+        render(<DistrictHud />);
+        const vitals = document.querySelector('.district-vitals');
+        expect([...vitals.children].map(card => card.getAttribute('aria-label'))).toEqual(['Your stats', 'Target stats']);
+        expect(document.querySelector('.district-topbar').contains(vitals)).toBe(false);
         expect(document.querySelector('.district-command-bar')).toBeNull();
-        expect(document.querySelector('.district-topbar')).not.toBeNull();
-        expect(view.container.querySelectorAll('header')).toHaveLength(1);
     });
     it('does not show stale room metadata during navigation or on the hotel view', () =>
     {
@@ -70,12 +55,24 @@ describe('city-status top bar', () =>
         test.roomSession = null; view.rerender(<DistrictHud />);
         expect(screen.getByText('DistrictRP City')).toBeInTheDocument();
     });
-    it('uses honest placeholders before synchronization', () =>
+    it('opens the room tools from the room name only inside a room', () =>
+    {
+        useRoomToolsMenuStore.setState({ open: false });
+        test.roomSession = { roomId: 1 }; test.room = { roomId: 1, roomName: 'Regency Café' };
+        const view = render(<DistrictHud />);
+        const chip = screen.getByRole('button', { name: /Regency Café/ });
+        expect(chip).toHaveAttribute('aria-expanded', 'false');
+        fireEvent.click(chip);
+        expect(useRoomToolsMenuStore.getState().open).toBe(true);
+        expect(chip).toHaveAttribute('aria-expanded', 'true');
+        test.roomSession = null; view.rerender(<DistrictHud />);
+        expect(screen.queryByRole('button', { name: /DistrictRP City/ })).toBeNull();
+        useRoomToolsMenuStore.setState({ open: false });
+    });
+    it('uses an honest placeholder before synchronization', () =>
     {
         test.city = null;
         render(<DistrictHud />);
-        expect(screen.getByText('--:--')).toBeInTheDocument();
-        expect(screen.getByText('— online')).toBeInTheDocument();
-        expect(screen.getByText('Synchronizing city time')).toBeInTheDocument();
+        expect(screen.getByTitle('Synchronizing city time')).toHaveTextContent('--:--');
     });
 });

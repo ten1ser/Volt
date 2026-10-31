@@ -1,26 +1,43 @@
 import { FC, ReactNode } from 'react';
+import phoneAppIcon from '../../../assets/images/roleplay/phone/apps/phone.png';
+import messagesAppIcon from '../../../assets/images/roleplay/phone/apps/messages.png';
+import friendsAppIcon from '../../../assets/images/roleplay/phone/apps/friends.png';
+import businessAppIcon from '../../../assets/images/roleplay/phone/apps/business.png';
+import gangAppIcon from '../../../assets/images/roleplay/phone/apps/gang.png';
+import backpackAppIcon from '../../../assets/images/roleplay/phone/apps/backpack.png';
+import roomsAppIcon from '../../../assets/images/roleplay/phone/apps/rooms.png';
+import inventoryAppIcon from '../../../assets/images/roleplay/phone/apps/inventory.png';
+import shopAppIcon from '../../../assets/images/roleplay/phone/apps/shop.png';
+import cameraAppIcon from '../../../assets/images/roleplay/phone/apps/camera.png';
+import modtoolsAppIcon from '../../../assets/images/roleplay/phone/apps/modtools.png';
+import wiredAppIcon from '../../../assets/images/roleplay/phone/apps/wired.png';
+import buildAppIcon from '../../../assets/images/roleplay/phone/apps/build.png';
+import gamesAppIcon from '../../../assets/images/roleplay/phone/apps/games.png';
+import storiesAppIcon from '../../../assets/images/roleplay/phone/apps/stories.png';
+import helperAppIcon from '../../../assets/images/roleplay/phone/apps/helper.png';
+import settingsAppIcon from '../../../assets/images/roleplay/phone/apps/settings.png';
 import { LayoutAvatarImageView } from '../../../common/layout/LayoutAvatarImageView';
 
-const glyph = (path: ReactNode) => <svg viewBox="0 0 24 24" aria-hidden="true">{path}</svg>;
+const glyph = (src: string) => <img className="district-phone__app-art" src={src} width={48} height={48} alt="" draggable={false} />;
 
 export const PHONE_GLYPHS = {
-    phone: glyph(<path d="M7 3h3l1.5 4.5-2 1.5a11 11 0 0 0 5.5 5.5l1.5-2L21 14v3a2 2 0 0 1-2 2C10.7 19 5 13.3 5 5a2 2 0 0 1 2-2Z" />),
-    messages: glyph(<path d="M4 5h16v11H9l-5 4Z" />),
-    friends: glyph(<><circle cx="9" cy="8" r="3.2" /><circle cx="16.5" cy="9" r="2.6" /><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5Zm12.5 0c0-2-.6-3.6-1.8-4.7 2.9-.4 5.3 1.4 5.3 4.7Z" /></>),
-    business: glyph(<path d="M9 4h6a1 1 0 0 1 1 1v2h4a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4V5a1 1 0 0 1 1-1Zm1 3h4V6h-4Zm-7 5h18v1.5H3Z" />),
-    gang: glyph(<path d="M5 3h2v18H5Zm3 1h11l-2.5 4L19 12H8Z" />),
-    backpack: glyph(<path d="M9 3h6v2.2A6 6 0 0 1 19 11v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a6 6 0 0 1 4-5.8Zm1.6 0v1.7h2.8V3ZM8 14v4h8v-4Z" />),
-    rooms: glyph(<path d="M6 3h12v18h-2V5H8v16H6Zm4 3h4v15h-4Zm2.6 7.2a.9.9 0 1 0 0 1.8.9.9 0 0 0 0-1.8Z" />),
-    inventory: glyph(<path d="M4 8l8-4 8 4v9l-8 4-8-4Zm8 1.6L6.4 7 12 4.4 17.6 7Z" />),
-    shop: glyph(<path d="M6 8h12l-1 12H7Zm3 0a3 3 0 0 1 6 0h-1.6a1.4 1.4 0 0 0-2.8 0Z" />),
-    camera: glyph(<path d="M8.5 5h7l1.5 2H20a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h3Zm3.5 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z" />),
-    modtools: glyph(<path d="M12 3l7 3v5c0 4.4-3 8.3-7 9.5C8 19.3 5 15.4 5 11V6Zm-1 5v5h2V8Zm0 6v2h2v-2Z" />),
-    wired: glyph(<path d="M13 3 6 13h5l-1 8 8-11h-5l1-7Z" />),
-    build: glyph(<path d="M4 18h16v2H4Zm2-4h12v3H6Zm2-4h8v3H8Zm2-4h4v3h-4Z" />),
-    games: glyph(<path d="M7 8h10a4 4 0 0 1 4 4v3a3 3 0 0 1-5.4 1.8L14.5 15h-5l-1.1 1.8A3 3 0 0 1 3 15v-3a4 4 0 0 1 4-4Zm0 2.5v1.5H5.5v1.5H7V15h1.5v-1.5H10V12H8.5v-1.5Zm8.5.5a1 1 0 1 0 0 2 1 1 0 0 0 0-2Zm2 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z" />),
-    stories: glyph(<path d="M5 4h10a4 4 0 0 1 4 4v12H9a4 4 0 0 1-4-4Zm3 3v2h8V7Zm0 4v2h8v-2Z" />),
-    helper: glyph(<path d="M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18Zm0 4a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm-6.2 1.6 2.4 1.3M18.2 8.6l-2.4 1.3" />),
-    settings: glyph(<path d="M10.6 3h2.8l.5 2.4 1.7.8 2.1-1.3 2 2-1.3 2.1.8 1.7 2.4.5v2.8l-2.4.5-.8 1.7 1.3 2.1-2 2-2.1-1.3-1.7.8-.5 2.4h-2.8l-.5-2.4-1.7-.8-2.1 1.3-2-2 1.3-2.1-.8-1.7L3 13.4v-2.8l2.4-.5.8-1.7-1.3-2.1 2-2 2.1 1.3 1.7-.8ZM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />)
+    phone: glyph(phoneAppIcon),
+    messages: glyph(messagesAppIcon),
+    friends: glyph(friendsAppIcon),
+    business: glyph(businessAppIcon),
+    gang: glyph(gangAppIcon),
+    backpack: glyph(backpackAppIcon),
+    rooms: glyph(roomsAppIcon),
+    inventory: glyph(inventoryAppIcon),
+    shop: glyph(shopAppIcon),
+    camera: glyph(cameraAppIcon),
+    modtools: glyph(modtoolsAppIcon),
+    wired: glyph(wiredAppIcon),
+    build: glyph(buildAppIcon),
+    games: glyph(gamesAppIcon),
+    stories: glyph(storiesAppIcon),
+    helper: glyph(helperAppIcon),
+    settings: glyph(settingsAppIcon)
 };
 
 /** Round head portrait; group chats (negative ids) and missing figures fall back to the name's initial. */

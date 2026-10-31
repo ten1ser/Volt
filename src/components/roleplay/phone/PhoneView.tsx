@@ -21,16 +21,19 @@ import { PhoneFriendsApp } from './PhoneFriendsApp';
 import { PhoneMessagesApp, threadPreview } from './PhoneMessagesApp';
 import { PhoneSettingsApp } from './PhoneSettingsApp';
 import { PHONE_GLYPHS, PhoneNoSim } from './PhoneShared';
+import { animatePhoneWindow } from './animatePhoneWindow';
 import './PhoneView.scss';
 
 type PhoneApp = 'home' | 'dialer' | 'messages' | 'friends' | 'settings' | 'camera';
 type App = { id: string; label: string; glyph: ReactNode; count?: number; run: () => void };
+type ExternalApp = Pick<App, 'id' | 'label' | 'glyph'> & { origin: string };
 type Banner = { threadId: number; name: string; text: string };
 
 const DND_KEY = 'districtrp.phone.dnd';
 const POSITION_KEY = 'districtrp.phone.position';
 const EDGE = 8;
 const BANNER_MS = 4500;
+const WINDOW_KEYS: Readonly<Record<string, string>> = { business: 'district-business', gang: 'district-gang', backpack: 'district-backpack', rooms: 'navigator', inventory: 'inventory', shop: 'catalog' };
 
 const hex = (color: number) => `#${color.toString(16).padStart(6, '0')}`;
 
@@ -92,11 +95,13 @@ export const PhoneView: FC = () =>
 {
     const [open, setOpen] = useState(false);
     const [app, setApp] = useState<PhoneApp>('home');
+    const [externalApp, setExternalApp] = useState<ExternalApp | null>(null);
     const [threadId, setThreadId] = useState(0);
     const [doNotDisturb, setDoNotDisturb] = useState(readDoNotDisturb);
     const [banner, setBanner] = useState<Banner>(null);
     const screen = useRef<HTMLDivElement>(null);
     const frame = useRef<HTMLElement>(null);
+    const stopLaunchAnimation = useRef<(() => void) | null>(null);
     const drag = useRef<{ pointerId: number; startX: number; startY: number; origin: Offset; restLeft: number; restTop: number; last: Offset } | null>(null);
     const [offset, setOffset] = useState<Offset>(readPosition);
     const { city } = useCityStatus();
@@ -144,9 +149,19 @@ export const PhoneView: FC = () =>
 
     useEffect(() =>
     {
+        if (!open) stopLaunchAnimation.current?.();
+        return () => stopLaunchAnimation.current?.();
+    }, [open]);
+
+    useEffect(() =>
+    {
         openRef.current = open;
-        if (open) screen.current?.querySelector<HTMLElement>('button, input')?.focus();
-    }, [open, app]);
+        if (open)
+        {
+            const active = screen.current?.querySelector<HTMLElement>('.district-phone__external button, .district-phone__app-container button, .district-phone__call button, .district-phone__grid button');
+            (active ?? screen.current?.querySelector<HTMLElement>('button, input'))?.focus();
+        }
+    }, [open, app, externalApp]);
 
     useEffect(() =>
     {
@@ -159,6 +174,7 @@ export const PhoneView: FC = () =>
             {
                 setApp('home');
                 setThreadId(0);
+                setExternalApp(null);
             }
             setOpen(show);
         } };
@@ -197,6 +213,7 @@ export const PhoneView: FC = () =>
 
     const goHome = () =>
     {
+        setExternalApp(null);
         setApp('home');
         setThreadId(0);
     };
@@ -207,6 +224,7 @@ export const PhoneView: FC = () =>
     };
     const openThread = (id: number) =>
     {
+        setExternalApp(null);
         setApp('messages');
         setThreadId(id);
     };
@@ -229,12 +247,7 @@ export const PhoneView: FC = () =>
             // Private windows can refuse storage; the setting then lasts for this session only.
         }
     };
-    // Tools open their own windows, so the phone is put away first.
-    const launch = (action: () => void) => () =>
-    {
-        close();
-        action();
-    };
+    // External apps keep their native windows; the handset stays available.
     const openBanner = () =>
     {
         if (!banner) return;
@@ -250,34 +263,43 @@ export const PhoneView: FC = () =>
         { id: 'dialer', label: 'Phone', glyph: PHONE_GLYPHS.phone, run: () => setApp('dialer') },
         { id: 'messages', label: 'Messages', glyph: PHONE_GLYPHS.messages, count: unreadThreads || (iconState === MessengerIconState.UNREAD ? 1 : 0), run: () => setApp('messages') },
         { id: 'friends', label: 'Friends', glyph: PHONE_GLYPHS.friends, count: requests.length, run: () => setApp('friends') },
-        // The former dock tools: each puts the phone away and opens its window.
-        { id: 'business', label: 'Businesses', glyph: PHONE_GLYPHS.business, run: launch(() => CreateLinkEvent('businesses/toggle')) },
-        { id: 'gang', label: 'Gang', glyph: PHONE_GLYPHS.gang, run: launch(() => CreateLinkEvent('gangs/toggle')) },
-        { id: 'backpack', label: 'Backpack', glyph: PHONE_GLYPHS.backpack, run: launch(() => CreateLinkEvent('backpack/toggle')) },
-        { id: 'rooms', label: 'Rooms', glyph: PHONE_GLYPHS.rooms, run: launch(() => CreateLinkEvent('navigator/toggle')) },
+        // The former dock tools retain their existing native routes.
+        { id: 'business', label: 'Businesses', glyph: PHONE_GLYPHS.business, run: () => CreateLinkEvent('businesses/toggle') },
+        { id: 'gang', label: 'Gang', glyph: PHONE_GLYPHS.gang, run: () => CreateLinkEvent('gangs/toggle') },
+        { id: 'backpack', label: 'Backpack', glyph: PHONE_GLYPHS.backpack, run: () => CreateLinkEvent('backpack/toggle') },
+        { id: 'rooms', label: 'Rooms', glyph: PHONE_GLYPHS.rooms, run: () => CreateLinkEvent('navigator/toggle') },
         { id: 'inventory', label: 'Inventory', glyph: PHONE_GLYPHS.inventory, count: getFullCount, run: () =>
         {
-            close();
             CreateLinkEvent('inventory/toggle');
         } },
         { id: 'shop', label: 'Shop', glyph: PHONE_GLYPHS.shop, run: () =>
         {
-            close();
             CreateLinkEvent('catalog/toggle/normal');
         } },
         // The camera photographs the current room, so it is only offered inside one (and with the camera perk).
         ...(roomSession && cameraAllowed ? [{ id: 'camera', label: 'Camera', glyph: PHONE_GLYPHS.camera, run: () => setApp('camera') }] : []),
         // Former dock "More" tools, with the same gates.
-        ...(isMod ? [{ id: 'modtools', label: 'Moderation', glyph: PHONE_GLYPHS.modtools, count: openIssues, run: launch(() => CreateLinkEvent('mod-tools/show')) }] : []),
-        ...(roomSession && showToolbarButton ? [{ id: 'wired', label: 'Wired', glyph: PHONE_GLYPHS.wired, run: launch(openMonitor) }] : []),
-        ...(roomSession && buildHeightAvailable ? [{ id: 'build', label: 'Build height', glyph: PHONE_GLYPHS.build, run: launch(toggleBuildHeight) }] : []),
-        ...(GetConfigurationValue('games_icon_enabled', GetConfigurationValue('game.center.enabled', false)) ? [{ id: 'games', label: 'Games', glyph: PHONE_GLYPHS.games, run: launch(() => CreateLinkEvent('games/toggle')) }] : []),
-        ...(GetConfigurationValue('toolbar.stories.enabled', false) ? [{ id: 'stories', label: 'Stories', glyph: PHONE_GLYPHS.stories, run: launch(() => CreateLinkEvent('stories/toggle')) }] : []),
-        ...(guideAllowed && GetConfigurationValue('guides.enabled') ? [{ id: 'helper', label: 'Helper', glyph: PHONE_GLYPHS.helper, run: launch(() => DispatchUiEvent(new GuideToolEvent(GuideToolEvent.TOGGLE_GUIDE_TOOL))) }] : []),
+        ...(isMod ? [{ id: 'modtools', label: 'Moderation', glyph: PHONE_GLYPHS.modtools, count: openIssues, run: () => CreateLinkEvent('mod-tools/show') }] : []),
+        ...(roomSession && showToolbarButton ? [{ id: 'wired', label: 'Wired', glyph: PHONE_GLYPHS.wired, run: openMonitor }] : []),
+        ...(roomSession && buildHeightAvailable ? [{ id: 'build', label: 'Build height', glyph: PHONE_GLYPHS.build, run: toggleBuildHeight }] : []),
+        ...(GetConfigurationValue('games_icon_enabled', GetConfigurationValue('game.center.enabled', false)) ? [{ id: 'games', label: 'Games', glyph: PHONE_GLYPHS.games, run: () => CreateLinkEvent('games/toggle') }] : []),
+        ...(GetConfigurationValue('toolbar.stories.enabled', false) ? [{ id: 'stories', label: 'Stories', glyph: PHONE_GLYPHS.stories, run: () => CreateLinkEvent('stories/toggle') }] : []),
+        ...(guideAllowed && GetConfigurationValue('guides.enabled') ? [{ id: 'helper', label: 'Helper', glyph: PHONE_GLYPHS.helper, run: () => DispatchUiEvent(new GuideToolEvent(GuideToolEvent.TOGGLE_GUIDE_TOOL)) }] : []),
         { id: 'settings', label: 'Settings', glyph: PHONE_GLYPHS.settings, run: () => setApp('settings') }
     ];
     const icon = (entry: App) => (
-        <button type="button" key={entry.id} className={`district-phone__app is-${entry.id}`} aria-label={entry.count ? `${entry.label}, ${entry.count}` : entry.label} onClick={entry.run}>
+        <button type="button" key={entry.id} className={`district-phone__app is-${entry.id}`} aria-label={entry.count ? `${entry.label}, ${entry.count}` : entry.label} onClick={event =>
+        {
+            if (!['dialer', 'messages', 'friends', 'settings', 'camera'].includes(entry.id))
+            {
+                const tile = event.currentTarget.getBoundingClientRect();
+                const surface = screen.current?.getBoundingClientRect();
+                stopLaunchAnimation.current?.();
+                stopLaunchAnimation.current = WINDOW_KEYS[entry.id] ? animatePhoneWindow(WINDOW_KEYS[entry.id], { x: tile.left + tile.width / 2, y: tile.top + tile.height / 2 }) : null;
+                setExternalApp({ id: entry.id, label: entry.label, glyph: entry.glyph, origin: surface ? `${tile.left + tile.width / 2 - surface.left}px ${tile.top + tile.height / 2 - surface.top}px` : '50% 50%' });
+            }
+            entry.run();
+        }}>
             <span className="district-phone__icon">{entry.glyph}{!!entry.count && <b>{entry.count}</b>}</span>
             <span className="district-phone__label">{entry.label}</span>
         </button>
@@ -303,7 +325,8 @@ export const PhoneView: FC = () =>
                 {
                     if (event.key !== 'Escape') return;
                     event.stopPropagation();
-                    close();
+                    if (externalApp || app !== 'home') goHome();
+                    else close();
                 }}>
                 <div className="district-phone__screen" ref={screen}>
                     <div className="district-phone__status" title="Drag to move the phone, double-click to put it back" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onDoubleClick={resetPosition}>
@@ -315,30 +338,45 @@ export const PhoneView: FC = () =>
                             : <span className="district-phone__no-sim">No SIM</span>}
                         <span className="district-phone__battery" aria-hidden="true" />
                     </div>
-                    {!call && app === 'home' && (
+                    <button type="button" className="district-phone__close" aria-label="Put phone away" onClick={close}>×</button>
+                    {!call && !externalApp && app === 'home' && (
                         <>
+                            <div className="district-phone__home-content">
                             <div className="district-phone__widget">
+                                <span className="district-phone__brand">DistrictRP</span>
                                 <strong>{city?.time ?? '--:--'}</strong>
                                 <span className="district-phone__phase">{city && <PixelIcon src={city.isDay ? sunIcon : moonIcon} />}{phase}</span>
                                 <div className="district-phone__stats">
-                                    <span className="district-phone__stat" title="RP Coins"><PixelIcon src={coinIcon} /><b>{(purse?.credits ?? 0).toLocaleString()}</b> RP Coins</span>
-                                    <span className="district-phone__stat" title="Players online"><PixelIcon src={onlineIcon} /><b>{city ? city.onlinePlayers.toLocaleString() : '—'}</b> online</span>
+                                    <span className="district-phone__stat" title="RP Coins"><PixelIcon src={coinIcon} /><span><b>{(purse?.credits ?? 0).toLocaleString()}</b>{' '}<small>RP Coins</small></span></span>
+                                    <span className="district-phone__stat" title="Players online"><PixelIcon src={onlineIcon} /><span><b>{city ? city.onlinePlayers.toLocaleString() : '—'}</b>{' '}<small>online</small></span></span>
                                     {status && <span className="district-phone__stat" title="Phone number"><PixelIcon src={simIcon} /><b>{status.hasSim ? status.number : 'No SIM card'}</b></span>}
-                                    {status && <span className="district-phone__stat" title="Load"><PixelIcon src={loadIcon} /><b>{status.load.toLocaleString()}</b> Load</span>}
+                                    {status && <span className="district-phone__stat" title="Load"><PixelIcon src={loadIcon} /><span><b>{status.load.toLocaleString()}</b>{' '}<small>Load</small></span></span>}
                                 </div>
                             </div>
                             <div className="district-phone__grid">{apps.slice(3).map(icon)}</div>
+                            </div>
                             <div className="district-phone__dock">{apps.slice(0, 3).map(icon)}</div>
                         </>
                     )}
+                    {!call && externalApp && (
+                        <div className="district-phone__external" key={externalApp.id} style={{ transformOrigin: externalApp.origin }}>
+                            <span className={`district-phone__app is-${externalApp.id}`} aria-hidden="true"><span className="district-phone__icon">{externalApp.glyph}</span></span>
+                            <h2>{externalApp.label}</h2>
+                            <p role="status">Opened in a separate window.</p>
+                            <p className="district-phone__hint">Your phone stays here. Use the window to continue, or choose another app.</p>
+                            <button type="button" className="district-phone__pill is-primary" onClick={goHome}>Back to apps</button>
+                        </div>
+                    )}
                     {call && <PhoneCallScreen call={call} lines={lines} onAnswer={answer} onHangUp={hangUp} />}
+                    {!call && app !== 'home' && <div className="district-phone__app-container" key={app}>
                     {!call && app === 'dialer' && <PhoneDialerApp onHome={goHome} />}
                     {!call && app === 'messages' && (noSim ? <PhoneNoSim title="Messages" onHome={goHome} /> : <PhoneMessagesApp threadId={threadId} onOpenThread={openThread} onHome={goHome} />)}
                     {!call && app === 'friends' && (noSim ? <PhoneNoSim title="Friends" onHome={goHome} /> : <PhoneFriendsApp onMessage={messageUser} onHome={goHome} />)}
                     {!call && app === 'settings' && <PhoneSettingsApp doNotDisturb={doNotDisturb} onDoNotDisturb={changeDoNotDisturb} onHome={goHome} />}
                     {!call && app === 'camera' && (roomSession ? <PhoneCameraApp onHome={goHome} /> : <p className="district-phone__empty">Enter a room to use the camera.</p>)}
+                    </div>}
                     {offer && <PhoneOfferSheet offer={offer} onRespond={respondOffer} />}
-                    <button type="button" className="district-phone__home" aria-label={app === 'home' ? 'Close phone' : 'Home'} onClick={app === 'home' ? close : goHome} />
+                    <button type="button" className="district-phone__home" aria-label={app === 'home' && !externalApp ? 'Close phone' : 'Home'} onClick={app === 'home' && !externalApp ? close : goHome} />
                 </div>
             </section>
         </>

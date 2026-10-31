@@ -93,16 +93,18 @@ describe('DistrictRP phone', () =>
         expect(screen.getByTitle('Players online')).toHaveTextContent('32 online');
     });
 
-    it('launches the former dock tools and puts the phone away', () =>
+    it('launches each external window once and keeps the handset visible', () =>
     {
         render(<PhoneView />); open();
-        for (const [name, url] of [['Businesses', 'businesses/toggle'], ['Gang', 'gangs/toggle'], ['Backpack', 'backpack/toggle'], ['Rooms', 'navigator/toggle']])
+        for (const [name, url] of [['Businesses', 'businesses/toggle'], ['Gang', 'gangs/toggle'], ['Backpack', 'backpack/toggle'], ['Rooms', 'navigator/toggle'], ['Inventory', 'inventory/toggle'], ['Shop', 'catalog/toggle/normal']])
         {
             fireEvent.click(screen.getByRole('button', { name }));
             expect(test.link).toHaveBeenLastCalledWith(url);
-            expect(phone()).not.toHaveClass('is-open');
-            open();
+            expect(phone()).toHaveClass('is-open');
+            expect(screen.getByRole('status')).toHaveTextContent('Opened in a separate window.');
+            fireEvent.click(screen.getByRole('button', { name: 'Back to apps' }));
         }
+        expect(test.link).toHaveBeenCalledTimes(6);
     });
 
     it('shows unread counts on the apps', () =>
@@ -128,12 +130,16 @@ describe('DistrictRP phone', () =>
         expect(screen.getByRole('button', { name: 'Turn on DND' })).toBeInTheDocument();
     });
 
-    it('launches the inventory and shop windows and puts the phone away', () =>
+    it('clears the external launch screen when hidden and reopened', () =>
     {
         render(<PhoneView />); open();
         fireEvent.click(screen.getByRole('button', { name: 'Shop' }));
         expect(test.link).toHaveBeenCalledWith('catalog/toggle/normal');
-        expect(phone()).not.toHaveClass('is-open');
+        expect(phone()).toHaveClass('is-open');
+        act(() => test.tracker?.linkReceived('phone/hide'));
+        open();
+        expect(screen.queryByText('Opened in a separate window.')).toBeNull();
+        expect(screen.getByRole('button', { name: 'Shop' })).toBeInTheDocument();
     });
 
     it('offers the Camera only inside a room with the camera perk, and runs it inside the phone', () =>
@@ -149,7 +155,7 @@ describe('DistrictRP phone', () =>
         expect(phone()).toHaveClass('is-open');
     });
 
-    it('carries the former More tools with their gates and puts the phone away when one opens', () =>
+    it('retains tool permission gates and keeps the phone visible when tools open', () =>
     {
         const view = render(<PhoneView />); open();
         for (const name of [/^Moderation/, 'Wired', 'Build height']) expect(screen.queryByRole('button', { name })).toBeNull();
@@ -158,13 +164,43 @@ describe('DistrictRP phone', () =>
         expect(screen.getByRole('button', { name: 'Moderation, 2' })).toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: 'Wired' }));
         expect(test.monitor).toHaveBeenCalledOnce();
-        expect(phone()).not.toHaveClass('is-open');
-        open();
+        expect(phone()).toHaveClass('is-open');
+        fireEvent.click(screen.getByRole('button', { name: 'Back to apps' }));
         fireEvent.click(screen.getByRole('button', { name: 'Moderation, 2' }));
         expect(test.link).toHaveBeenCalledWith('mod-tools/show');
-        open();
+        fireEvent.click(screen.getByRole('button', { name: 'Back to apps' }));
         fireEvent.click(screen.getByRole('button', { name: 'Build height' }));
         expect(test.toggleBuild).toHaveBeenCalledOnce();
+        expect(phone()).toHaveClass('is-open');
+    });
+
+    it('returns home before closing with Escape and supports explicitly putting the phone away', () =>
+    {
+        render(<PhoneView />); open();
+        fireEvent.click(screen.getByRole('button', { name: 'Businesses' }));
+        fireEvent.keyDown(screen.getByRole('button', { name: 'Back to apps' }), { key: 'Escape' });
+        expect(phone()).toHaveClass('is-open');
+        expect(screen.getByRole('button', { name: 'Businesses' })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Shop' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Put phone away' }));
+        expect(phone()).not.toHaveClass('is-open');
+        open();
+        expect(screen.queryByRole('status')).toBeNull();
+    });
+
+    it('prioritizes incoming calls and offers over the external app launch screen', () =>
+    {
+        const view = render(<PhoneView />); open();
+        fireEvent.click(screen.getByRole('button', { name: 'Shop' }));
+        test.phone = { ...test.phone, call: { state: 2, callId: 'call', peerName: 'Marco' } };
+        view.rerender(<PhoneView />);
+        expect(screen.getByText('Call with Marco')).toBeInTheDocument();
+        expect(screen.queryByText('Opened in a separate window.')).toBeNull();
+        test.phone = { ...test.phone, call: null, offer: { offerId: 'offer', seller: 'staff' } };
+        view.rerender(<PhoneView />);
+        expect(screen.getByText('Offer from staff')).toBeInTheDocument();
+        expect(phone()).toHaveClass('is-open');
+        expect(test.link).toHaveBeenCalledTimes(1);
     });
 
     it('puts the Phone app in the dock and shows the number and Load', () =>

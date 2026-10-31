@@ -1,0 +1,92 @@
+/* DistrictRP dark theme for Mod Tools (selectors start with `html` to outrank the lazily loaded native window CSS). Both of its window families (the classic blue style-0 windows and the
+   light style-100 start panel) keep their pixel layout; only the paint changes:
+   - the native frame, header, close and scaler skins are hidden and replaced by the DistrictRP frame, title strip and close button;
+   - the window content is drawn in dark mode with one filter (light surfaces turn dark, black text turns light),
+     and pictures (icons, avatars, furni) get the exact inverse filter so they keep their own colours. */
+:root {
+    --district-mod-dark: invert(1) hue-rotate(180deg) contrast(0.8);
+    --district-mod-undo: contrast(1.25) hue-rotate(180deg) invert(1);
+    /* The light native panel grey (#e2e2e2) after the dark filter: window bodies use it so canvas text blends in. */
+    --district-mod-body: #313131;
+}
+
+/* Frames */
+html .native0-frame,
+html .native-frame {
+    border: 1px solid #515151;
+    border-radius: 5px;
+    background: var(--district-mod-body);
+    box-shadow: 0 3px 7px #0007, inset 0 0 0 1px #ffffff08;
+    color: var(--district-ui-text, #f1f1ed);
+    filter: none;
+}
+
+html .native0-frame > .native-skin,
+html .native0-header > .native-skin,
+html .native0-header__caption-bg,
+html .native0-close > .native-skin,
+html .native0-scaler > .native-skin,
+html .native-frame__chrome { display: none; }
+
+/* Style-0 title strip: the header sits at (6,6) and the content at (6,25). */
+html .native0-frame::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 24px;
+    border-bottom: 1px solid #1a1a1a;
+    border-radius: 4px 4px 0 0;
+    background: #3a3a3a;
+    pointer-events: none;
+}
+
+html .native0-header__caption .native0-text__line {
+    color: #fff;
+    font: 700 12px/15px var(--district-ui-font, HabboAirUbuntu, UbuntuRegular, sans-serif);
+    text-shadow: none;
+}
+
+/* Style-100 title strip: the start panel's title is a canvas on the panel grey, so the strip keeps the body colour. */
+html .native-frame__titlebar { height: 30px; border-bottom: 1px solid #1a1a1a; }
+html .native-frame__title { filter: var(--district-mod-dark); }
+
+/* Close buttons: the DistrictRP grey square with a white cross. */
+html .native0-close,
+html .native-frame__close {
+    border: 1px solid #ffffff15;
+    border-radius: 3px;
+    background: #656970;
+}
+
+html .native-frame__close { top: 6px; right: 6px; width: 19px; height: 19px; }
+html .native0-close:hover,
+html .native-frame__close:is(:hover, :active) { background: #757a82; }
+
+html .native0-close::before,
+html .native0-close::after,
+html .native-frame__close::before,
+html .native-frame__close::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: 9px;
+    height: 2px;
+    margin: auto;
+    border-radius: 1px;
+    background: #eee;
+    transform: rotate(45deg);
+}
+
+html .native0-close::after,
+html .native-frame__close::after { transform: rotate(-45deg); }
+
+html .native0-scaler { background: linear-gradient(135deg, transparent 55%, #6a6e75 55%, #6a6e75 65%, transparent 65%, transparent 78%, #6a6e75 78%); }
+
+/* Content in dark mode; white headings that sat on the blue frame are pre-darkened so they come out light. */
+html .native0-client,
+html .native-frame__client { filter: var(--district-mod-dark); }
+
+html .native0-client .native0-text__line.has-glow { color: #000; text-shadow: none; }
+
+html .native0-client img,
+html .native-frame__client img { filter: var(--district-mod-undo); }

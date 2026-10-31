@@ -94,6 +94,7 @@ import './css/navigator/NavigatorView.css';
 import './css/quests/RewardTrackView.css';
 import './css/common/ClassicScrollbar.css';
 import './css/roleplay/DistrictWindows.css';
+import './css/roleplay/DistrictModTools.css';
 
 // bootstrap.ts mounts the app once the configuration has loaded.
 export const mountApp = () => {

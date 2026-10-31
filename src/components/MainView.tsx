@@ -25,6 +25,7 @@ import { GameCenterView } from './game-center/GameCenterView';
 import { SnowWarView } from './game-center/views/snowwar/SnowWarView';
 import { GroupsView } from './groups/GroupsView';
 import { BusinessView } from './roleplay/jobs/BusinessView';
+import { GangView } from './roleplay/gangs/GangView';
 import { HealOfferView } from './roleplay/jobs/HealOfferView';
 import { BackpackView } from './roleplay/inventory/BackpackView';
 import { PhoneView } from './roleplay/phone/PhoneView';
@@ -137,6 +138,7 @@ export const MainView: FC<{}> = (props) =>
             <NativeTextHaloFilter />
             <DistrictHud />
             <BusinessView />
+            <GangView />
             <HealOfferView />
             <BackpackView />
             <PhoneView />

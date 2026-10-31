@@ -2,12 +2,12 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BusinessView } from './BusinessView';
 
-const test = vi.hoisted(() => ({ tracker: null, act: vi.fn(), group: vi.fn(), refresh: vi.fn(),
+const test = vi.hoisted(() => ({ tracker: null, act: vi.fn(), group: vi.fn(), refresh: vi.fn(), link: vi.fn(),
     snapshot: null as any, pending: false, authenticated: true }));
 vi.mock('@volt/renderer', () => ({ AddLinkEventTracker: (tracker: any) =>
 {
     test.tracker = tracker;
-}, RemoveLinkEventTracker: vi.fn() }));
+}, RemoveLinkEventTracker: vi.fn(), CreateLinkEvent: test.link }));
 vi.mock('../../../api', () => ({ GetGroupMembers: test.group, TryJoinGroup: vi.fn(), GroupMembershipType: { REQUEST_PENDING: 2 }, GroupType: { PRIVATE: 2 } }));
 vi.mock('../../../common', () => ({ VoltCardView: ({ children }: any) => <div>{children}</div>, LayoutAvatarImageView: () => <span>Avatar</span>, LayoutBadgeImageView: () => <span>Badge</span> }));
 vi.mock('../../../hooks/roleplay/useRpBusiness', () => ({ useRpBusiness: () => ({ snapshot: test.snapshot, pending: test.pending, mutating: false, error: '', remainingMs: 342000,
@@ -105,6 +105,8 @@ describe('Hospital business directory', () =>
         expect(screen.getByRole('heading', { name: 'Other corporation' })).toBeInTheDocument();
         expect(screen.queryByText('teniser')).toBeNull();
         expect(screen.queryByRole('button', { name: 'Start shift' })).toBeNull();
-        expect(screen.getByText('This corporation has no linked job or salary directory yet.')).toBeInTheDocument();
+        expect(screen.getByText('This group is a gang, not a business with jobs.')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Open gang' }));
+        expect(test.link).toHaveBeenCalledWith('gangs/view/99');
     });
 });

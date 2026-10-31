@@ -1,4 +1,4 @@
-import { AddLinkEventTracker, GroupInformationParser, ILinkEventTracker, RemoveLinkEventTracker } from '@volt/renderer';
+import { AddLinkEventTracker, CreateLinkEvent, GroupInformationParser, ILinkEventTracker, RemoveLinkEventTracker } from '@volt/renderer';
 import { useEffect, useId, useRef, useState } from 'react';
 import { GetGroupMembers, GroupMembershipType, GroupType, TryJoinGroup } from '../../../api';
 import { LayoutAvatarImageView, LayoutBadgeImageView, VoltCardView } from '../../../common';
@@ -116,7 +116,7 @@ export const BusinessView = ({ groupInformation, onClose }: BusinessViewProps = 
                 {error && <div className="business-feedback" role="alert">{error}<button type="button" disabled={pending} onClick={refresh}>Refresh</button></div>}
                 {data?.message && <p className="business-feedback" role="status">{data.message}</p>}
                 {!snapshot && !error && <p role="status" className="business-empty">Loading employees…</p>}
-                {(unrelated || (data && !data.available)) && <div className="business-empty"><h3>Employee directory unavailable</h3><p>{unrelated ? 'This corporation has no linked job or salary directory yet.' : 'Refresh to check whether the business is available.'}</p><button type="button" disabled={pending} onClick={refresh}>Refresh</button></div>}
+                {(unrelated || (data && !data.available)) && <div className="business-empty"><h3>Employee directory unavailable</h3><p>{unrelated ? 'This group is a gang, not a business with jobs.' : 'Refresh to check whether the business is available.'}</p>{unrelated ? <button type="button" onClick={() => CreateLinkEvent(`gangs/view/${groupInformation.id}`)}>Open gang</button> : <button type="button" disabled={pending} onClick={refresh}>Refresh</button>}</div>}
                 {data?.available && tab === 'shift' && <div className="business-shift">
                     <span className={`business-duty ${data.self.onDuty ? 'is-working' : ''}`}><span aria-hidden="true" />{data.self.onDuty ? 'On duty' : 'Off duty'}</span>
                     <h2>{ownRank?.name || 'Join the hospital team'}</h2>

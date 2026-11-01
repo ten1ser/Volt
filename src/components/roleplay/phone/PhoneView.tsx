@@ -208,7 +208,7 @@ export const PhoneView: FC = () =>
 
     useEffect(() =>
     {
-        const prefixes: Partial<Record<NativePhoneApp, string>> = { gang: 'gangs/', backpack: 'backpack/', rooms: 'navigator/', inventory: 'inventory/', shop: 'catalog/', modtools: 'mod-tools/', wired: 'wired-tools/', games: 'games/' };
+        const prefixes: Partial<Record<NativePhoneApp, string>> = { gang: 'gangs/', rooms: 'navigator/', inventory: 'inventory/', shop: 'catalog/', modtools: 'mod-tools/', wired: 'wired-tools/', games: 'games/' };
         const trackers = openedApps.flatMap(id => prefixes[id] ? [{ eventUrlPrefix: prefixes[id], linkReceived: (url: string) =>
         {
             if (!['show', 'toggle', 'open', 'view'].includes(url.split('/')[1])) return;
@@ -317,7 +317,6 @@ export const PhoneView: FC = () =>
             setApp('business');
         } },
         { id: 'gang', label: 'Gang', glyph: PHONE_GLYPHS.gang, run: () => CreateLinkEvent('gangs/show') },
-        { id: 'backpack', label: 'Backpack', glyph: PHONE_GLYPHS.backpack, run: () => CreateLinkEvent('backpack/show') },
         { id: 'rooms', label: 'Rooms', glyph: PHONE_GLYPHS.rooms, run: () => CreateLinkEvent('navigator/show') },
         { id: 'inventory', label: 'Inventory', glyph: PHONE_GLYPHS.inventory, count: getFullCount, run: () =>
         {

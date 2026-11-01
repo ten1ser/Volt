@@ -3,7 +3,6 @@ import { WindowHost } from '../../../common/draggable-window/WindowHost';
 
 export const PHONE_WINDOWS = {
     gang: { label: 'Gang', keys: ['district-gang'], hide: 'gangs/hide' },
-    backpack: { label: 'Backpack', keys: ['district-backpack'], hide: 'backpack/hide' },
     rooms: { label: 'Rooms', keys: ['navigator', 'navigator-room-creator', 'volt-room-settings', 'volt-room-settings-confirm'], hide: 'navigator/hide' },
     inventory: { label: 'Inventory', keys: ['inventory', 'inventory-delete', 'marketplace-offer'], hide: 'inventory/hide' },
     shop: { label: 'Shop', keys: ['catalog', 'targeted-offer', 'catalog-purchase-confirm', 'catalog-club-confirm', 'catalog-gift', 'marketplace-offer'], hide: 'catalog/hide' },

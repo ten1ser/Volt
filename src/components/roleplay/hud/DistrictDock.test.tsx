@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DistrictDock } from './DistrictDock';
+import { useGameContextMenu } from '../../../hooks/useGameContextMenu';
 
 const test = vi.hoisted(() => ({ link: vi.fn(), moderator: false }));
 vi.mock('@volt/renderer', () => ({ CreateLinkEvent: test.link }));
@@ -25,7 +26,7 @@ describe('DistrictRP chat bar', () =>
     });
     afterEach(cleanup);
 
-    it('holds only the chat input and the phone button; every other tool is a phone app', () =>
+    it('keeps dock tools hidden until requested, leaving only chat and the phone button visible', () =>
     {
         render(<DistrictDock isInRoom />);
         expect(document.querySelectorAll('#toolbar-chat-input-container')).toHaveLength(1);
@@ -55,5 +56,59 @@ describe('DistrictRP chat bar', () =>
         test.moderator = true;
         render(<DistrictDock isInRoom />);
         expect(button(/^Phone/)).toHaveTextContent('5');
+    });
+
+    it('opens the Bag menu despite browser-menu suppression and launches the standalone backpack', () =>
+    {
+        const Fixture = () => { useGameContextMenu(); return <DistrictDock isInRoom />; };
+        render(<Fixture />);
+        fireEvent.contextMenu(button(/^Phone/));
+        expect(test.link).not.toHaveBeenCalled();
+        expect(screen.getByRole('menu', { name: 'Dock tools' })).toBeInTheDocument();
+        expect(screen.getByRole('menuitem', { name: 'Bag' })).toHaveFocus();
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Bag' }));
+        expect(test.link.mock.calls).toEqual([['phone/hide'], ['backpack/show']]);
+        expect(screen.queryByRole('menu')).toBeNull();
+        expect(button(/^Phone/)).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('supports keyboard access and Escape restores focus without opening an app', () =>
+    {
+        render(<DistrictDock isInRoom />);
+        fireEvent.keyDown(button(/^Phone/), { key: 'F10', shiftKey: true });
+        expect(screen.getByRole('menuitem', { name: 'Bag' })).toHaveFocus();
+        fireEvent.keyDown(screen.getByRole('menuitem', { name: 'Bag' }), { key: 'Escape' });
+        expect(screen.queryByRole('menu')).toBeNull();
+        expect(button(/^Phone/)).toHaveFocus();
+        expect(test.link).not.toHaveBeenCalled();
+    });
+
+    it('dismisses the menu on outside interaction and allows normal phone clicks afterwards', () =>
+    {
+        render(<DistrictDock isInRoom />);
+        fireEvent.contextMenu(button(/^Phone/));
+        fireEvent.pointerDown(document.body);
+        expect(screen.queryByRole('menu')).toBeNull();
+        fireEvent.click(button(/^Phone/));
+        expect(test.link).toHaveBeenCalledExactlyOnceWith('phone/toggle');
+    });
+
+    it('offers Bag and an inactive Radio icon without duplicating Phone', () =>
+    {
+        render(<DistrictDock isInRoom />);
+        fireEvent.contextMenu(button(/^Phone/));
+        expect(screen.getAllByRole('menuitem')).toHaveLength(2);
+        expect(screen.queryByRole('menuitem', { name: 'Phone' })).toBeNull();
+        const radio = screen.getByRole('menuitem', { name: 'Radio' });
+        expect(radio).toHaveAttribute('aria-disabled', 'true');
+        fireEvent.keyDown(screen.getByRole('menuitem', { name: 'Bag' }), { key: 'ArrowRight' });
+        expect(radio).toHaveFocus();
+        fireEvent.click(radio);
+        expect(test.link).not.toHaveBeenCalled();
+        fireEvent.keyDown(radio, { key: 'ArrowLeft' });
+        expect(screen.getByRole('menuitem', { name: 'Bag' })).toHaveFocus();
+        fireEvent.keyDown(screen.getByRole('menuitem', { name: 'Bag' }), { key: 'Escape' });
+        expect(test.link).not.toHaveBeenCalled();
+        expect(screen.queryByRole('menu')).toBeNull();
     });
 });

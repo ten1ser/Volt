@@ -96,12 +96,13 @@ describe('DistrictRP phone', () =>
         expect(screen.getByText('Day · 6 min left')).toBeInTheDocument();
         expect(screen.getByTitle('RP Coins')).toHaveTextContent('50,200 RP Coins');
         expect(screen.getByTitle('Players online')).toHaveTextContent('32 online');
+        expect(screen.queryByRole('button', { name: 'Backpack' })).toBeNull();
     });
 
     it('opens each native app inside the landscape handset with an idempotent show route', () =>
     {
         render(<PhoneView />); open();
-        for (const [name, url, hide] of [['Gang', 'gangs/show', 'gangs/hide'], ['Backpack', 'backpack/show', 'backpack/hide'], ['Rooms', 'navigator/show', 'navigator/hide'], ['Inventory', 'inventory/show', 'inventory/hide'], ['Shop', 'catalog/show/normal', 'catalog/hide']])
+        for (const [name, url, hide] of [['Gang', 'gangs/show', 'gangs/hide'], ['Rooms', 'navigator/show', 'navigator/hide'], ['Inventory', 'inventory/show', 'inventory/hide'], ['Shop', 'catalog/show/normal', 'catalog/hide']])
         {
             fireEvent.click(screen.getByRole('button', { name }));
             expect(test.link).toHaveBeenLastCalledWith(url);
@@ -112,7 +113,7 @@ describe('DistrictRP phone', () =>
             expect(test.link).toHaveBeenLastCalledWith(hide);
             expect(phone()).not.toHaveClass('is-landscape');
         }
-        expect(test.link).toHaveBeenCalledTimes(10);
+        expect(test.link).toHaveBeenCalledTimes(8);
     });
 
     it('hosts Businesses inside a landscape handset and returns to portrait apps', () =>
@@ -251,13 +252,13 @@ describe('DistrictRP phone', () =>
     {
         Object.defineProperty(window, 'innerHeight', { configurable: true, value: 540 });
         render(<PhoneView />); open();
-        fireEvent.click(screen.getByRole('button', { name: 'App page 3' }));
+        fireEvent.click(screen.getByRole('button', { name: 'App page 2' }));
         expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
         Object.defineProperty(window, 'innerHeight', { configurable: true, value: 900 });
         fireEvent(window, new Event('resize'));
         expect(screen.getByRole('button', { name: 'Businesses' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: 'App page 3' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'App page 2' })).toBeNull();
     });
 
     it('opens Messages, Friends and Settings inside the phone and goes home with the home bar', () =>

@@ -87,6 +87,7 @@ $outline: 0 1px 0 #000000b3, 1px 0 0 #00000080, -1px 0 0 #00000080, 0 -1px 0 #00
 
     // On the hotel view there is no chat, so only the phone button remains, at the right.
     &.is-hotel-view { justify-content: flex-end; }
+    &.has-dock-menu { z-index: 520; }
 }
 
 .district-command-bar {
@@ -158,18 +159,20 @@ $outline: 0 1px 0 #000000b3, 1px 0 0 #00000080, -1px 0 0 #00000080, 0 -1px 0 #00
         .swf-chat-input .swf-chat-help-button { left: auto !important; right: 10px !important; top: 10px !important; }
     }
 
+    &__tools { position: relative; flex: 0 0 44px; }
+
     // Brass phone button at the end of the chat bar; the pixel phone stays at its exact 1x size.
     &__phone {
         position: relative;
         display: grid;
         place-items: center;
-        flex: 0 0 48px;
+        flex: 0 0 44px;
         box-sizing: border-box;
-        width: 48px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         padding: 0;
         border: 0;
-        border-radius: 20px;
+        border-radius: 50%;
         background: $brass;
         cursor: pointer;
 
@@ -183,6 +186,49 @@ $outline: 0 1px 0 #000000b3, 1px 0 0 #00000080, -1px 0 0 #00000080, 0 -1px 0 #00
             image-rendering: pixelated;
         }
     }
+}
+
+.district-dock-menu {
+    position: absolute;
+    right: 0;
+    // The Phone sits 6px inside the bar: leave 14px above the bar, not just above the circle.
+    bottom: calc(100% + 20px);
+    width: 92px;
+    height: 64px;
+    visibility: hidden;
+    pointer-events: none;
+    transition: visibility 0s linear 180ms;
+
+    &__bubble {
+        position: absolute;
+        box-sizing: border-box;
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: 1px solid #ffffff29;
+        border-radius: 50%;
+        background: #25272d;
+        box-shadow: 0 2px 6px #0005;
+        color: $text;
+        cursor: pointer;
+        opacity: 0;
+        transform: translateY(6px) scale(.92);
+        transition: transform 180ms cubic-bezier(.2, .8, .2, 1), opacity 160ms ease, background-color 120ms ease;
+
+        &.is-bag { left: 0; bottom: 0; }
+        &.is-radio { right: 0; top: 0; }
+        &:hover { background: #34373d; border-color: $brass; }
+        &[aria-disabled='true'] { cursor: default; }
+        &:focus-visible { outline: 2px solid $brass; outline-offset: -2px; }
+        img { image-rendering: pixelated; }
+        span { position: absolute; bottom: calc(100% + 5px); left: 50%; translate: -50% 0; padding: 3px 7px; border-radius: 5px; background: #17181ceb; color: $text; font: 700 11px/16px HabboAirUbuntu, UbuntuRegular, sans-serif; white-space: nowrap; opacity: 0; pointer-events: none; }
+        &:hover span, &:focus-visible span { opacity: 1; }
+    }
+
+    &.is-open { visibility: visible; transition-delay: 0s; }
+    &.is-open &__bubble { opacity: 1; transform: translate(0, 0) scale(1); pointer-events: auto; }
 }
 
 .district-badge { position: absolute; top: -6px; right: -6px; min-width: 17px; padding: 0 4px; border: 1px solid #2b2d31; border-radius: 4px; background: #a65043; color: #fff; font-size: 10px; line-height: 16px; text-align: center; }
@@ -215,4 +261,5 @@ $outline: 0 1px 0 #000000b3, 1px 0 0 #00000080, -1px 0 0 #00000080, 0 -1px 0 #00
 @media (prefers-reduced-motion: reduce) {
     .district-command-bar .swf-chat-input-field { transition: none; }
     .district-location__chevron { transition: none; }
+    .district-dock-menu, .district-dock-menu__bubble { transition: none; }
 }

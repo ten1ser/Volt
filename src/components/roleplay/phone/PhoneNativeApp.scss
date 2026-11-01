@@ -34,15 +34,6 @@
     .district-gang .gang-kd strong { font-size: 12px; line-height: 17px; }
     .district-gang .gang-member-grid { grid-template-columns: minmax(0, 1fr); }
 
-    // Backpack keeps all ten native slots and their pointer/drag actions at 1x.
-    .district-backpack .backpack-body { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(270px, 1.5fr); gap: 6px 12px; padding: 8px; }
-    .district-backpack .backpack-label:first-child { grid-column: 1; grid-row: 1; }
-    .district-backpack .backpack-equipped { grid-column: 1; grid-row: 2; flex-wrap: wrap; }
-    .district-backpack .backpack-info { flex: 1 0 100%; }
-    .district-backpack .backpack-label:nth-of-type(2) { grid-column: 2; grid-row: 1; }
-    .district-backpack .backpack-grid { grid-column: 2; grid-row: 2; gap: 6px; }
-    .district-backpack :is(.backpack-footer, .backpack-notice, .backpack-confirm) { grid-column: 1 / -1; }
-
     .volt-inventory-window .volt-inventory-body { overflow: auto; }
     .volt-inventory-window .volt-inventory-content { overflow: auto; min-height: 140px; }
     .volt-inventory-window .volt-inventory-subcontent { flex-shrink: 0; }
@@ -74,9 +65,6 @@
     .district-phone {
         .phone-hosted-window > .district-gang > [role='dialog'] { display: flex; }
         .district-gang .gang-tabs { flex-direction: row; flex-wrap: wrap; }
-        .district-backpack .backpack-body { display: block; }
-        .district-backpack .backpack-grid { grid-template-columns: repeat(4, 56px); }
-        .district-backpack .backpack-slot { width: 56px; }
         .volt-catalog-window .volt-catalog-stage { min-width: 500px; }
         .volt-inventory-window .volt-inventory-body { min-width: 460px; }
     }

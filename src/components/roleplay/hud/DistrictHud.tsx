@@ -1,5 +1,6 @@
 import { FC } from 'react';
 import clockIcon from '../../../assets/images/hc-center/clock.png';
+import roomIcon from '../../../assets/images/roleplay/room-hotel.png';
 import { useCityStatus } from '../../../hooks/roleplay/useCityStatus';
 import { useRoom } from '../../../hooks/rooms/useRoom';
 import { useNavigatorData } from '../../../hooks/navigator/useNavigatorData';
@@ -19,7 +20,7 @@ export const DistrictHud: FC = () =>
     const roomName = roomSession
         ? (room?.roomId === roomSession.roomId ? room.roomName : 'Entering room…')
         : 'DistrictRP City';
-    const clockTitle = city ? `City time · ${city.isDay ? 'Day' : 'Night'}` : 'Synchronizing city time';
+    const clockTitle = city ? 'City time' : 'Synchronizing city time';
     const toolsOpen = useRoomToolsMenuStore(state => state.open);
     const toggleTools = useRoomToolsMenuStore(state => state.toggle);
 
@@ -30,18 +31,18 @@ export const DistrictHud: FC = () =>
                 <TargetHud />
             </div>
             <header className="district-topbar" aria-label="DistrictRP city status">
-                <span className="district-clock" title={clockTitle}>
-                    <img src={clockIcon} alt="" width={24} height={24} draggable={false} />
-                    <time aria-label="City time">{city?.time ?? '--:--'}</time>
-                </span>
                 {roomSession
                     ? (
                         <button type="button" className="district-location is-menu" title={`${roomName} · room tools`} aria-haspopup="true" aria-expanded={toolsOpen} aria-controls="district-room-tools-menu" onClick={toggleTools}>
-                            <span>{roomName}</span>
+                            <img className="district-location__icon" src={roomIcon} alt="" width={34} height={55} draggable={false} /><span>{roomName}</span>
                             <svg className="district-location__chevron" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" /></svg>
                         </button>
                     )
                     : <div className="district-location" title={roomName}><span>{roomName}</span></div>}
+                <span className="district-clock" title={clockTitle}>
+                    <img src={clockIcon} alt="" width={24} height={24} draggable={false} />
+                    <time aria-label="City time">{city?.time ?? '--:--'}</time>
+                </span>
             </header>
         </>
     );

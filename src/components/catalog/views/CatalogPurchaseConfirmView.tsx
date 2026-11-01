@@ -82,6 +82,7 @@ export const CatalogPurchaseConfirmView: FC<CatalogPurchaseConfirmViewProps> = (
 
     return (
         <VoltCardView
+            uniqueKey="catalog-purchase-confirm"
             innerRef={dialogRef}
             aria-label={title}
             aria-modal="true"

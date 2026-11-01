@@ -30,20 +30,45 @@ export const useTargetStats = () =>
     const roomUsers = useRoomUserListSnapshot();
     const [selection, setSelection] = useState<TargetSelection | null>(null);
     const [reply, setReply] = useState<TargetReply | null>(null);
+    const [lockedTarget, setLockedTarget] = useState<(TargetIdentity & { ownerId: number }) | null>(null);
+    const [unavailable, setUnavailable] = useState(false);
     const pendingRef = useRef<PendingRequest | null>(null);
     const requestIdRef = useRef(0);
 
     const roomId = roomSession?.roomId ?? 0;
+    const [observedRoom, setObservedRoom] = useState({ roomId, users: roomUsers, ready: true });
+    const snapshotReady = observedRoom.roomId === roomId
+        ? observedRoom.ready || observedRoom.users !== roomUsers
+        : observedRoom.users !== roomUsers;
+    if (observedRoom.roomId !== roomId || observedRoom.users !== roomUsers)
+        setObservedRoom({ roomId, users: roomUsers, ready: snapshotReady });
+    const locked = !!lockedTarget && authenticated && lockedTarget.ownerId === ownUserId;
+    if (lockedTarget && !locked)
+    {
+        setLockedTarget(null);
+        setSelection(null);
+        setReply(null);
+    }
+
+    const liveLockedUser = locked && roomId && snapshotReady
+        ? roomUsers.find(user => user.webID === lockedTarget.userId && isOtherHuman(user, ownUserId))
+        : undefined;
 
     const target = useMemo<TargetIdentity | null>(() =>
     {
+        if (locked)
+        {
+            const user = liveLockedUser;
+            return user ? { userId: user.webID, name: user.name, figure: user.figure, sex: user.sex }
+                : { userId: lockedTarget.userId, name: lockedTarget.name, figure: lockedTarget.figure, sex: lockedTarget.sex };
+        }
         if(!authenticated || !selection || selection.roomId !== roomId) return null;
 
         const user = roomUsers.find((roomUser) => roomUser.roomIndex === selection.roomIndex);
         if(!user || user.webID !== selection.userId || !isOtherHuman(user, ownUserId)) return null;
 
         return { userId: user.webID, name: user.name, figure: user.figure, sex: user.sex };
-    }, [authenticated, selection, roomId, roomUsers, ownUserId]);
+    }, [authenticated, selection, roomId, roomUsers, ownUserId, locked, lockedTarget, liveLockedUser]);
 
     if(selection && !target)
     {
@@ -52,10 +77,12 @@ export const useTargetStats = () =>
     }
 
     const targetUserId = target?.userId ?? 0;
+    const inRoom = !!target && !!roomId && (!locked || !!liveLockedUser);
+    if (reply && (!inRoom || reply.roomId !== roomId)) setReply(null);
 
     useEffect(() =>
     {
-        if(!authenticated || !roomId || !targetUserId) return;
+        if(!authenticated || !roomId || !targetUserId || !inRoom) return;
 
         const request = () =>
         {
@@ -72,7 +99,7 @@ export const useTargetStats = () =>
             window.clearInterval(timer);
             pendingRef.current = null;
         };
-    }, [authenticated, roomId, targetUserId, selection]);
+    }, [authenticated, roomId, targetUserId, selection, inRoom]);
 
     const receive = useCallback((event: RpTargetStatsEvent) =>
     {
@@ -85,12 +112,14 @@ export const useTargetStats = () =>
         {
             pendingRef.current = null;
             setReply(null);
-            setSelection(null);
+            setUnavailable(true);
+            if (!locked) setSelection(null);
             return;
         }
 
+        setUnavailable(false);
         setReply({ roomId: parser.roomId, targetUserId: parser.targetUserId, health: parser.health, energy: parser.energy });
-    }, []);
+    }, [locked]);
 
     useMessageEvent<RpTargetStatsEvent>(RpTargetStatsEvent, receive);
 
@@ -99,12 +128,27 @@ export const useTargetStats = () =>
         pendingRef.current = null;
         setReply(null);
         setSelection(null);
+        setLockedTarget(null);
+        setUnavailable(false);
     }, []);
+
+    const toggleLock = useCallback(() =>
+    {
+        if (locked)
+        {
+            if (liveLockedUser) setSelection({ roomId, roomIndex: liveLockedUser.roomIndex, userId: liveLockedUser.webID });
+            else clearTarget();
+            setLockedTarget(null);
+        }
+        else if (target) setLockedTarget({ ...target, ownerId: ownUserId });
+    }, [locked, liveLockedUser, roomId, clearTarget, target, ownUserId]);
 
     useUiEvent<RoomWidgetUpdateRoomObjectEvent>(RoomWidgetUpdateRoomObjectEvent.OBJECT_SELECTED, (event) =>
     {
+        if (locked) return;
         pendingRef.current = null;
         setReply(null);
+        setUnavailable(false);
 
         const user = event.category === RoomObjectCategory.UNIT ? roomUsers.find((roomUser) => roomUser.roomIndex === event.id) : undefined;
 
@@ -119,21 +163,21 @@ export const useTargetStats = () =>
 
     useUiEvent<RoomWidgetUpdateRoomObjectEvent>(RoomWidgetUpdateRoomObjectEvent.OBJECT_DESELECTED, (event) =>
     {
-        if(!selection || event.category !== RoomObjectCategory.UNIT || event.roomId !== selection.roomId || event.id !== selection.roomIndex) return;
+        if(locked || !selection || event.category !== RoomObjectCategory.UNIT || event.roomId !== selection.roomId || event.id !== selection.roomIndex) return;
 
         clearTarget();
     });
 
     useUiEvent<RoomWidgetUpdateRoomObjectEvent>(RoomWidgetUpdateRoomObjectEvent.USER_REMOVED, (event) =>
     {
-        if(!selection || event.roomId !== selection.roomId || event.id !== selection.roomIndex) return;
+        if(locked || !selection || event.roomId !== selection.roomId || event.id !== selection.roomIndex) return;
 
         clearTarget();
     });
 
-    const stats = target && reply && reply.roomId === roomId && reply.targetUserId === target.userId
+    const stats = inRoom && target && reply && reply.roomId === roomId && reply.targetUserId === target.userId
         ? { health: reply.health, energy: reply.energy }
         : null;
 
-    return { target, stats, clearTarget };
+    return { target, stats, clearTarget, locked, toggleLock, unavailable: !inRoom || unavailable };
 };

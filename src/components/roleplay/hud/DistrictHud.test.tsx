@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DistrictHud } from './DistrictHud';
+import roomIcon from '../../../assets/images/roleplay/room-hotel.png';
 import { useRoomToolsMenuStore } from '../../room/widgets/room-tools/roomToolsMenuStore';
 
 interface TestState
@@ -29,7 +30,7 @@ describe('phone-first HUD', () =>
     {
         render(<DistrictHud />);
         expect(screen.getByText('DistrictRP City')).toBeInTheDocument();
-        expect(screen.getByTitle('City time · Day')).toHaveTextContent('12:30');
+        expect(screen.getByTitle('City time')).toHaveTextContent('12:30');
         expect(screen.queryByText(/min left/)).toBeNull();
         expect(screen.queryByTitle('RP Coins')).toBeNull();
         expect(screen.queryByText(/online/)).toBeNull();
@@ -62,6 +63,14 @@ describe('phone-first HUD', () =>
         const view = render(<DistrictHud />);
         const chip = screen.getByRole('button', { name: /Regency Café/ });
         expect(chip).toHaveAttribute('aria-expanded', 'false');
+        expect(chip.querySelector('img')).toHaveAttribute('src', roomIcon);
+        expect(chip.querySelector('img')).toHaveAttribute('width', '34');
+        expect(chip.querySelector('img')).toHaveAttribute('height', '55');
+        const topbar = document.querySelector('.district-topbar');
+        expect(topbar.firstElementChild).toBe(chip);
+        expect(topbar.lastElementChild).toHaveClass('district-clock');
+        expect(topbar.querySelectorAll('time')).toHaveLength(1);
+        expect(screen.queryByText(/min left/)).toBeNull();
         fireEvent.click(chip);
         expect(useRoomToolsMenuStore.getState().open).toBe(true);
         expect(chip).toHaveAttribute('aria-expanded', 'true');

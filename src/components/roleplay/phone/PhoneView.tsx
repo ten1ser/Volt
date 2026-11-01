@@ -15,25 +15,26 @@ import { CallState, useRpPhone } from '../../../hooks/roleplay/useRpPhone';
 import { useRoom } from '../../../hooks/rooms/useRoom';
 import { usePerkAllowed } from '../../../state/perkAllowancesStore';
 import { PhoneCallScreen, PhoneOfferSheet } from './PhoneCallScreen';
+import { BusinessView } from '../jobs/BusinessView';
+import { hasHostedWindow, hasWindowHost } from '../../../common/draggable-window/WindowHost';
 import { PhoneCameraApp } from './PhoneCameraApp';
 import { PhoneDialerApp } from './PhoneDialerApp';
 import { PhoneFriendsApp } from './PhoneFriendsApp';
 import { PhoneMessagesApp, threadPreview } from './PhoneMessagesApp';
 import { PhoneSettingsApp } from './PhoneSettingsApp';
 import { PHONE_GLYPHS, PhoneNoSim } from './PhoneShared';
-import { animatePhoneWindow } from './animatePhoneWindow';
+import { isNativePhoneApp, NativePhoneApp, PHONE_WINDOWS, PhoneNativeApp } from './PhoneNativeApp';
 import './PhoneView.scss';
+import './PhoneNativeApp.scss';
 
-type PhoneApp = 'home' | 'dialer' | 'messages' | 'friends' | 'settings' | 'camera';
+type PhoneApp = 'home' | 'dialer' | 'messages' | 'friends' | 'settings' | 'camera' | 'business' | 'native';
 type App = { id: string; label: string; glyph: ReactNode; count?: number; run: () => void };
-type ExternalApp = Pick<App, 'id' | 'label' | 'glyph'> & { origin: string };
 type Banner = { threadId: number; name: string; text: string };
 
 const DND_KEY = 'districtrp.phone.dnd';
 const POSITION_KEY = 'districtrp.phone.position';
 const EDGE = 8;
 const BANNER_MS = 4500;
-const WINDOW_KEYS: Readonly<Record<string, string>> = { business: 'district-business', gang: 'district-gang', backpack: 'district-backpack', rooms: 'navigator', inventory: 'inventory', shop: 'catalog' };
 
 const hex = (color: number) => `#${color.toString(16).padStart(6, '0')}`;
 
@@ -95,15 +96,20 @@ export const PhoneView: FC = () =>
 {
     const [open, setOpen] = useState(false);
     const [app, setApp] = useState<PhoneApp>('home');
-    const [externalApp, setExternalApp] = useState<ExternalApp | null>(null);
+    const [appPage, setAppPage] = useState(0);
+    const [pageSize, setPageSize] = useState(() => window.innerHeight < 580 ? 3 : window.innerHeight < 760 ? 6 : 9);
+    const [nativeApp, setNativeApp] = useState<NativePhoneApp | null>(null);
+    const [openedApps, setOpenedApps] = useState<NativePhoneApp[]>([]);
     const [threadId, setThreadId] = useState(0);
     const [doNotDisturb, setDoNotDisturb] = useState(readDoNotDisturb);
     const [banner, setBanner] = useState<Banner>(null);
     const screen = useRef<HTMLDivElement>(null);
     const frame = useRef<HTMLElement>(null);
-    const stopLaunchAnimation = useRef<(() => void) | null>(null);
+    const homeRef = useRef<() => void>(() => {});
+    const pendingLaunch = useRef<{ id: NativePhoneApp; run: () => void } | null>(null);
     const drag = useRef<{ pointerId: number; startX: number; startY: number; origin: Offset; restLeft: number; restTop: number; last: Offset } | null>(null);
     const [offset, setOffset] = useState<Offset>(readPosition);
+    const [landscapeOffset, setLandscapeOffset] = useState<Offset>({ x: 0, y: 0 });
     const { city } = useCityStatus();
     const { purse } = usePurse();
     const { requests } = useFriends();
@@ -115,10 +121,33 @@ export const PhoneView: FC = () =>
     const isMod = useHasPermission(Permission.ModerationTool);
     const openIssues = useOpenIssueCount();
     const { openMonitor, showToolbarButton } = useWiredTools();
-    const { available: buildHeightAvailable, toggle: toggleBuildHeight } = useBuildHeight();
+    const { available: buildHeightAvailable, isOpen: buildHeightOpen, close: closeBuildHeight, toggle: toggleBuildHeight } = useBuildHeight();
     const [seenThreads, setSeenThreads] = useState(visibleThreads);
-    const { status, call, lines, offer, answer, hangUp, respondOffer } = useRpPhone();
+    const { status, call, lines, offer, answer, hangUp, respondOffer, setBrowsing } = useRpPhone();
+    const landscape = (app === 'business' || app === 'native') && !call;
+    const position = landscape ? landscapeOffset : offset;
+    useEffect(() =>
+    {
+        setBrowsing?.(open);
+        return () => setBrowsing?.(false);
+    }, [open, setBrowsing, roomSession]);
     const [seenAlert, setSeenAlert] = useState('');
+
+    useEffect(() =>
+    {
+        const resize = () => setPageSize(window.innerHeight < 580 ? 3 : window.innerHeight < 760 ? 6 : 9);
+        window.addEventListener('resize', resize);
+        return () => window.removeEventListener('resize', resize);
+    }, []);
+
+    useEffect(() =>
+    {
+        if (!landscape || !open) return;
+        // A dragged landscape handset must return within the new viewport after resizing.
+        const resize = () => setLandscapeOffset({ x: 0, y: 0 });
+        window.addEventListener('resize', resize);
+        return () => window.removeEventListener('resize', resize);
+    }, [landscape, open]);
 
     // A ringing call or a staff sale offer takes the phone out of the pocket.
     const alert = call?.state === CallState.Incoming ? `call:${call.callId}` : offer ? `offer:${offer.offerId}` : '';
@@ -149,19 +178,13 @@ export const PhoneView: FC = () =>
 
     useEffect(() =>
     {
-        if (!open) stopLaunchAnimation.current?.();
-        return () => stopLaunchAnimation.current?.();
-    }, [open]);
-
-    useEffect(() =>
-    {
         openRef.current = open;
         if (open)
         {
-            const active = screen.current?.querySelector<HTMLElement>('.district-phone__external button, .district-phone__app-container button, .district-phone__call button, .district-phone__grid button');
+            const active = screen.current?.querySelector<HTMLElement>('.district-phone__app-container button, .district-phone__call button, .district-phone__grid button');
             (active ?? screen.current?.querySelector<HTMLElement>('button, input'))?.focus();
         }
-    }, [open, app, externalApp]);
+    }, [open, app, nativeApp, call?.callId]);
 
     useEffect(() =>
     {
@@ -172,9 +195,10 @@ export const PhoneView: FC = () =>
             if (!show && url !== 'phone/hide' && url !== 'phone/toggle') return;
             if (!show)
             {
+                homeRef.current();
                 setApp('home');
                 setThreadId(0);
-                setExternalApp(null);
+                setAppPage(0);
             }
             setOpen(show);
         } };
@@ -182,12 +206,24 @@ export const PhoneView: FC = () =>
         return () => RemoveLinkEventTracker(tracker);
     }, []);
 
+    useEffect(() =>
+    {
+        const prefixes: Partial<Record<NativePhoneApp, string>> = { gang: 'gangs/', backpack: 'backpack/', rooms: 'navigator/', inventory: 'inventory/', shop: 'catalog/', modtools: 'mod-tools/', wired: 'wired-tools/', games: 'games/' };
+        const trackers = openedApps.flatMap(id => prefixes[id] ? [{ eventUrlPrefix: prefixes[id], linkReceived: (url: string) =>
+        {
+            if (!['show', 'toggle', 'open', 'view'].includes(url.split('/')[1])) return;
+            setNativeApp(id); setApp('native'); setOpen(true); setLandscapeOffset({ x: 0, y: 0 });
+        } } satisfies ILinkEventTracker] : []);
+        trackers.forEach(AddLinkEventTracker);
+        return () => trackers.forEach(RemoveLinkEventTracker);
+    }, [openedApps]);
+
     // Dragging the status bar moves the phone anywhere on screen; double-clicking it puts the phone back.
     const startDrag = (event: ReactPointerEvent<HTMLDivElement>) =>
     {
         if (event.button !== 0 || !frame.current) return;
         const rect = frame.current.getBoundingClientRect();
-        drag.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, origin: offset, restLeft: rect.left - offset.x, restTop: rect.top - offset.y, last: offset };
+        drag.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, origin: position, restLeft: rect.left - position.x, restTop: rect.top - position.y, last: position };
         event.currentTarget.setPointerCapture?.(event.pointerId);
     };
     const moveDrag = (event: ReactPointerEvent<HTMLDivElement>) =>
@@ -196,27 +232,38 @@ export const PhoneView: FC = () =>
         if (!current || current.pointerId !== event.pointerId || !frame.current) return;
         const next = { x: current.origin.x + event.clientX - current.startX, y: current.origin.y + event.clientY - current.startY };
         current.last = clampOffset(next, frame.current.offsetWidth, frame.current.offsetHeight, current.restLeft, current.restTop);
-        setOffset(current.last);
+        if (landscape) setLandscapeOffset(current.last);
+        else setOffset(current.last);
     };
     const endDrag = (event: ReactPointerEvent<HTMLDivElement>) =>
     {
         const current = drag.current;
         if (current?.pointerId !== event.pointerId) return;
         drag.current = null;
-        savePosition(current.last);
+        if (!landscape) savePosition(current.last);
     };
     const resetPosition = () =>
     {
         setOffset({ x: 0, y: 0 });
+        setLandscapeOffset({ x: 0, y: 0 });
         savePosition({ x: 0, y: 0 });
     };
 
     const goHome = () =>
     {
-        setExternalApp(null);
+        pendingLaunch.current = null;
+        if (nativeApp)
+        {
+            const spec = PHONE_WINDOWS[nativeApp];
+            if ('hide' in spec) CreateLinkEvent(spec.hide);
+            if (nativeApp === 'build') closeBuildHeight?.();
+        }
+        setNativeApp(null);
+        setAppPage(0);
         setApp('home');
         setThreadId(0);
     };
+    homeRef.current = goHome;
     const close = () =>
     {
         setOpen(false);
@@ -224,7 +271,7 @@ export const PhoneView: FC = () =>
     };
     const openThread = (id: number) =>
     {
-        setExternalApp(null);
+        homeRef.current();
         setApp('messages');
         setThreadId(id);
     };
@@ -247,7 +294,6 @@ export const PhoneView: FC = () =>
             // Private windows can refuse storage; the setting then lasts for this session only.
         }
     };
-    // External apps keep their native windows; the handset stays available.
     const openBanner = () =>
     {
         if (!banner) return;
@@ -263,25 +309,30 @@ export const PhoneView: FC = () =>
         { id: 'dialer', label: 'Phone', glyph: PHONE_GLYPHS.phone, run: () => setApp('dialer') },
         { id: 'messages', label: 'Messages', glyph: PHONE_GLYPHS.messages, count: unreadThreads || (iconState === MessengerIconState.UNREAD ? 1 : 0), run: () => setApp('messages') },
         { id: 'friends', label: 'Friends', glyph: PHONE_GLYPHS.friends, count: requests.length, run: () => setApp('friends') },
-        // The former dock tools retain their existing native routes.
-        { id: 'business', label: 'Businesses', glyph: PHONE_GLYPHS.business, run: () => CreateLinkEvent('businesses/toggle') },
-        { id: 'gang', label: 'Gang', glyph: PHONE_GLYPHS.gang, run: () => CreateLinkEvent('gangs/toggle') },
-        { id: 'backpack', label: 'Backpack', glyph: PHONE_GLYPHS.backpack, run: () => CreateLinkEvent('backpack/toggle') },
-        { id: 'rooms', label: 'Rooms', glyph: PHONE_GLYPHS.rooms, run: () => CreateLinkEvent('navigator/toggle') },
+        // Native app controllers keep ownership of their data and actions inside phone destinations.
+        { id: 'business', label: 'Businesses', glyph: PHONE_GLYPHS.business, run: () =>
+        {
+            CreateLinkEvent('businesses/hide');
+            setLandscapeOffset({ x: 0, y: 0 });
+            setApp('business');
+        } },
+        { id: 'gang', label: 'Gang', glyph: PHONE_GLYPHS.gang, run: () => CreateLinkEvent('gangs/show') },
+        { id: 'backpack', label: 'Backpack', glyph: PHONE_GLYPHS.backpack, run: () => CreateLinkEvent('backpack/show') },
+        { id: 'rooms', label: 'Rooms', glyph: PHONE_GLYPHS.rooms, run: () => CreateLinkEvent('navigator/show') },
         { id: 'inventory', label: 'Inventory', glyph: PHONE_GLYPHS.inventory, count: getFullCount, run: () =>
         {
-            CreateLinkEvent('inventory/toggle');
+            CreateLinkEvent('inventory/show');
         } },
         { id: 'shop', label: 'Shop', glyph: PHONE_GLYPHS.shop, run: () =>
         {
-            CreateLinkEvent('catalog/toggle/normal');
+            CreateLinkEvent('catalog/show/normal');
         } },
         // The camera photographs the current room, so it is only offered inside one (and with the camera perk).
         ...(roomSession && cameraAllowed ? [{ id: 'camera', label: 'Camera', glyph: PHONE_GLYPHS.camera, run: () => setApp('camera') }] : []),
         // Former dock "More" tools, with the same gates.
         ...(isMod ? [{ id: 'modtools', label: 'Moderation', glyph: PHONE_GLYPHS.modtools, count: openIssues, run: () => CreateLinkEvent('mod-tools/show') }] : []),
         ...(roomSession && showToolbarButton ? [{ id: 'wired', label: 'Wired', glyph: PHONE_GLYPHS.wired, run: openMonitor }] : []),
-        ...(roomSession && buildHeightAvailable ? [{ id: 'build', label: 'Build height', glyph: PHONE_GLYPHS.build, run: toggleBuildHeight }] : []),
+        ...(roomSession && buildHeightAvailable ? [{ id: 'build', label: 'Build height', glyph: PHONE_GLYPHS.build, run: () => { if (!buildHeightOpen) toggleBuildHeight(); } }] : []),
         ...(GetConfigurationValue('games_icon_enabled', GetConfigurationValue('game.center.enabled', false)) ? [{ id: 'games', label: 'Games', glyph: PHONE_GLYPHS.games, run: () => CreateLinkEvent('games/toggle') }] : []),
         ...(GetConfigurationValue('toolbar.stories.enabled', false) ? [{ id: 'stories', label: 'Stories', glyph: PHONE_GLYPHS.stories, run: () => CreateLinkEvent('stories/toggle') }] : []),
         ...(guideAllowed && GetConfigurationValue('guides.enabled') ? [{ id: 'helper', label: 'Helper', glyph: PHONE_GLYPHS.helper, run: () => DispatchUiEvent(new GuideToolEvent(GuideToolEvent.TOGGLE_GUIDE_TOOL)) }] : []),
@@ -290,13 +341,18 @@ export const PhoneView: FC = () =>
     const icon = (entry: App) => (
         <button type="button" key={entry.id} className={`district-phone__app is-${entry.id}`} aria-label={entry.count ? `${entry.label}, ${entry.count}` : entry.label} onClick={event =>
         {
-            if (!['dialer', 'messages', 'friends', 'settings', 'camera'].includes(entry.id))
+            if (isNativePhoneApp(entry.id))
             {
-                const tile = event.currentTarget.getBoundingClientRect();
-                const surface = screen.current?.getBoundingClientRect();
-                stopLaunchAnimation.current?.();
-                stopLaunchAnimation.current = WINDOW_KEYS[entry.id] ? animatePhoneWindow(WINDOW_KEYS[entry.id], { x: tile.left + tile.width / 2, y: tile.top + tile.height / 2 }) : null;
-                setExternalApp({ id: entry.id, label: entry.label, glyph: entry.glyph, origin: surface ? `${tile.left + tile.width / 2 - surface.left}px ${tile.top + tile.height / 2 - surface.top}px` : '50% 50%' });
+                setNativeApp(entry.id);
+                setOpenedApps(previous => previous.includes(entry.id as NativePhoneApp) ? previous : [...previous, entry.id as NativePhoneApp]);
+                setLandscapeOffset({ x: 0, y: 0 });
+                setApp('native');
+                if (hasWindowHost(`phone-${entry.id}`))
+                {
+                    if (!['games', 'helper'].includes(entry.id) || !hasHostedWindow(`phone-${entry.id}`)) entry.run();
+                }
+                else pendingLaunch.current = { id: entry.id, run: entry.run };
+                return;
             }
             entry.run();
         }}>
@@ -305,6 +361,9 @@ export const PhoneView: FC = () =>
         </button>
     );
     const phase = city ? `${city.isDay ? 'Day' : 'Night'} · ${Math.ceil(city.phaseRemainingMs / 60000)} min left` : 'Synchronizing';
+    const homeApps = apps.slice(3);
+    const pageCount = Math.ceil(homeApps.length / pageSize);
+    const currentPage = Math.min(appPage, pageCount - 1);
 
     return (
         <>
@@ -316,16 +375,16 @@ export const PhoneView: FC = () =>
             )}
             <section
                 ref={frame}
-                className={`district-phone ${open ? 'is-open' : ''}`}
+                className={`district-phone ${open ? 'is-open' : ''} ${landscape ? 'is-landscape' : ''}`}
                 aria-label="Phone"
                 aria-hidden={!open}
                 inert={!open}
-                style={{ ...(city ? { '--phone-sky': hex(city.backdropColor) } : {}), '--phone-x': `${offset.x}px`, '--phone-y': `${offset.y}px` } as CSSProperties}
+                style={{ ...(city ? { '--phone-sky': hex(city.backdropColor) } : {}), '--phone-x': `${position.x}px`, '--phone-y': `${position.y}px` } as CSSProperties}
                 onKeyDown={event =>
                 {
                     if (event.key !== 'Escape') return;
                     event.stopPropagation();
-                    if (externalApp || app !== 'home') goHome();
+                    if (app !== 'home') goHome();
                     else close();
                 }}>
                 <div className="district-phone__screen" ref={screen}>
@@ -339,36 +398,40 @@ export const PhoneView: FC = () =>
                         <span className="district-phone__battery" aria-hidden="true" />
                     </div>
                     <button type="button" className="district-phone__close" aria-label="Put phone away" onClick={close}>×</button>
-                    {!call && !externalApp && app === 'home' && (
+                    {!call && app === 'home' && (
                         <>
                             <div className="district-phone__home-content">
                             <div className="district-phone__widget">
-                                <span className="district-phone__brand">DistrictRP</span>
-                                <strong>{city?.time ?? '--:--'}</strong>
+                                <div className="district-phone__city-line"><strong>{city?.time ?? '--:--'}</strong><span className="district-phone__brand">DistrictRP</span></div>
                                 <span className="district-phone__phase">{city && <PixelIcon src={city.isDay ? sunIcon : moonIcon} />}{phase}</span>
-                                <div className="district-phone__stats">
-                                    <span className="district-phone__stat" title="RP Coins"><PixelIcon src={coinIcon} /><span><b>{(purse?.credits ?? 0).toLocaleString()}</b>{' '}<small>RP Coins</small></span></span>
-                                    <span className="district-phone__stat" title="Players online"><PixelIcon src={onlineIcon} /><span><b>{city ? city.onlinePlayers.toLocaleString() : '—'}</b>{' '}<small>online</small></span></span>
-                                    {status && <span className="district-phone__stat" title="Phone number"><PixelIcon src={simIcon} /><b>{status.hasSim ? status.number : 'No SIM card'}</b></span>}
-                                    {status && <span className="district-phone__stat" title="Load"><PixelIcon src={loadIcon} /><span><b>{status.load.toLocaleString()}</b>{' '}<small>Load</small></span></span>}
+                                <div className="district-phone__account">
+                                    <div className="district-phone__account-row">
+                                        <span title="RP Coins"><PixelIcon src={coinIcon} /><b>{(purse?.credits ?? 0).toLocaleString()}</b>{' '}<small>RP Coins</small></span>
+                                        <span title="Players online"><PixelIcon src={onlineIcon} /><b>{city ? city.onlinePlayers.toLocaleString() : '—'}</b>{' '}<small>online</small></span>
+                                    </div>
+                                    <div className="district-phone__account-row is-sim">
+                                        <span title="Phone number"><PixelIcon src={simIcon} /><b>{status ? status.hasSim ? status.number : 'No SIM card' : 'Connecting'}</b></span>
+                                        <span title="Load"><PixelIcon src={loadIcon} /><b>{status ? status.load.toLocaleString() : '—'}</b>{' '}<small>Load</small></span>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="district-phone__grid">{apps.slice(3).map(icon)}</div>
+                            <div className="district-phone__grid" key={`${currentPage}-${pageSize}`}>{homeApps.slice(currentPage * pageSize, (currentPage + 1) * pageSize).map(icon)}</div>
+                            <nav className="district-phone__pages" aria-label="App pages">
+                                {pageCount > 1 && Array.from({ length: pageCount }, (_, index) => <button type="button" key={index} aria-label={`App page ${index + 1}`} aria-current={currentPage === index ? 'page' : undefined} onClick={() => setAppPage(index)}><span /></button>)}
+                            </nav>
                             </div>
                             <div className="district-phone__dock">{apps.slice(0, 3).map(icon)}</div>
                         </>
                     )}
-                    {!call && externalApp && (
-                        <div className="district-phone__external" key={externalApp.id} style={{ transformOrigin: externalApp.origin }}>
-                            <span className={`district-phone__app is-${externalApp.id}`} aria-hidden="true"><span className="district-phone__icon">{externalApp.glyph}</span></span>
-                            <h2>{externalApp.label}</h2>
-                            <p role="status">Opened in a separate window.</p>
-                            <p className="district-phone__hint">Your phone stays here. Use the window to continue, or choose another app.</p>
-                            <button type="button" className="district-phone__pill is-primary" onClick={goHome}>Back to apps</button>
-                        </div>
-                    )}
+                    {openedApps.map(id => <PhoneNativeApp key={id} id={id} active={open && !call && app === 'native' && nativeApp === id} onHome={goHome}
+                        onReady={() => { const pending = pendingLaunch.current; if (pending?.id === id) { pendingLaunch.current = null; pending.run(); } }}
+                        onRetry={() => apps.find(entry => entry.id === id)?.run()} />)}
                     {call && <PhoneCallScreen call={call} lines={lines} onAnswer={answer} onHangUp={hangUp} />}
-                    {!call && app !== 'home' && <div className="district-phone__app-container" key={app}>
+                    {!call && app !== 'home' && app !== 'native' && <div className="district-phone__app-container" key={app}>
+                    {app === 'business' && <>
+                        <header className="district-phone__app-header"><button type="button" onClick={goHome} aria-label="Back to apps">‹ Apps</button><h2>Businesses</h2></header>
+                        <BusinessView embedded onClose={goHome} />
+                    </>}
                     {!call && app === 'dialer' && <PhoneDialerApp onHome={goHome} />}
                     {!call && app === 'messages' && (noSim ? <PhoneNoSim title="Messages" onHome={goHome} /> : <PhoneMessagesApp threadId={threadId} onOpenThread={openThread} onHome={goHome} />)}
                     {!call && app === 'friends' && (noSim ? <PhoneNoSim title="Friends" onHome={goHome} /> : <PhoneFriendsApp onMessage={messageUser} onHome={goHome} />)}
@@ -376,7 +439,7 @@ export const PhoneView: FC = () =>
                     {!call && app === 'camera' && (roomSession ? <PhoneCameraApp onHome={goHome} /> : <p className="district-phone__empty">Enter a room to use the camera.</p>)}
                     </div>}
                     {offer && <PhoneOfferSheet offer={offer} onRespond={respondOffer} />}
-                    <button type="button" className="district-phone__home" aria-label={app === 'home' && !externalApp ? 'Close phone' : 'Home'} onClick={app === 'home' && !externalApp ? close : goHome} />
+                    <button type="button" className="district-phone__home" aria-label={app === 'home' ? 'Close phone' : 'Home'} onClick={app === 'home' ? close : goHome} />
                 </div>
             </section>
         </>

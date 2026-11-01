@@ -51,7 +51,7 @@ export const StartPanelView: FC<StartPanelProps> = ({ canUseRoomTool, canUseChat
     const handlers: NativeNodeHandlers = { room_tool_but: { onClick: onRoomTool }, chatlog_but: { onClick: onChatlog }, userinfo_but: { onClick: onUserInfo }, ticket_queue_but: { onClick: onTicketQueue } };
 
     return (
-        <DraggableWindow handleSelector=".native-frame__titlebar" initialPosition={{ x, y }} onPositionChange={(position) => onMove(position.x, position.y)} unconstrainedPosition>
+        <DraggableWindow uniqueKey="phone-mod-start" handleSelector=".native-frame__titlebar" initialPosition={{ x, y }} onPositionChange={(position) => onMove(position.x, position.y)} unconstrainedPosition>
             <NativeFrameView handlers={handlers} images={IMAGES} node={node} states={states} onClose={onClose} />
         </DraggableWindow>
     );

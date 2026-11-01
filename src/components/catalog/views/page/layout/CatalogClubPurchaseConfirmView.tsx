@@ -55,6 +55,7 @@ export const CatalogClubPurchaseConfirmView: FC<CatalogClubPurchaseConfirmViewPr
 
     return (
         <VoltCardView
+            uniqueKey="catalog-club-confirm"
             aria-label={title}
             aria-modal="true"
             classNames={['volt-club-purchase-confirm']}

@@ -28,6 +28,27 @@ describe('Hospital business directory', () =>
         test.snapshot = data(); test.pending = false; test.authenticated = true; test.act.mockClear(); test.group.mockClear();
     });
     afterEach(cleanup);
+    it('embeds real staff and shift controls without a dialog, titlebar or standalone route', () =>
+    {
+        test.tracker = null;
+        const close = vi.fn();
+        render(<BusinessView embedded onClose={close} />);
+        const region = screen.getByRole('region', { name: 'Business/Corporation' });
+        expect(within(region).getByText('teniser')).toBeInTheDocument();
+        expect(screen.queryByRole('dialog')).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Close Business/Corporation' })).toBeNull();
+        expect(test.tracker).toBeNull();
+        expect(screen.getByRole('tablist')).toHaveAttribute('aria-orientation', 'vertical');
+        screen.getByRole('tab', { name: 'Employees' }).focus();
+        fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowDown' });
+        expect(screen.getByRole('tab', { name: 'My shift' })).toHaveAttribute('aria-selected', 'true');
+        fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowUp' });
+        expect(screen.getByRole('tab', { name: 'Employees' })).toHaveAttribute('aria-selected', 'true');
+        fireEvent.click(within(region).getByRole('button', { name: 'Start shift' }));
+        expect(test.act).toHaveBeenCalledWith(1);
+        fireEvent.keyDown(region, { key: 'Escape' });
+        expect(close).toHaveBeenCalledOnce();
+    });
     it('opens from the dock link and shows real staff without management for ordinary members', () =>
     {
         open(); expect(screen.getByRole('dialog', { name: 'Business/Corporation' })).toBeInTheDocument();

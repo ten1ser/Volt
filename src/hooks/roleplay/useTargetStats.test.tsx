@@ -89,6 +89,7 @@ describe('useTargetStats', () =>
     beforeEach(() =>
     {
         test.authenticated = true;
+        test.ownUserId = 1;
         test.roomId = 7;
         test.users = [
             human(1, 1, 'Me'),
@@ -324,5 +325,92 @@ describe('useTargetStats', () =>
         rerender();
         expect(result.current.target).toEqual({ userId: 22, name: 'Mara B', figure: 'hd-180-2', sex: 'F' });
         expect(test.sent).toHaveLength(1);
+    });
+
+    it('pins identity across rooms, ignores stale room users and resumes at a new room index', () =>
+    {
+        const { result, rerender } = renderHook(() => useTargetStats());
+        select(4);
+        reply(last());
+        act(() => result.current.toggleLock());
+        const oldRequest = last();
+        const count = test.sent.length;
+        test.roomId = 8;
+        rerender();
+        expect(result.current.locked).toBe(true);
+        expect(result.current.target?.userId).toBe(22);
+        expect(result.current.stats).toBeNull();
+        expect(result.current.unavailable).toBe(true);
+        act(() => vi.advanceTimersByTime(2000));
+        expect(test.sent).toHaveLength(count);
+        reply(oldRequest);
+        expect(result.current.stats).toBeNull();
+        test.users = [human(4, 99), human(12, 22, 'Mara')];
+        rerender();
+        expect(last()).toMatchObject({ roomId: 8, targetUserId: 22 });
+        expect(result.current.stats).toBeNull();
+        reply(last(), { health: 17, energy: 25 });
+        expect(result.current.stats).toEqual({ health: 17, energy: 25 });
+    });
+
+    it('ignores other selections and deselection while locked, but explicit clear releases the lock', () =>
+    {
+        test.users.push(human(5, 23));
+        const { result } = renderHook(() => useTargetStats());
+        select(4);
+        act(() => result.current.toggleLock());
+        select(5); select(4, FLOOR);
+        fire(DESELECTED, { id: 4, category: UNIT, roomId: 7 });
+        expect(result.current.target?.userId).toBe(22);
+        act(() => result.current.clearTarget());
+        expect(result.current.locked).toBe(false);
+        expect(result.current.target).toBeNull();
+        select(5);
+        expect(result.current.target?.userId).toBe(23);
+    });
+
+    it('keeps a locked unavailable identity but drops old vitals when the player leaves', () =>
+    {
+        const { result, rerender } = renderHook(() => useTargetStats());
+        select(4);
+        act(() => result.current.toggleLock());
+        reply(last(), { available: false });
+        expect(result.current.target?.userId).toBe(22);
+        expect(result.current.unavailable).toBe(true);
+        test.users = [];
+        rerender();
+        act(() => result.current.toggleLock());
+        expect(result.current.target).toBeNull();
+        expect(result.current.locked).toBe(false);
+    });
+
+    it('unlocks a present user and returns to ordinary selection behavior', () =>
+    {
+        const { result } = renderHook(() => useTargetStats());
+        select(4);
+        act(() => result.current.toggleLock());
+        act(() => result.current.toggleLock());
+        expect(result.current.target?.userId).toBe(22);
+        expect(result.current.locked).toBe(false);
+        select(4, FLOOR);
+        expect(result.current.target).toBeNull();
+    });
+
+    it('releases a lock on disconnect or account change', () =>
+    {
+        const { result, rerender } = renderHook(() => useTargetStats());
+        select(4);
+        act(() => result.current.toggleLock());
+        test.authenticated = false;
+        rerender();
+        test.authenticated = true;
+        rerender();
+        expect(result.current.target).toBeNull();
+        expect(result.current.locked).toBe(false);
+        select(4);
+        act(() => result.current.toggleLock());
+        test.ownUserId = 3;
+        rerender();
+        expect(result.current.target).toBeNull();
     });
 });

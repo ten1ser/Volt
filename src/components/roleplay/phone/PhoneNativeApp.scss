@@ -1,0 +1,83 @@
+.district-phone {
+    .district-phone__native-app[hidden] { display: none !important; }
+    .district-phone__native-app { overflow: hidden; }
+    .phone-window-host { position: relative; isolation: isolate; flex: 1; min-width: 0; min-height: 0; overflow: hidden; background: var(--district-ui-surface, #202a2a); }
+    .phone-hosted-window { position: absolute; inset: 0; overflow: auto; background: var(--district-ui-surface, #202a2a); }
+    .phone-window-host > .phone-hosted-window > :is(.volt-card, .volt-navigator-air) {
+        width: 100% !important; min-width: 0 !important; max-width: none !important;
+        height: 100% !important; min-height: 0 !important; max-height: none !important;
+        border: 0 !important; border-image: none !important; border-radius: 0 !important;
+        box-shadow: none !important; filter: none !important; resize: none !important;
+        padding: 0 !important; overflow: auto !important;
+        &::before, &::after { display: none !important; }
+    }
+    .phone-hosted-window :is(.volt-card-resize-handle, .card-resize-handle) { display: none !important; }
+    .phone-window-host > .phone-hosted-window:not([data-primary]) > .volt-card-frame-3 { padding: 32px 8px 8px !important; }
+    .phone-hosted-window[data-primary] :is(.volt-card-header, .gang-titlebar, .backpack-titlebar, .volt-navigator-air__caption) { display: none !important; }
+    .phone-hosted-window > .volt-card > [role='dialog'] { min-height: 0; max-height: none; height: 100%; }
+    .district-phone__app-empty { padding: 22px; font-size: 13px; line-height: 19px; color: var(--district-ui-text, #f3f1e9); }
+    .district-phone__app-empty p { margin: 8px 0 12px; color: var(--district-ui-muted, #b9c9c0); }
+    .district-phone__app-empty button { padding: 7px 12px; border: 1px solid var(--district-ui-border, #536563); border-radius: 5px; background: var(--district-ui-raised, #2c3838); color: inherit; }
+
+    // Gang navigation is a narrow left rail, with real members/settings in the right pane.
+    .phone-hosted-window > .district-gang > [role='dialog'] { display: grid; grid-template-columns: 160px minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); }
+    .district-gang .gang-banner { grid-column: 1; grid-row: 1; margin: 0; padding: 8px; flex-wrap: wrap; }
+    .district-gang .gang-visit { grid-column: 1; grid-row: 2; flex-direction: column; padding: 6px; }
+    .district-gang .gang-tabs { grid-column: 1; grid-row: 3; flex-direction: column; padding: 6px; border: 0; overflow-y: auto; }
+    .district-gang .gang-tabs button { text-align: left; min-height: 30px; }
+    .district-gang .gang-content { grid-column: 2; grid-row: 1 / 4; height: auto; min-width: 0; overflow: auto; }
+    .phone-hosted-window > .district-gang > [role='dialog']:not(:has(.gang-banner)) { display: flex; }
+    .district-gang .gang-banner { max-height: 104px; overflow-y: auto; }
+    .district-gang .gang-banner-badge { width: 36px; height: 40px; }
+    .district-gang .gang-banner-copy h2 { font-size: 14px; line-height: 18px; }
+    .district-gang .gang-kd { flex-direction: row; gap: 4px; padding: 2px 6px; }
+    .district-gang .gang-kd strong { font-size: 12px; line-height: 17px; }
+    .district-gang .gang-member-grid { grid-template-columns: minmax(0, 1fr); }
+
+    // Backpack keeps all ten native slots and their pointer/drag actions at 1x.
+    .district-backpack .backpack-body { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(270px, 1.5fr); gap: 6px 12px; padding: 8px; }
+    .district-backpack .backpack-label:first-child { grid-column: 1; grid-row: 1; }
+    .district-backpack .backpack-equipped { grid-column: 1; grid-row: 2; flex-wrap: wrap; }
+    .district-backpack .backpack-info { flex: 1 0 100%; }
+    .district-backpack .backpack-label:nth-of-type(2) { grid-column: 2; grid-row: 1; }
+    .district-backpack .backpack-grid { grid-column: 2; grid-row: 2; gap: 6px; }
+    .district-backpack :is(.backpack-footer, .backpack-notice, .backpack-confirm) { grid-column: 1 / -1; }
+
+    .volt-inventory-window .volt-inventory-body { overflow: auto; }
+    .volt-inventory-window .volt-inventory-content { overflow: auto; min-height: 140px; }
+    .volt-inventory-window .volt-inventory-subcontent { flex-shrink: 0; }
+    .volt-inventory-window .volt-inventory-tabs-shell { overflow-x: auto; }
+
+    // Remove desktop decoration; keep catalog categories, products and purchase controls.
+    .volt-catalog-window .volt-catalog-standard-header { display: none; }
+    .volt-catalog-window .volt-catalog-content-shell { min-height: 0; flex: 1; overflow: auto !important; }
+    .volt-catalog-window .volt-catalog-stage { min-height: 180px; height: 100%; }
+    .volt-catalog-window .volt-catalog-sidebar { width: 150px; min-width: 150px; }
+
+    .volt-navigator-air { --navigator-height: 100% !important; }
+    .volt-navigator-air :is(.volt-navigator-air__skin, .volt-navigator-air__tab-shelf, .volt-navigator-air__resize-handle) { display: none; }
+    .volt-navigator-air .volt-navigator-air__tabs { top: 0; left: 36px; right: 8px; overflow-x: auto; }
+    .volt-navigator-air .volt-navigator-air__quick-toggle { top: 5px; }
+    .volt-navigator-air .volt-navigator-air__body { top: 34px; bottom: 6px; left: 8px; right: 8px; width: auto; height: auto; overflow: auto; }
+    .volt-navigator-air .volt-navigator-air__workspace { min-height: 0; flex: 1; overflow: auto; }
+
+    // Fixed-coordinate staff/game forms pan inside the same handset; never shrink their lettering.
+    [data-phone-app='modtools'] .phone-hosted-window { padding: 8px; }
+    [data-phone-app='modtools'] .phone-hosted-window > * { max-width: none; }
+    .phone-hosted-window > .volt-wired-menu { min-width: 500px !important; height: auto !important; min-height: 470px !important; }
+    .phone-hosted-window > .snowwar-window { height: auto !important; min-height: 450px !important; }
+    .phone-hosted-window > .volt-guide-tool { height: auto !important; min-height: 100% !important; }
+    .phone-hosted-window > .volt-build-height-widget { padding: 10px !important; }
+}
+
+@media (max-width: 560px) {
+    .district-phone {
+        .phone-hosted-window > .district-gang > [role='dialog'] { display: flex; }
+        .district-gang .gang-tabs { flex-direction: row; flex-wrap: wrap; }
+        .district-backpack .backpack-body { display: block; }
+        .district-backpack .backpack-grid { grid-template-columns: repeat(4, 56px); }
+        .district-backpack .backpack-slot { width: 56px; }
+        .volt-catalog-window .volt-catalog-stage { min-width: 500px; }
+        .volt-inventory-window .volt-inventory-body { min-width: 460px; }
+    }
+}

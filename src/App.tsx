@@ -23,6 +23,7 @@ import { clearRoomToolsHistory } from './components/room/widgets/room-tools/room
 import { ClearStoredChatHistory, getConnectionFailureAction, shouldClearLoginAfterDisconnect, useConnectionState, useDevicePixelRatio, useMessageEvent, useVoltEvent } from './hooks';
 import { clearPerkAllowances, listenForPerkAllowances } from './state/perkAllowancesStore';
 import { SharedHookRegistry } from './state/useSharedHook';
+import { useGameContextMenu } from './hooks/useGameContextMenu';
 
 VoltVersion.UI_VERSION = GetUIVersion();
 
@@ -51,6 +52,7 @@ const takeEarlyCommunicationInit = (): Promise<void> | null => {
 };
 
 export const App: FC<{}> = (props) => {
+    useGameContextMenu();
     const connectionState = useConnectionState();
     const devicePixelRatio = useDevicePixelRatio();
     const [isReady, setIsReady] = useState(false);

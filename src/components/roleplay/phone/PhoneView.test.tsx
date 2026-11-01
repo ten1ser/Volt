@@ -1,5 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useState } from 'react';
+import { DraggableWindow } from '../../../common/draggable-window/DraggableWindow';
 import { PhoneView } from './PhoneView';
 
 type Thread = { threadId: number; unreadCount: number; unread: boolean; participant: { name: string } };
@@ -11,24 +13,25 @@ const test = vi.hoisted(() =>
     const emptyPhone: PhoneMock = { status: { hasSim: true, number: '+12-345-6', load: 9 }, call: null, offer: null };
     return {
         tracker: null,
-        link: vi.fn(), iconState: 0, requests: [] as unknown[], unseen: 0, threads: [] as Thread[], rerender: null,
+        link: vi.fn(), setBrowsing: vi.fn(), iconState: 0, requests: [] as unknown[], unseen: 0, threads: [] as Thread[], rerender: null,
         inRoom: false, camera: false, moderator: false, wired: false, build: false, monitor: vi.fn(), toggleBuild: vi.fn(),
         phone: emptyPhone
     };
 });
 vi.mock('../../../hooks/roleplay/useRpPhone', () => ({
     CallState: { Idle: 0, Dialing: 1, Incoming: 2, Active: 3 },
-    useRpPhone: () => ({ ...test.phone, lines: [], answer: vi.fn(), hangUp: vi.fn(), respondOffer: vi.fn() })
+    useRpPhone: () => ({ ...test.phone, lines: [], answer: vi.fn(), hangUp: vi.fn(), respondOffer: vi.fn(), setBrowsing: test.setBrowsing })
 }));
 vi.mock('./PhoneDialerApp', () => ({ PhoneDialerApp: () => <div>Dialer app</div> }));
+vi.mock('../jobs/BusinessView', () => ({ BusinessView: ({ embedded }: { embedded?: boolean }) => <div data-testid="business-content" data-embedded={embedded}>Business employees and shift</div> }));
 vi.mock('./PhoneCallScreen', () => ({
     PhoneCallScreen: ({ call }: { call: { peerName: string } }) => <div>Call with {call.peerName}</div>,
     PhoneOfferSheet: ({ offer }: { offer: { seller: string } }) => <div>Offer from {offer.seller}</div>
 }));
 vi.mock('@volt/renderer', () => ({
-    AddLinkEventTracker: (tracker: { linkReceived: (url: string) => void }) =>
+    AddLinkEventTracker: (tracker: { eventUrlPrefix: string; linkReceived: (url: string) => void }) =>
     {
-        test.tracker = tracker;
+        if (tracker.eventUrlPrefix === 'phone/') test.tracker = tracker;
     },
     RemoveLinkEventTracker: vi.fn(),
     CreateLinkEvent: test.link,
@@ -76,9 +79,11 @@ describe('DistrictRP phone', () =>
     {
         test.iconState = 0; test.requests = []; test.unseen = 0; test.threads = []; test.inRoom = false; test.camera = false;
         test.moderator = false; test.wired = false; test.build = false; test.monitor.mockClear(); test.toggleBuild.mockClear();
-        test.link.mockClear();
+        test.link.mockReset();
+        test.setBrowsing.mockClear();
         test.phone = { status: { hasSim: true, number: '+12-345-6', load: 9 }, call: null, offer: null };
         window.localStorage.clear();
+        Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
     });
     afterEach(cleanup);
 
@@ -93,18 +98,115 @@ describe('DistrictRP phone', () =>
         expect(screen.getByTitle('Players online')).toHaveTextContent('32 online');
     });
 
-    it('launches each external window once and keeps the handset visible', () =>
+    it('opens each native app inside the landscape handset with an idempotent show route', () =>
     {
         render(<PhoneView />); open();
-        for (const [name, url] of [['Businesses', 'businesses/toggle'], ['Gang', 'gangs/toggle'], ['Backpack', 'backpack/toggle'], ['Rooms', 'navigator/toggle'], ['Inventory', 'inventory/toggle'], ['Shop', 'catalog/toggle/normal']])
+        for (const [name, url, hide] of [['Gang', 'gangs/show', 'gangs/hide'], ['Backpack', 'backpack/show', 'backpack/hide'], ['Rooms', 'navigator/show', 'navigator/hide'], ['Inventory', 'inventory/show', 'inventory/hide'], ['Shop', 'catalog/show/normal', 'catalog/hide']])
         {
             fireEvent.click(screen.getByRole('button', { name }));
             expect(test.link).toHaveBeenLastCalledWith(url);
             expect(phone()).toHaveClass('is-open');
-            expect(screen.getByRole('status')).toHaveTextContent('Opened in a separate window.');
+            expect(phone()).toHaveClass('is-landscape');
+            expect(screen.getByRole('status')).toHaveTextContent(`Opening ${name}`);
             fireEvent.click(screen.getByRole('button', { name: 'Back to apps' }));
+            expect(test.link).toHaveBeenLastCalledWith(hide);
+            expect(phone()).not.toHaveClass('is-landscape');
         }
-        expect(test.link).toHaveBeenCalledTimes(6);
+        expect(test.link).toHaveBeenCalledTimes(10);
+    });
+
+    it('hosts Businesses inside a landscape handset and returns to portrait apps', () =>
+    {
+        render(<PhoneView />); open();
+        fireEvent.click(screen.getByRole('button', { name: 'Businesses' }));
+        expect(phone()).toHaveClass('is-open', 'is-landscape');
+        expect(phone()).toContainElement(screen.getByTestId('business-content'));
+        expect(screen.getByTestId('business-content')).toHaveAttribute('data-embedded', 'true');
+        expect(test.link).toHaveBeenCalledExactlyOnceWith('businesses/hide');
+        expect(screen.queryByText('Opened in a separate window.')).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Back to apps' }));
+        expect(phone()).not.toHaveClass('is-landscape');
+        expect(screen.queryByTestId('business-content')).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Businesses' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Put phone away' }));
+        open();
+        expect(phone()).not.toHaveClass('is-landscape');
+        expect(screen.getByRole('button', { name: 'Businesses' })).toBeInTheDocument();
+    });
+
+    it('hosts one real app, preserves its state through calls, and closes it on Back', () =>
+    {
+        const desktop = document.createElement('div'); desktop.id = 'draggable-windows-container'; document.body.append(desktop);
+        const Content = () =>
+        {
+            const [count, setCount] = useState(0);
+            return <button type="button" onClick={() => setCount(count + 1)}>Choose product {count}</button>;
+        };
+        const Fixture = () =>
+        {
+            const [visible, setVisible] = useState(false);
+            test.link.mockImplementation(url =>
+            {
+                if (url === 'catalog/show/normal') setVisible(true);
+                if (url === 'catalog/hide') setVisible(false);
+            });
+            return <><PhoneView />{visible && <DraggableWindow uniqueKey="catalog"><Content /></DraggableWindow>}</>;
+        };
+        const view = render(<Fixture />); open();
+        fireEvent.click(screen.getByRole('button', { name: 'Shop' }));
+        const choose = screen.getByRole('button', { name: 'Choose product 0' });
+        expect(phone()).toContainElement(choose);
+        expect(desktop).toBeEmptyDOMElement();
+        fireEvent.click(choose);
+        test.phone = { ...test.phone, call: { state: 2, callId: 'incoming', peerName: 'Marco' } };
+        view.rerender(<Fixture />);
+        expect(screen.getByText('Call with Marco')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Choose product 1' })).toBeNull();
+        expect(desktop).toBeEmptyDOMElement();
+        test.phone = { ...test.phone, call: null };
+        view.rerender(<Fixture />);
+        expect(screen.getAllByRole('button', { name: 'Choose product 1' })).toHaveLength(1);
+        fireEvent.click(screen.getByRole('button', { name: 'Back to apps' }));
+        expect(screen.queryByText('Choose product 1')).toBeNull();
+        expect(phone()).not.toHaveClass('is-landscape');
+        fireEvent.click(screen.getByRole('button', { name: 'Shop' }));
+        expect(screen.getAllByRole('button', { name: 'Choose product 0' })).toHaveLength(1);
+        view.unmount(); desktop.remove();
+    });
+
+    it('prioritizes a call over Businesses and restores the business screen afterwards', () =>
+    {
+        const view = render(<PhoneView />); open();
+        fireEvent.click(screen.getByRole('button', { name: 'Businesses' }));
+        test.phone = { ...test.phone, call: { state: 2, callId: 'call', peerName: 'Marco' } };
+        view.rerender(<PhoneView />);
+        expect(phone()).not.toHaveClass('is-landscape');
+        expect(screen.getByText('Call with Marco')).toBeInTheDocument();
+        expect(screen.queryByTestId('business-content')).toBeNull();
+        test.phone = { ...test.phone, call: null };
+        view.rerender(<PhoneView />);
+        expect(phone()).toHaveClass('is-landscape');
+        expect(screen.getAllByTestId('business-content')).toHaveLength(1);
+        expect(test.link).toHaveBeenCalledTimes(1);
+    });
+
+    it('opens landscape within the viewport without overwriting the saved portrait position', () =>
+    {
+        window.localStorage.setItem('districtrp.phone.position', JSON.stringify({ x: -200, y: -30 }));
+        render(<PhoneView />); open();
+        fireEvent.click(screen.getByRole('button', { name: 'Businesses' }));
+        expect((phone() as HTMLElement).style.getPropertyValue('--phone-x')).toBe('0px');
+        const bar = document.querySelector('.district-phone__status');
+        vi.spyOn(phone() as HTMLElement, 'getBoundingClientRect').mockReturnValue({ left: 268, top: 150, right: 1008, bottom: 650, width: 740, height: 500, x: 268, y: 150, toJSON: () => ({}) });
+        fireEvent.pointerDown(bar, { button: 0, pointerId: 1, clientX: 500, clientY: 500 });
+        fireEvent.pointerMove(bar, { pointerId: 1, clientX: 400, clientY: 480 });
+        fireEvent.pointerUp(bar, { pointerId: 1 });
+        expect((phone() as HTMLElement).style.getPropertyValue('--phone-x')).toBe('-100px');
+        fireEvent(window, new Event('resize'));
+        expect((phone() as HTMLElement).style.getPropertyValue('--phone-x')).toBe('0px');
+        fireEvent.click(screen.getByRole('button', { name: 'Back to apps' }));
+        expect((phone() as HTMLElement).style.getPropertyValue('--phone-x')).toBe('-200px');
+        expect(JSON.parse(window.localStorage.getItem('districtrp.phone.position') ?? 'null')).toEqual({ x: -200, y: -30 });
     });
 
     it('shows unread counts on the apps', () =>
@@ -114,6 +216,48 @@ describe('DistrictRP phone', () =>
         expect(screen.getByRole('button', { name: 'Messages, 2' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Friends, 2' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Inventory, 3' })).toBeInTheDocument();
+    });
+
+    it('keeps the static carry pose across app launches and clears it on close and unmount', () =>
+    {
+        const view = render(<PhoneView />); open();
+        expect(test.setBrowsing).toHaveBeenLastCalledWith(true);
+        fireEvent.click(screen.getByRole('button', { name: 'Shop' }));
+        expect(test.setBrowsing).toHaveBeenLastCalledWith(true);
+        fireEvent.click(screen.getByRole('button', { name: 'Put phone away' }));
+        expect(test.setBrowsing).toHaveBeenLastCalledWith(false);
+        open();
+        view.unmount();
+        expect(test.setBrowsing).toHaveBeenLastCalledWith(false);
+    });
+
+    it('pages apps on short screens without losing routes or the communication dock', () =>
+    {
+        Object.defineProperty(window, 'innerHeight', { configurable: true, value: 540 });
+        render(<PhoneView />); open();
+        expect(screen.getByRole('button', { name: 'App page 1' })).toHaveAttribute('aria-current', 'page');
+        expect(screen.queryByRole('button', { name: 'Shop' })).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'App page 2' }));
+        expect(screen.getByRole('button', { name: 'Phone' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Messages' })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Shop' }));
+        expect(test.link).toHaveBeenCalledExactlyOnceWith('catalog/show/normal');
+        expect(phone()).toHaveClass('is-open');
+        fireEvent.click(screen.getByRole('button', { name: 'Back to apps' }));
+        expect(screen.getByRole('button', { name: 'App page 1' })).toHaveAttribute('aria-current', 'page');
+    });
+
+    it('clamps the selected page when resizing to fit more apps', () =>
+    {
+        Object.defineProperty(window, 'innerHeight', { configurable: true, value: 540 });
+        render(<PhoneView />); open();
+        fireEvent.click(screen.getByRole('button', { name: 'App page 3' }));
+        expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
+        Object.defineProperty(window, 'innerHeight', { configurable: true, value: 900 });
+        fireEvent(window, new Event('resize'));
+        expect(screen.getByRole('button', { name: 'Businesses' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'App page 3' })).toBeNull();
     });
 
     it('opens Messages, Friends and Settings inside the phone and goes home with the home bar', () =>
@@ -130,11 +274,11 @@ describe('DistrictRP phone', () =>
         expect(screen.getByRole('button', { name: 'Turn on DND' })).toBeInTheDocument();
     });
 
-    it('clears the external launch screen when hidden and reopened', () =>
+    it('closes the native app when the phone is hidden and restores the home screen', () =>
     {
         render(<PhoneView />); open();
         fireEvent.click(screen.getByRole('button', { name: 'Shop' }));
-        expect(test.link).toHaveBeenCalledWith('catalog/toggle/normal');
+        expect(test.link).toHaveBeenCalledWith('catalog/show/normal');
         expect(phone()).toHaveClass('is-open');
         act(() => test.tracker?.linkReceived('phone/hide'));
         open();
@@ -188,7 +332,7 @@ describe('DistrictRP phone', () =>
         expect(screen.queryByRole('status')).toBeNull();
     });
 
-    it('prioritizes incoming calls and offers over the external app launch screen', () =>
+    it('prioritizes incoming calls and offers over the hosted app', () =>
     {
         const view = render(<PhoneView />); open();
         fireEvent.click(screen.getByRole('button', { name: 'Shop' }));

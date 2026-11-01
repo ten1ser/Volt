@@ -6,7 +6,7 @@ import { useConnectionState } from '../events/useConnectionState';
 import { useMessageEvent } from '../events/useMessageEvent';
 
 /** Wire actions of packets 6100 and 6101. */
-export const PhoneAction = { Status: 0, Reset: 1, AddContact: 2, History: 3, Locate: 4, ShareLocation: 5 } as const;
+export const PhoneAction = { Status: 0, Reset: 1, AddContact: 2, History: 3, Locate: 4, ShareLocation: 5, Browsing: 6 } as const;
 export const CallAction = { Dial: 0, Answer: 1, HangUp: 2, CallContact: 3 } as const;
 export const LocationState = { Hidden: 0, InRoom: 1, NotInRoom: 2, Offline: 3 } as const;
 export const CallState = { Idle: 0, Dialing: 1, Incoming: 2, Active: 3 } as const;
@@ -230,7 +230,11 @@ export const useRpPhoneSource = () =>
         locations: authenticated ? locations : NO_LOCATIONS,
         locate: useCallback((userId: number) => read(PhoneAction.Locate, String(userId)), [read]),
         setSharing: useCallback((share: boolean) => request(PhoneAction.ShareLocation, share ? '1' : '0'), [request]),
-        respondOffer
+        respondOffer,
+        setBrowsing: useCallback((open: boolean) =>
+        {
+            if (authenticated) read(PhoneAction.Browsing, open ? '1' : '0');
+        }, [authenticated, read])
     };
 };
 

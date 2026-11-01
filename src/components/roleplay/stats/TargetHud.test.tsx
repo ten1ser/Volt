@@ -62,4 +62,17 @@ describe('target HUD', () =>
         fireEvent.click(screen.getByRole('button', { name: 'Clear target' }));
         expect(clearTarget).toHaveBeenCalledTimes(1);
     });
+
+    it('exposes the padlock as a toggle and identifies an out-of-room target without fabricated bars', () =>
+    {
+        const toggleLock = vi.fn();
+        test.value = { target, stats: null, clearTarget: vi.fn(), locked: true, unavailable: true, toggleLock };
+        render(<TargetHud />);
+        const lock = screen.getByRole('button', { name: 'Unlock target' });
+        expect(lock).toHaveAttribute('aria-pressed', 'true');
+        fireEvent.click(lock);
+        expect(toggleLock).toHaveBeenCalledOnce();
+        expect(screen.getByRole('status')).toHaveTextContent('Target unavailable in this room');
+        expect(screen.queryByRole('progressbar')).toBeNull();
+    });
 });

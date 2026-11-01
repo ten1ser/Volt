@@ -15,9 +15,10 @@ const clock = (milliseconds: number) =>
 interface BusinessViewProps {
     groupInformation?: GroupInformationParser;
     onClose?: () => void;
+    embedded?: boolean;
 }
 
-export const BusinessView = ({ groupInformation, onClose }: BusinessViewProps = {}) =>
+export const BusinessView = ({ groupInformation, onClose, embedded = false }: BusinessViewProps = {}) =>
 {
     const windowId = useId();
     const [open, setOpen] = useState(false);
@@ -29,18 +30,18 @@ export const BusinessView = ({ groupInformation, onClose }: BusinessViewProps = 
     const panel = useRef<HTMLDivElement>(null);
     const opener = useRef<HTMLElement | null>(null);
     const controlled = !!groupInformation;
-    const visible = controlled || open;
+    const visible = embedded || controlled || open;
     const { snapshot, pending, mutating, error, remainingMs, refresh, act, authenticated } = useRpBusiness(visible, { search, rankFilter, page });
     // The existing Jobs endpoint serves one configured corporation. Never show its staff for another group.
     const data = snapshot && (!controlled || snapshot.groupId === groupInformation.id) ? snapshot : null;
     const unrelated = !!snapshot && controlled && snapshot.groupId !== groupInformation.id;
     const companyName = groupInformation?.title || data?.name || 'Hospital';
     const badge = groupInformation?.badge || data?.badge;
-    const close = () => controlled ? onClose?.() : setOpen(false);
+    const close = () => controlled || embedded ? onClose?.() : setOpen(false);
 
     useEffect(() =>
     {
-        if(controlled) return;
+        if(controlled || embedded) return;
         const tracker: ILinkEventTracker = { eventUrlPrefix: 'businesses/', linkReceived: url =>
         {
             if(url === 'businesses/hide')
@@ -54,12 +55,12 @@ export const BusinessView = ({ groupInformation, onClose }: BusinessViewProps = 
         } };
         AddLinkEventTracker(tracker);
         return () => RemoveLinkEventTracker(tracker);
-    }, [controlled]);
+    }, [controlled, embedded]);
 
     if(!authenticated && open) setOpen(false);
     useEffect(() =>
     {
-        if(!visible) return;
+        if(!visible || embedded) return;
         const focus = window.setTimeout(() => panel.current?.querySelector<HTMLButtonElement>('.business-close')?.focus(), 0);
         return () =>
         {
@@ -67,7 +68,7 @@ export const BusinessView = ({ groupInformation, onClose }: BusinessViewProps = 
             const target = opener.current?.closest('[hidden]') ? document.querySelector<HTMLElement>('[aria-controls="district-friends"]') : opener.current;
             target?.focus();
         };
-    }, [visible]);
+    }, [visible, embedded]);
     if(tab === 'management' && data && !data.canManageMembers && !data.canManageRanks) setTab('staff');
 
     if(!visible || !authenticated) return null;
@@ -91,25 +92,24 @@ export const BusinessView = ({ groupInformation, onClose }: BusinessViewProps = 
     });
     const staffRanks = data?.ranks.slice().sort((a, b) => b.level - a.level).filter(rank => data.employees.some(user => user.level === rank.level));
 
-    return <VoltCardView theme="district" uniqueKey={controlled ? `district-corporation-${groupInformation.id}` : 'district-business'} className="district-business" isResizable={false} constrainToViewport>
-        <div ref={panel} role="dialog" aria-labelledby={`${windowId}-title`} onKeyDown={event =>
+    const content = <div ref={panel} role={embedded ? 'region' : 'dialog'} aria-label={embedded ? 'Business/Corporation' : undefined} aria-labelledby={embedded ? undefined : `${windowId}-title`} onKeyDown={event =>
         {
             if(event.key === 'Escape' && !event.defaultPrevented)
             {
                 event.stopPropagation(); close();
             }
         }}>
-            <header className="business-titlebar drag-handler"><span id={`${windowId}-title`}>Business/Corporation</span><button type="button" className="business-close" aria-label="Close Business/Corporation" onClick={close}>×</button></header>
+            {!embedded && <header className="business-titlebar drag-handler"><span id={`${windowId}-title`}>Business/Corporation</span><button type="button" className="business-close" aria-label="Close Business/Corporation" onClick={close}>×</button></header>}
             <div className="business-heading">
                 <div className="business-badge" aria-label="Job badge">{badge && <LayoutBadgeImageView badgeCode={badge} isGroup showInfo={false} />}</div>
                 <div className="business-heading-copy"><h2>{companyName}</h2><div className="business-summary">{data?.available ? <><span>{data.totalEmployees} employees</span><span>{data.onDutyCount} on duty</span></> : <span>Employee directory</span>}</div></div>
             </div>
-            <div className="business-tabs" role="tablist" aria-label="Business sections" onKeyDown={event =>
+            <div className="business-tabs" role="tablist" aria-label="Business sections" aria-orientation={embedded ? 'vertical' : 'horizontal'} onKeyDown={event =>
             {
-                if(!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                if(!['ArrowLeft', 'ArrowRight', 'Home', 'End', ...(embedded ? ['ArrowUp', 'ArrowDown'] : [])].includes(event.key)) return;
                 const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
                 const current = tabs.indexOf(document.activeElement as HTMLButtonElement);
-                const index = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+                const index = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (current + (['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : -1) + tabs.length) % tabs.length;
                 event.preventDefault(); tabs[index]?.click(); tabs[index]?.focus();
             }}>{(['staff', 'shift', ...(management ? ['management'] : [])] as Tab[]).map(id => <button type="button" key={id} id={`${windowId}-tab-${id}`} role="tab" tabIndex={tab === id ? 0 : -1} aria-selected={tab === id} aria-controls={`${windowId}-content`} onClick={() => setTab(id)}>{id === 'staff' ? 'Employees' : id === 'shift' ? 'My shift' : 'Management'}</button>)}</div>
             <section id={`${windowId}-content`} role="tabpanel" aria-labelledby={`${windowId}-tab-${tab}`} className="business-content" aria-busy={pending}>
@@ -148,6 +148,7 @@ export const BusinessView = ({ groupInformation, onClose }: BusinessViewProps = 
                 </>}
             </section>
             {data?.available && <footer className="business-footer"><div><strong>{ownRank?.name || 'Not employed'}</strong><span>{ownRank ? `${ownRank.pay}c / 10 min` : 'Apply through My shift'}</span></div><div className="business-next-pay">{data.self.onDuty ? <>Next salary <strong>{clock(remainingMs)}</strong></> : 'Off duty'}</div>{dutyButton}</footer>}
-        </div>
-    </VoltCardView>;
+        </div>;
+    return embedded ? <div className="district-business is-embedded">{content}</div>
+        : <VoltCardView theme="district" uniqueKey={controlled ? `district-corporation-${groupInformation.id}` : 'district-business'} className="district-business" isResizable={false} constrainToViewport>{content}</VoltCardView>;
 };

@@ -29,8 +29,8 @@ $outline: 0 1px 0 #000000b3, 1px 0 0 #00000080, -1px 0 0 #00000080, 0 -1px 0 #00
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
+    align-items: flex-start;
+    gap: 5px;
     max-width: min(320px, calc(100vw - 320px));
     color: #fff;
     font-family: HabboAirUbuntu, UbuntuRegular, sans-serif;
@@ -46,7 +46,7 @@ $outline: 0 1px 0 #000000b3, 1px 0 0 #00000080, -1px 0 0 #00000080, 0 -1px 0 #00
 
     // Native hotel icon at exact 1x so its pixels stay crisp.
     img { flex: 0 0 auto; image-rendering: pixelated; filter: drop-shadow(0 1px 1px #000000b3); }
-    time { font-size: 34px; font-weight: 700; line-height: 38px; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; }
+    time { font-size: 18px; font-weight: 700; line-height: 24px; font-variant-numeric: tabular-nums; }
 }
 
 .district-location {
@@ -56,15 +56,16 @@ $outline: 0 1px 0 #000000b3, 1px 0 0 #00000080, -1px 0 0 #00000080, 0 -1px 0 #00
     gap: 6px;
     min-width: 0;
     max-width: 100%;
-    padding: 2px 2px 2px 6px;
+    padding: 2px 0;
     border: 0;
     border-radius: 6px;
     background: transparent;
     color: #fff;
-    font: 14px/18px HabboAirUbuntu, UbuntuRegular, sans-serif;
+    font: 700 22px/28px HabboAirUbuntu, UbuntuRegular, sans-serif;
     text-shadow: $outline;
 
     span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .district-location__icon { flex: 0 0 34px; width: 34px; height: 55px; max-width: none; image-rendering: pixelated; }
 
     // In a room the name opens the room tools menu.
     &.is-menu { cursor: pointer; text-align: right; pointer-events: auto; }
@@ -190,7 +191,7 @@ $outline: 0 1px 0 #000000b3, 1px 0 0 #00000080, -1px 0 0 #00000080, 0 -1px 0 #00
 
 // Room tools as a dropdown under the room name (top right): no side rail, hidden while closed.
 .volt-room-tools-container.district-room-tools {
-    top: max(84px, calc(env(safe-area-inset-top) + 84px));
+    top: max(116px, calc(env(safe-area-inset-top) + 116px));
     bottom: auto;
     left: auto;
     right: max(16px, env(safe-area-inset-right));
@@ -204,10 +205,11 @@ $outline: 0 1px 0 #000000b3, 1px 0 0 #00000080, -1px 0 0 #00000080, 0 -1px 0 #00
 @media (max-width: 700px) {
     .district-vitals { top: max(12px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); width: min(280px, calc(100vw - 176px)); }
     .district-topbar { top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); max-width: 160px; }
-    .district-clock time { font-size: 26px; line-height: 30px; }
+    .district-clock time { font-size: 16px; line-height: 22px; }
+    .district-location { font-size: 16px; line-height: 22px; }
     .district-bottom { right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); left: max(12px, env(safe-area-inset-left)); }
     .district-context-rail { top: 100px; right: 12px; width: min(210px, calc(100vw - 24px)); }
-    .volt-room-tools-container.district-room-tools { top: max(72px, calc(env(safe-area-inset-top) + 72px)); right: max(12px, env(safe-area-inset-right)); }
+    .volt-room-tools-container.district-room-tools { top: max(110px, calc(env(safe-area-inset-top) + 110px)); right: max(12px, env(safe-area-inset-right)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

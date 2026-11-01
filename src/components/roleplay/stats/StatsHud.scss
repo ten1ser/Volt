@@ -57,7 +57,7 @@
     &__track {
         position: relative;
         flex: 1;
-        height: 12px;
+        height: 15px;
         overflow: hidden;
         border-radius: 6px;
         background: #00000080;
@@ -67,13 +67,17 @@
     &__stat--health &__fill { background: #e5534b; }
     &__stat--energy &__fill { background: #e8b84a; }
     &__value {
-        flex: 0 0 28px;
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
         color: #fff;
-        font-size: 13px;
+        font-size: 11px;
         font-weight: 700;
         line-height: 14px;
         font-variant-numeric: tabular-nums;
-        text-align: right;
+        text-align: center;
+        text-shadow: 0 1px 2px #000, 1px 0 1px #000;
     }
 
     &__treatment {

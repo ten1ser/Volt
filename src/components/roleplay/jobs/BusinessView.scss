@@ -1,4 +1,4 @@
-.district-business.volt-card {
+.district-business.volt-card, .district-business.is-embedded {
     --business-surface: var(--district-ui-surface, #202a2a);
     --business-raised: var(--district-ui-raised, #2c3838);
     --business-border: var(--district-ui-border, #536563);
@@ -105,5 +105,63 @@
         .business-pagination { flex-wrap: wrap; }
         .business-pagination > span:first-child { width: 100%; }
         .business-footer { padding: 10px 12px; gap: 8px; flex-wrap: wrap; }
+    }
+}
+
+.district-business.is-embedded {
+    container-type: inline-size;
+    display: flex;
+    flex: 1 1 auto;
+    width: 100%;
+    height: auto;
+    max-width: none;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    > div[role='region'] {
+        display: grid; flex: 1; min-width: 0; min-height: 0;
+        grid-template-columns: 144px minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr) auto;
+    }
+    .business-heading {
+        grid-column: 1; grid-row: 1; margin: 0; padding: 9px 8px; gap: 8px;
+        background: transparent; border: 0; border-radius: 0;
+        h2 { font-size: 13px; line-height: 17px; margin: 0 0 3px; overflow-wrap: anywhere; }
+    }
+    .business-badge { width: 36px; height: 40px; border: 0; background: transparent; }
+    .business-summary { display: block; }
+    .business-summary span { display: block; padding: 0; border: 0; background: transparent; font-size: 10px; }
+    .business-tabs { grid-column: 1; grid-row: 2; flex-direction: column; padding: 0 8px 8px; border: 0; overflow-y: auto; }
+    .business-tabs button {
+        flex-shrink: 0; min-height: 32px; padding: 6px 8px; text-align: left;
+        border: 0; border-left: 2px solid transparent; border-radius: 4px;
+        background: transparent;
+    }
+    .business-tabs button[aria-selected='true'] { border-left-color: var(--business-accent); border-bottom-color: transparent; background: var(--business-raised); }
+    .business-content { grid-column: 2; grid-row: 1 / 3; height: auto; min-width: 0; min-height: 0; padding: 8px; border-left: 1px solid var(--business-border); }
+    .business-footer { grid-column: 1 / -1; grid-row: 3; padding: 6px 10px; gap: 8px; }
+    .business-filters { flex-direction: row; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .business-filters select { max-width: 150px; }
+    .business-filters input, .business-filters select { padding: 5px 6px; }
+    .business-rank-section { padding: 5px; }
+    .business-rank-section > header { padding: 3px 5px; }
+    .business-staff-grid { gap: 5px; padding-top: 5px; }
+    .business-staff-card { gap: 6px; padding: 4px; }
+    .business-pagination { flex-wrap: wrap; padding-top: 8px; gap: 6px; }
+    .business-empty { padding: 18px 8px; }
+    .business-countdown { margin-top: 8px; }
+    @container (max-width: 420px) {
+        > div[role='region'] { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr) auto; }
+        .business-heading { grid-column: 1; grid-row: 1; }
+        .business-tabs { grid-column: 1; grid-row: 2; padding: 0 8px 6px; }
+        .business-content { grid-column: 1; grid-row: 3; border-left: 0; }
+        .business-footer { grid-column: 1; grid-row: 4; }
+        .business-staff-grid { grid-template-columns: minmax(0, 1fr); }
+        .business-filters { flex-direction: column; }
+        .business-filters select { max-width: 100%; width: 100%; }
+        .business-footer { flex-wrap: wrap; gap: 6px; }
+        .business-columns, .business-person { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 64px; }
+        .has-actions :is(.business-columns, .business-person) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 }

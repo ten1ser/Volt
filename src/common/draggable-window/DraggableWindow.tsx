@@ -14,6 +14,7 @@ import {
 import { createPortal } from 'react-dom';
 import { GetLocalStorage, SetLocalStorage, WindowSaveOptions } from '../../api';
 import { DraggableWindowPosition } from './DraggableWindowPosition';
+import { HostedWindow, useWindowDestination } from './WindowHost';
 
 const CURRENT_WINDOWS: HTMLElement[] = [];
 const POS_MEMORY: Map<Key, { x: number; y: number }> = new Map();
@@ -37,7 +38,14 @@ export interface DraggableWindowProps {
     children?: ReactNode;
 }
 
-export const DraggableWindow: FC<DraggableWindowProps> = (props) => {
+export const DraggableWindow: FC<DraggableWindowProps> = props => {
+    const destination = useWindowDestination(props.uniqueKey);
+    return destination
+        ? <HostedWindow destination={destination} windowKey={props.uniqueKey}>{props.children}</HostedWindow>
+        : <FloatingDraggableWindow {...props} />;
+};
+
+const FloatingDraggableWindow: FC<DraggableWindowProps> = (props) => {
     const {
         uniqueKey = null,
         handleSelector = '.drag-handler',

@@ -19,7 +19,7 @@ export const NativeWindowShell: FC<NativeWindowShellProps> = ({ type, windowKey,
     const onPositionChange = useCallback((position: { x: number; y: number }) => move(type, windowKey, position.x, position.y), [move, type, windowKey]);
 
     return (
-        <DraggableWindow handleSelector=".native0-header" initialPosition={{ x, y }} onPositionChange={onPositionChange}>
+        <DraggableWindow uniqueKey={`phone-mod-${type}-${windowKey}`} handleSelector=".native0-header" initialPosition={{ x, y }} onPositionChange={onPositionChange}>
             {children}
         </DraggableWindow>
     );

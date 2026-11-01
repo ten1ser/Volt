@@ -332,7 +332,7 @@ export const GuideToolView: FC<{}> = (props) => {
     if (!isVisible) return null;
 
     return (
-        <VoltCardView className="volt-guide-tool" theme="primary-slim">
+        <VoltCardView className="volt-guide-tool" theme="primary-slim" uniqueKey="guide-tool">
             <VoltCardHeaderView headerText={headerText} noCloseButton={noCloseButton} onCloseClick={(event) => processAction('close')} />
             <VoltCardContentView className="text-black">
                 {sessionState === GuideSessionState.GUIDE_TOOL_MENU && (

@@ -1,0 +1,634 @@
+$charcoal: var(--district-ui-surface, #23252a);
+$charcoal-dark: var(--district-ui-raised, #17181c);
+$brass: var(--district-ui-accent, #d4b369);
+$brass-light: var(--district-ui-accent-hover, #e4c477);
+$text: var(--district-ui-text, #f1eee6);
+$muted: var(--district-ui-muted, #b1b1ad);
+$panel-edge: #ffffff1a;
+$panel-right: max(16px, env(safe-area-inset-right));
+$panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
+
+// A compact fixed handset and an independent fixed log. Neither panel has a transparent wrapper.
+.district-radio {
+    position: fixed;
+    right: $panel-right;
+    bottom: $panel-bottom;
+    z-index: 480;
+    box-sizing: border-box;
+    width: 240px;
+    max-width: calc(100vw - 24px);
+    padding: 10px 12px 12px;
+    border: 1px solid $panel-edge;
+    border-radius: 16px 16px 20px 20px;
+    background: linear-gradient(160deg, #2f3238, $charcoal 42%, $charcoal-dark);
+    box-shadow: 0 14px 32px #000a, inset 0 1px #ffffff1f, inset 0 0 0 1px #0006;
+    color: $text;
+    font-family: var(--district-ui-font, HabboAirUbuntu, UbuntuRegular, sans-serif);
+    pointer-events: auto;
+
+    &.is-positioned { right: auto; bottom: auto; }
+
+    &.is-minimized {
+        width: 252px;
+        padding: 8px 10px;
+    }
+
+    button {
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+
+        &:disabled { cursor: default; opacity: .45; }
+        &:focus-visible { outline: 2px solid $brass; outline-offset: 2px; }
+    }
+
+    input { font: inherit; }
+
+    &__body {
+        max-height: calc(100dvh - 112px - env(safe-area-inset-top));
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        scrollbar-color: #4a4d54 transparent;
+    }
+
+    &__antenna {
+        position: absolute;
+        top: -28px;
+        right: 32px;
+        width: 5px;
+        height: 34px;
+        border-radius: 3px;
+        background: linear-gradient(180deg, $brass-light, #6b5a2e);
+        box-shadow: 0 1px 3px #0008;
+        transform: rotate(9deg);
+        transform-origin: bottom center;
+
+        &::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -1px;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: $brass;
+        }
+    }
+
+    &__header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+
+        &:active { cursor: grabbing; }
+
+        h2 {
+            flex: 1 1 auto;
+            min-width: 0;
+            margin: 0;
+            overflow: hidden;
+            color: $brass-light;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .08em;
+            line-height: 20px;
+            text-overflow: ellipsis;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+    }
+
+    &__header--minimized {
+        flex-wrap: wrap;
+        gap: 3px 8px;
+    }
+
+    &__mini-frequency {
+        flex: 0 0 auto;
+        color: $brass-light;
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        line-height: 20px;
+    }
+
+    &__mini-actions {
+        display: flex;
+        flex: 0 0 auto;
+        gap: 4px;
+        margin-left: auto;
+
+        button {
+            padding: 3px 6px;
+            border: 1px solid #4a4d54;
+            border-radius: 5px;
+            background: #26292f;
+            color: $muted;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 14px;
+        }
+
+        button[aria-pressed='true'] { border-color: $brass; color: $brass-light; }
+    }
+
+    &__close,
+    &__minimize {
+        flex: 0 0 auto;
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        border: 1px solid #ffffff24;
+        border-radius: 5px;
+        background: #26292f;
+        color: $muted;
+        font-size: 14px;
+        line-height: 18px;
+    }
+
+    &__minimize { font-size: 15px; }
+
+    // Speaker grille slots, purely decorative.
+    &__speaker {
+        display: block;
+        height: 10px;
+        margin: 7px 0 0;
+        border-radius: 3px;
+        background: repeating-linear-gradient(180deg, #101114 0 2px, #3a3e45 2px 4px);
+        box-shadow: inset 0 1px 2px #0008;
+    }
+
+    &__lcd {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        margin: 8px 0 6px;
+        padding: 6px 8px 7px;
+        border: 1px solid #0a0b0d;
+        border-radius: 7px;
+        background: radial-gradient(120% 100% at 50% 0%, #24301f, #0d130c);
+        box-shadow: inset 0 2px 8px #000c, 0 1px #ffffff14;
+        color: #b9e39a;
+        font-variant-numeric: tabular-nums;
+
+        strong {
+            overflow: hidden;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            line-height: 27px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    &__lcd-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        line-height: 12px;
+        text-transform: uppercase;
+        opacity: .8;
+    }
+
+    &__lcd-note {
+        overflow: hidden;
+        color: #8fae82;
+        font-size: 9px;
+        line-height: 12px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    // Keyboard entry still works; the keypad writes into the same draft.
+    &__lcd-input {
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 3px;
+        padding: 2px 5px;
+        border: 1px solid #3e5a35;
+        border-radius: 4px;
+        background: #0a1009c9;
+        color: #d7f2c2;
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+
+        &::placeholder { color: #6f8a65; opacity: 1; }
+        &:disabled { opacity: .55; }
+        &:focus-visible { outline: 1px solid $brass; outline-offset: 1px; }
+    }
+
+    &__pulse {
+        display: block;
+        width: max-content;
+        min-width: 46px;
+        margin: 0 0 6px auto;
+        padding: 1px 6px;
+        border: 1px solid #3b3f35;
+        border-radius: 4px;
+        background: #151a13;
+        color: #8fae82;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        line-height: 14px;
+        text-align: center;
+
+        &.is-tx { border-color: #6b5a2e; color: #f0c66f; animation: district-radio-pulse 700ms ease-out; }
+        &.is-rx { border-color: #3e6a35; color: #9adf7c; animation: district-radio-pulse 700ms ease-out; }
+    }
+
+    &__controls {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 6px;
+    }
+
+    &__power {
+        padding: 6px 8px;
+        border: 1px solid $brass;
+        border-radius: 6px;
+        background: linear-gradient(180deg, #3a3d44, #262a30);
+        color: $brass-light;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 14px;
+        white-space: nowrap;
+    }
+
+    &__channels {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 3px;
+        min-width: 0;
+
+        button {
+            min-width: 0;
+            overflow: hidden;
+            padding: 5px 2px;
+            border: 1px solid #4a4d54;
+            border-radius: 5px;
+            background: #2a2d33;
+            color: $muted;
+            font-size: 9px;
+            font-weight: 700;
+            line-height: 13px;
+            text-align: center;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        button[aria-pressed='true'] {
+            border-color: $brass;
+            background: #3a3324;
+            color: $brass-light;
+        }
+    }
+
+    &__hint {
+        margin: 5px 0 0;
+        color: $muted;
+        font-size: 9px;
+        line-height: 13px;
+    }
+
+    &__keypad {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 4px;
+        margin-top: 8px;
+    }
+
+    &__key {
+        min-width: 0;
+        padding: 6px 0;
+        border: 1px solid #4a4d54;
+        border-radius: 6px;
+        background: linear-gradient(180deg, #34383f, #23262b);
+        color: $text;
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        line-height: 16px;
+
+        &:active { transform: translateY(1px); }
+        &[aria-label='Backspace'] { color: $brass-light; }
+    }
+
+    &__tune-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        margin-top: 4px;
+
+        button {
+            padding: 5px 0;
+            border: 1px solid #4a4d54;
+            border-radius: 6px;
+            background: #26292f;
+            color: $muted;
+            font-size: 10px;
+            font-weight: 700;
+        }
+    }
+
+    &__tune {
+        border-color: $brass !important;
+        background: linear-gradient(180deg, $brass-light, #c9a557) !important;
+        color: #2a2008 !important;
+    }
+
+    &__notice {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        margin-top: 7px;
+        padding: 5px 7px;
+        border-left: 3px solid $brass;
+        border-radius: 4px;
+        background: #2c2a22;
+        color: $text;
+        font-size: 10px;
+        line-height: 14px;
+
+        &.is-refused { border-left-color: #c96b5a; background: #2e2222; }
+
+        span { flex: 1 1 auto; overflow-wrap: anywhere; }
+        button { flex: 0 0 auto; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: $muted; font-size: 13px; line-height: 14px; }
+    }
+
+    &__error { margin: 5px 0 0; color: #e39c8f; font-size: 10px; line-height: 14px; }
+
+    &__tx-hint {
+        margin: 6px 0 0;
+        color: $muted;
+        font-size: 9px;
+        line-height: 13px;
+        text-align: center;
+    }
+
+    &__audio {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 6px;
+
+        > button {
+            padding: 4px 7px;
+            border: 1px solid #4a4d54;
+            border-radius: 5px;
+            background: #26292f;
+            color: $muted;
+            font-size: 9px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        > button[aria-pressed='true'] { border-color: $brass; color: $brass-light; }
+        input { flex: 1 1 auto; min-width: 0; accent-color: $brass; }
+    }
+
+    &__actions {
+        display: flex;
+        gap: 5px;
+        margin-top: 6px;
+
+        button {
+            flex: 1 1 0;
+            padding: 4px 3px;
+            border: 1px solid #4a4d54;
+            border-radius: 5px;
+            background: #26292f;
+            color: $muted;
+            font-size: 9px;
+            font-weight: 700;
+        }
+    }
+
+    // The log is its own fixed panel, to the handset's left by default.
+    &__log {
+        position: fixed;
+        right: calc(#{$panel-right} + 250px);
+        bottom: $panel-bottom;
+        z-index: 480;
+        display: flex;
+        flex-direction: column;
+        width: var(--radio-log-width, 300px);
+        max-width: calc(100vw - 16px);
+        max-height: min(400px, calc(100dvh - 100px - env(safe-area-inset-top)));
+        box-sizing: border-box;
+        border: 1px solid $panel-edge;
+        border-radius: 14px;
+        background-color: rgba(23, 24, 28, var(--radio-log-opacity, .92));
+        box-shadow: 0 14px 32px #000a;
+        overflow: hidden;
+        color: $text;
+        font-family: var(--district-ui-font, HabboAirUbuntu, UbuntuRegular, sans-serif);
+        pointer-events: auto;
+
+        &.is-positioned { right: auto; bottom: auto; }
+
+        button {
+            font: inherit;
+            color: inherit;
+            cursor: pointer;
+
+            &:focus-visible { outline: 2px solid $brass; outline-offset: 2px; }
+        }
+    }
+
+    &__log-header {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 10px;
+        border-bottom: 1px solid $panel-edge;
+        background-color: rgba(31, 33, 38, var(--radio-log-opacity, .92));
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+
+        &:active { cursor: grabbing; }
+
+        h3 {
+            flex: 1 1 auto;
+            min-width: 0;
+            margin: 0;
+            overflow: hidden;
+            color: $brass-light;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            line-height: 18px;
+            text-overflow: ellipsis;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+    }
+
+    &__log-count {
+        flex: 0 0 auto;
+        color: $muted;
+        font-size: 9px;
+        font-variant-numeric: tabular-nums;
+        line-height: 18px;
+    }
+
+    &__log-settings-toggle {
+        flex: 0 0 auto;
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        border: 1px solid #ffffff24;
+        border-radius: 5px;
+        background: #26292f;
+        color: $muted;
+        font-size: 12px;
+        line-height: 18px;
+
+        &[aria-expanded='true'] { border-color: $brass; color: $brass-light; }
+    }
+
+    &__log-settings {
+        display: flex;
+        flex: 0 0 auto;
+        flex-direction: column;
+        gap: 6px;
+        padding: 7px 10px;
+        border-bottom: 1px solid $panel-edge;
+        background-color: rgba(28, 30, 35, var(--radio-log-opacity, .92));
+    }
+
+    &__setting {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        span {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            color: $muted;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            line-height: 13px;
+            text-transform: uppercase;
+        }
+
+        output { color: $brass-light; font-variant-numeric: tabular-nums; }
+        input { width: 100%; min-width: 0; accent-color: $brass; }
+    }
+
+    &__settings-reset {
+        align-self: flex-start;
+        padding: 3px 7px;
+        border: 1px solid #4a4d54;
+        border-radius: 5px;
+        background: #26292f;
+        color: $muted;
+        font-size: 9px;
+        font-weight: 700;
+    }
+
+    &__log-list {
+        flex: 1 1 auto;
+        min-height: 0;
+        margin: 0;
+        padding: 2px 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        list-style: none;
+        font-size: var(--radio-log-text, 12px);
+        touch-action: pan-y;
+        scrollbar-width: none !important;
+        scrollbar-color: transparent transparent !important;
+
+        li { padding: 5px 10px; border-bottom: 1px solid #ffffff0d; }
+        li:last-child { border-bottom: 0; }
+
+        p {
+            margin: 2px 0 0;
+            color: $text;
+            font-size: 1em;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+        }
+    }
+
+    &__log-meta {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 3px 6px;
+        font-size: .82em;
+        line-height: 1.35;
+
+        strong { color: $text; font-size: 1.1em; }
+        time { margin-left: auto; color: $muted; font-size: .9em; font-variant-numeric: tabular-nums; }
+    }
+
+    &__log-rank { color: $brass; font-weight: 700; }
+    &__log-channel { color: $muted; }
+
+    &__log-empty {
+        flex: 1 1 auto;
+        margin: 0;
+        padding: 18px 12px;
+        color: $muted;
+        font-size: 12px;
+        text-align: center;
+    }
+}
+
+// Keep the log's own scroll surface clean even inside the global classic scrollbar theme.
+.district-radio__log .district-radio__log-list {
+    scrollbar-width: none !important;
+    scrollbar-color: transparent transparent !important;
+}
+
+.district-radio__log .district-radio__log-list::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+}
+
+@keyframes district-radio-pulse {
+    from { opacity: .35; }
+    50% { opacity: 1; }
+    to { opacity: 1; }
+}
+
+@media (max-width: 720px) {
+    .district-radio {
+        right: max(12px, env(safe-area-inset-right));
+        bottom: max(76px, calc(68px + env(safe-area-inset-bottom)));
+        width: min(240px, calc(100vw - 24px));
+    }
+
+    .district-radio__body { max-height: calc(100dvh - 160px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+
+    .district-radio__log {
+        right: max(12px, env(safe-area-inset-right));
+        top: max(12px, env(safe-area-inset-top));
+        bottom: auto;
+        width: min(var(--radio-log-width, 300px), calc(100vw - 24px));
+        max-height: min(38dvh, 320px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .district-radio__pulse { animation: none; }
+}

@@ -10,7 +10,7 @@ import {
 } from '@volt/renderer';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FC, useEffect, useState } from 'react';
-import { NativeTextHaloFilter } from '../common';
+import { NativeTextHaloFilter, WidgetErrorBoundary } from '../common';
 import { useVoltEventReducer } from '../hooks';
 import { AchievementsView } from './achievements/AchievementsView';
 import { AvatarEditorView } from './avatar-editor';
@@ -29,6 +29,7 @@ import { GangView } from './roleplay/gangs/GangView';
 import { HealOfferView } from './roleplay/jobs/HealOfferView';
 import { BackpackView } from './roleplay/inventory/BackpackView';
 import { PhoneView } from './roleplay/phone/PhoneView';
+import { RadioView } from './roleplay/radio/RadioView';
 import { GroupForumView } from './groups/views/forums/GroupForumView';
 import { GuideToolView } from './guide-tool/GuideToolView';
 import { HcCenterView } from './hc-center/HcCenterView';
@@ -142,6 +143,9 @@ export const MainView: FC<{}> = (props) =>
             <HealOfferView />
             <BackpackView />
             <PhoneView />
+            <WidgetErrorBoundary name="Radio">
+                <RadioView />
+            </WidgetErrorBoundary>
             <AnimatePresence>
                 {landingViewVisible && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

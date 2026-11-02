@@ -16,8 +16,8 @@ import { UserClassificationEntry, UserClassificationView } from './views/UserCla
 import { UserInfoView } from './views/UserInfoView';
 
 
-// Classic v75 ModerationManager / StartPanelCtrl (fme): the panel opens when the moderator init message arrives, the room and chatlog buttons follow the
-// room entered / left events, the user button follows the last selected avatar and stays enabled after the room is left.
+// The moderator init message creates the start panel; DistrictRP keeps it hidden until `mod-tools/show` or `mod-tools/toggle`.
+// The room and chatlog buttons follow the room entered / left events, and the user button follows the last selected avatar and stays enabled after the room is left.
 export const ModToolsView: FC<{}> = () => {
     const [isVisible, setIsVisible] = useState(false);
     const [currentRoomId, setCurrentRoomId] = useState<number>(-1);
@@ -39,8 +39,8 @@ export const ModToolsView: FC<{}> = () => {
     const setStartPanel = useModWindowTrackerStore((state) => state.setStartPanel);
     const { settings = null, cfhCategories = [] } = useModTools();
     const issueContext = useIssueManager();
-    // the toolbar's moderator button (and anything else linking `mod-tools/show|hide|toggle`) only reaches the start panel for a moderator. The button links `show`: the panel opens by
-    // itself when the init message arrives (classic fme.show), so a toggle would close it on the first click of a moderator who has not closed it yet.
+    // the toolbar's moderator button (and anything else linking `mod-tools/show|hide|toggle`) only reaches the start panel for a moderator. The button links `show`: the panel starts
+    // hidden on every login, so its first click opens it instead of toggling it closed.
     const canUseModTools = useHasPermission(Permission.ModerationTool);
     const canUseModToolsRef = useRef(false);
 
@@ -53,16 +53,14 @@ export const ModToolsView: FC<{}> = () => {
 
         if (!settings) return;
 
-        // fme.show(): the frame is created once (user, room tool and chatlog buttons start disabled, the ticket queue follows the call for help
-        // permission); every later init message only makes the existing frame visible again.
+        // The frame is created once (user, room tool and chatlog buttons start disabled, the ticket queue follows the call for help
+        // permission). The init message only initialises it; DistrictRP keeps the panel hidden until `mod-tools/show` or `mod-tools/toggle`.
         if (!panelCreatedRef.current) {
             panelCreatedRef.current = true;
             setRoomEntered(false);
             setChatlogEnabled(false);
             setTicketQueueEnabled(settings.cfhPermission);
         }
-
-        setIsVisible(true);
     }, [settings]);
 
     useVoltEvent<RoomEngineEvent>([RoomEngineEvent.INITIALIZED, RoomEngineEvent.DISPOSED], (event) => {

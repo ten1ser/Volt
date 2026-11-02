@@ -3,8 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DistrictDock } from './DistrictDock';
 import { useGameContextMenu } from '../../../hooks/useGameContextMenu';
 
-const test = vi.hoisted(() => ({ link: vi.fn(), moderator: false }));
+const test = vi.hoisted(() => ({ link: vi.fn(), moderator: false, radioUnread: 0 }));
 vi.mock('@volt/renderer', () => ({ CreateLinkEvent: test.link }));
+vi.mock('../../../hooks/roleplay/useRpRadio', () => ({ useRpRadio: () => ({ unread: test.radioUnread }) }));
 vi.mock('../../../api', () => ({ MessengerIconState: { HIDDEN: 0, UNREAD: 2 } }));
 vi.mock('../../../api/permissions', () => ({ Permission: { ModerationTool: 'moderator' } }));
 vi.mock('../../../hooks', () => ({
@@ -23,6 +24,7 @@ describe('DistrictRP chat bar', () =>
     {
         vi.clearAllMocks();
         test.moderator = false;
+        test.radioUnread = 0;
     });
     afterEach(cleanup);
 
@@ -93,22 +95,26 @@ describe('DistrictRP chat bar', () =>
         expect(test.link).toHaveBeenCalledExactlyOnceWith('phone/toggle');
     });
 
-    it('offers Bag and an inactive Radio icon without duplicating Phone', () =>
+    it('offers Bag and an active Radio icon without duplicating Phone', () =>
     {
         render(<DistrictDock isInRoom />);
         fireEvent.contextMenu(button(/^Phone/));
         expect(screen.getAllByRole('menuitem')).toHaveLength(2);
         expect(screen.queryByRole('menuitem', { name: 'Phone' })).toBeNull();
         const radio = screen.getByRole('menuitem', { name: 'Radio' });
-        expect(radio).toHaveAttribute('aria-disabled', 'true');
         fireEvent.keyDown(screen.getByRole('menuitem', { name: 'Bag' }), { key: 'ArrowRight' });
         expect(radio).toHaveFocus();
         fireEvent.click(radio);
-        expect(test.link).not.toHaveBeenCalled();
-        fireEvent.keyDown(radio, { key: 'ArrowLeft' });
-        expect(screen.getByRole('menuitem', { name: 'Bag' })).toHaveFocus();
-        fireEvent.keyDown(screen.getByRole('menuitem', { name: 'Bag' }), { key: 'Escape' });
-        expect(test.link).not.toHaveBeenCalled();
+        expect(test.link.mock.calls).toEqual([['phone/hide'], ['radio/show']]);
         expect(screen.queryByRole('menu')).toBeNull();
+    });
+
+    it('badges only the Radio with its unread transmissions', () =>
+    {
+        test.radioUnread = 4;
+        render(<DistrictDock isInRoom />);
+        expect(button(/^Phone/)).toHaveTextContent('3');
+        fireEvent.contextMenu(button(/^Phone/));
+        expect(screen.getByRole('menuitem', { name: 'Radio, 4' })).toHaveTextContent('4');
     });
 });

@@ -32,7 +32,6 @@ type App = { id: string; label: string; glyph: ReactNode; count?: number; run: (
 type Banner = { threadId: number; name: string; text: string };
 
 const DND_KEY = 'districtrp.phone.dnd';
-const POSITION_KEY = 'districtrp.phone.position';
 const EDGE = 8;
 const BANNER_MS = 4500;
 
@@ -54,32 +53,6 @@ const readDoNotDisturb = () =>
 };
 
 type Offset = { x: number; y: number };
-
-const readPosition = (): Offset =>
-{
-    try
-    {
-        const saved = JSON.parse(window.localStorage.getItem(POSITION_KEY) ?? 'null') as Partial<Offset> | null;
-
-        return Number.isFinite(saved?.x) && Number.isFinite(saved?.y) ? { x: saved.x, y: saved.y } : { x: 0, y: 0 };
-    }
-    catch
-    {
-        return { x: 0, y: 0 };
-    }
-};
-
-const savePosition = (offset: Offset) =>
-{
-    try
-    {
-        window.localStorage.setItem(POSITION_KEY, JSON.stringify(offset));
-    }
-    catch
-    {
-        // Without storage the phone still moves; it returns to its corner next session.
-    }
-};
 
 /** Keeps the moved phone fully on screen: the offset is from its resting corner (bottom right), so it can only go left and up. */
 const clampOffset = (offset: Offset, width: number, height: number, restLeft: number, restTop: number): Offset => ({
@@ -108,7 +81,7 @@ export const PhoneView: FC = () =>
     const homeRef = useRef<() => void>(() => {});
     const pendingLaunch = useRef<{ id: NativePhoneApp; run: () => void } | null>(null);
     const drag = useRef<{ pointerId: number; startX: number; startY: number; origin: Offset; restLeft: number; restTop: number; last: Offset } | null>(null);
-    const [offset, setOffset] = useState<Offset>(readPosition);
+    const [offset, setOffset] = useState<Offset>({ x: 0, y: 0 });
     const [landscapeOffset, setLandscapeOffset] = useState<Offset>({ x: 0, y: 0 });
     const { city } = useCityStatus();
     const { purse } = usePurse();
@@ -240,13 +213,11 @@ export const PhoneView: FC = () =>
         const current = drag.current;
         if (current?.pointerId !== event.pointerId) return;
         drag.current = null;
-        if (!landscape) savePosition(current.last);
     };
     const resetPosition = () =>
     {
         setOffset({ x: 0, y: 0 });
         setLandscapeOffset({ x: 0, y: 0 });
-        savePosition({ x: 0, y: 0 });
     };
 
     const goHome = () =>

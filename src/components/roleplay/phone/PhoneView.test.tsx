@@ -191,10 +191,14 @@ describe('DistrictRP phone', () =>
         expect(test.link).toHaveBeenCalledTimes(1);
     });
 
-    it('opens landscape within the viewport without overwriting the saved portrait position', () =>
+    it('opens landscape within the viewport without overwriting the session portrait position', () =>
     {
-        window.localStorage.setItem('districtrp.phone.position', JSON.stringify({ x: -200, y: -30 }));
         render(<PhoneView />); open();
+        const portraitBar = document.querySelector('.district-phone__status');
+        vi.spyOn(phone() as HTMLElement, 'getBoundingClientRect').mockReturnValue({ left: 700, top: 130, right: 1000, bottom: 750, width: 300, height: 620, x: 700, y: 130, toJSON: () => ({}) });
+        fireEvent.pointerDown(portraitBar, { button: 0, pointerId: 1, clientX: 500, clientY: 500 });
+        fireEvent.pointerMove(portraitBar, { pointerId: 1, clientX: 300, clientY: 470 });
+        fireEvent.pointerUp(portraitBar, { pointerId: 1 });
         fireEvent.click(screen.getByRole('button', { name: 'Businesses' }));
         expect((phone() as HTMLElement).style.getPropertyValue('--phone-x')).toBe('0px');
         const bar = document.querySelector('.district-phone__status');
@@ -207,7 +211,7 @@ describe('DistrictRP phone', () =>
         expect((phone() as HTMLElement).style.getPropertyValue('--phone-x')).toBe('0px');
         fireEvent.click(screen.getByRole('button', { name: 'Back to apps' }));
         expect((phone() as HTMLElement).style.getPropertyValue('--phone-x')).toBe('-200px');
-        expect(JSON.parse(window.localStorage.getItem('districtrp.phone.position') ?? 'null')).toEqual({ x: -200, y: -30 });
+        expect(window.localStorage.getItem('districtrp.phone.position')).toBeNull();
     });
 
     it('shows unread counts on the apps', () =>
@@ -380,9 +384,17 @@ describe('DistrictRP phone', () =>
         expect(screen.queryByText(/Messages app/)).toBeNull();
     });
 
-    it('moves by dragging the status bar, remembers where and goes back on double-click', () =>
+    it('ignores old saved positions when mounted for a new game session', () =>
     {
+        window.localStorage.setItem('districtrp.phone.position', JSON.stringify({ x: -200, y: -30 }));
         render(<PhoneView />); open();
+        expect((phone() as HTMLElement).style.getPropertyValue('--phone-x')).toBe('0px');
+        expect((phone() as HTMLElement).style.getPropertyValue('--phone-y')).toBe('0px');
+    });
+
+    it('keeps dragging session-only, preserves it on reopen and resets after remount', () =>
+    {
+        const view = render(<PhoneView />); open();
         const bar = document.querySelector('.district-phone__status');
         // jsdom has no layout: put the resting phone at the bottom right of a 1024x768 window.
         vi.spyOn(phone() as HTMLElement, 'getBoundingClientRect').mockReturnValue({ left: 700, top: 130, right: 1000, bottom: 750, width: 300, height: 620, x: 700, y: 130, toJSON: () => ({}) });
@@ -391,9 +403,22 @@ describe('DistrictRP phone', () =>
         fireEvent.pointerUp(bar, { pointerId: 1, clientX: 380, clientY: 460 });
         expect((phone() as HTMLElement).style.getPropertyValue('--phone-x')).toBe('-120px');
         expect((phone() as HTMLElement).style.getPropertyValue('--phone-y')).toBe('-40px');
-        expect(JSON.parse(window.localStorage.getItem('districtrp.phone.position') ?? 'null')).toEqual({ x: -120, y: -40 });
+        expect(window.localStorage.getItem('districtrp.phone.position')).toBeNull();
+        act(() => test.tracker?.linkReceived('phone/hide'));
+        open();
+        expect((phone() as HTMLElement).style.getPropertyValue('--phone-x')).toBe('-120px');
+        expect((phone() as HTMLElement).style.getPropertyValue('--phone-y')).toBe('-40px');
         fireEvent.doubleClick(bar);
         expect((phone() as HTMLElement).style.getPropertyValue('--phone-x')).toBe('0px');
+        expect((phone() as HTMLElement).style.getPropertyValue('--phone-y')).toBe('0px');
+        fireEvent.pointerDown(bar, { button: 0, pointerId: 2, clientX: 500, clientY: 500 });
+        fireEvent.pointerMove(bar, { pointerId: 2, clientX: 380, clientY: 460 });
+        fireEvent.pointerUp(bar, { pointerId: 2 });
+        expect((phone() as HTMLElement).style.getPropertyValue('--phone-x')).toBe('-120px');
+        view.unmount();
+        render(<PhoneView />); open();
+        expect((phone() as HTMLElement).style.getPropertyValue('--phone-x')).toBe('0px');
+        expect((phone() as HTMLElement).style.getPropertyValue('--phone-y')).toBe('0px');
     });
 
     it('takes the phone out for a ringing call and a sale offer', () =>

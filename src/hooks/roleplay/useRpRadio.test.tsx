@@ -2,7 +2,25 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRpRadioSource } from './useRpRadio';
 
-const test = vi.hoisted(() => ({ handlers: new Map<unknown, (event: unknown) => void>(), sent: [] as any[], authenticated: true, userId: 1 }));
+const test = vi.hoisted(() => ({
+    handlers: new Map<unknown, (event: unknown) => void>(),
+    sent: [] as any[],
+    authenticated: true,
+    userId: 1,
+    identityListeners: new Set<() => void>(),
+    identity: { userId: 1 },
+    setIdentity(userId: number)
+    {
+        this.userId = userId;
+        this.identity = { userId };
+        for(const listener of this.identityListeners) listener();
+    },
+    snapshot()
+    {
+        if(this.identity.userId !== this.userId) this.identity = { userId: this.userId };
+        return this.identity;
+    }
+}));
 vi.mock('@volt/renderer', () =>
 {
     class RpRadioStatusEvent {}
@@ -12,7 +30,21 @@ vi.mock('@volt/renderer', () =>
         constructor(public requestId: number, public action: number, public channel: number, public frequency: number, public text: string)
         {}
     }
-    return { RpRadioStatusEvent, RpRadioTransmissionEvent, RpRadioRequestComposer, GetSessionDataManager: () => ({ userId: test.userId }) };
+    return { RpRadioStatusEvent, RpRadioTransmissionEvent, RpRadioRequestComposer };
+});
+vi.mock('../session/useSessionSnapshots', async () =>
+{
+    const { useSyncExternalStore } = await import('react');
+    return {
+        useUserDataSnapshot: () => useSyncExternalStore(
+            (onChange: () => void) =>
+            {
+                test.identityListeners.add(onChange);
+                return () => test.identityListeners.delete(onChange);
+            },
+            () => test.snapshot()
+        )
+    };
 });
 vi.mock('../events/useMessageEvent', () => ({ useMessageEvent: (type: unknown, handler: (event: unknown) => void) => test.handlers.set(type, handler) }));
 vi.mock('../events/useConnectionState', () => ({ useConnectionState: () => ({ authenticated: test.authenticated }) }));
@@ -30,6 +62,7 @@ describe('useRpRadio', () =>
     beforeEach(() =>
     {
         test.handlers.clear(); test.sent = []; test.authenticated = true; test.userId = 1;
+        test.identityListeners.clear(); test.identity = { userId: 1 };
     });
 
     it('reads the status once signed in and shows only correlated notices', () =>
@@ -47,6 +80,31 @@ describe('useRpRadio', () =>
         deliver(renderer.RpRadioStatusEvent, status(test.sent[1].requestId, { notice: 'The radio is off.', refused: true, powered: false }));
         expect(result.current.notice).toEqual({ text: 'The radio is off.', refused: true });
         expect(result.current.status?.powered).toBe(false);
+    });
+
+    it('starts once the account identity arrives after authentication', () =>
+    {
+        test.userId = 0;
+        const { result } = renderHook(() => useRpRadioSource());
+        expect(test.sent).toHaveLength(0);
+
+        act(() => test.setIdentity(1));
+        expect(test.sent).toHaveLength(1);
+        expect(test.sent[0]).toMatchObject({ action: 0, channel: 0, frequency: 0, text: '' });
+        expect(result.current.status).toBeNull();
+
+        deliver(renderer.RpRadioStatusEvent, status(test.sent[0].requestId, { powered: false }));
+        expect(result.current.status?.powered).toBe(false);
+        expect(result.current.pending).toBe(false);
+
+        act(() => result.current.power(true));
+        expect(test.sent).toHaveLength(2);
+        expect(test.sent[1]).toMatchObject({ action: 1, channel: 1, frequency: 0 });
+        deliver(renderer.RpRadioStatusEvent, status(test.sent[1].requestId, { powered: true }));
+        expect(result.current.status?.powered).toBe(true);
+
+        act(() => test.setIdentity(1));
+        expect(test.sent).toHaveLength(2);
     });
 
     it('records real transmissions, keeps the feed bounded and tracks unread', () =>

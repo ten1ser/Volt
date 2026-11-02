@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { AddLinkEventTracker } from '@volt/renderer';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -447,5 +449,33 @@ describe('RadioView', () =>
         rerender(<RadioView />);
         expect(screen.queryByRole('region', { name: 'Radio' })).toBeNull();
         expect(screen.queryByRole('complementary', { name: 'Radio log' })).toBeNull();
+    });
+
+    it('powers on with a populated log without clearing it, and stacks the handset above the log', () =>
+    {
+        test.radio.status = { powered: false, channel: 0, frequency: 1234, channelLabel: 'Public', hospitalAccess: false, gangAccess: true };
+        test.radio.messages = feed(1);
+        render(<RadioView />);
+        open();
+
+        const log = screen.getByRole('log');
+        const power = screen.getByRole('button', { name: 'Power on' });
+
+        expect(log.querySelectorAll('li')).toHaveLength(5);
+        expect(power).toBeEnabled();
+
+        fireEvent.click(power);
+        expect(test.radio.power).toHaveBeenCalledWith(true);
+        expect(test.radio.clear).not.toHaveBeenCalled();
+        expect(screen.getByRole('log').querySelectorAll('li')).toHaveLength(5);
+
+        // jsdom has no layout or hit-testing, so the stacking fix is asserted on the stylesheet itself.
+        const scss = readFileSync(resolve(process.cwd(), 'src/components/roleplay/radio/RadioView.scss'), 'utf8');
+        const handsetScope = scss.slice(scss.indexOf('.district-radio {'), scss.indexOf('&__log {'));
+        const logScope = scss.slice(scss.indexOf('&__log {'), scss.indexOf('&__log-header'));
+        const handsetLayer = Number(handsetScope.match(/z-index:\s*(\d+)/)?.[1]);
+        const logLayer = Number(logScope.match(/z-index:\s*(\d+)/)?.[1]);
+
+        expect(handsetLayer).toBeGreaterThan(logLayer);
     });
 });

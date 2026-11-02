@@ -13,7 +13,8 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
     position: fixed;
     right: $panel-right;
     bottom: $panel-bottom;
-    z-index: 480;
+    // Above the sibling log (480), which renders later and would otherwise cover the handset and eat its clicks.
+    z-index: 490;
     box-sizing: border-box;
     width: 240px;
     max-width: calc(100vw - 24px);

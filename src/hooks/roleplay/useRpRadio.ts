@@ -1,9 +1,10 @@
-import { GetSessionDataManager, RpRadioRequestComposer, RpRadioStatusEvent, RpRadioTransmissionEvent } from '@volt/renderer';
+import { RpRadioRequestComposer, RpRadioStatusEvent, RpRadioTransmissionEvent } from '@volt/renderer';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SendMessageComposer } from '../../api/volt/SendMessageComposer';
 import { registerSharedHook, useSharedHook } from '../../state/useSharedHook';
 import { useConnectionState } from '../events/useConnectionState';
 import { useMessageEvent } from '../events/useMessageEvent';
+import { useUserDataSnapshot } from '../session/useSessionSnapshots';
 
 /** Wire actions of packet 6120. */
 export const RadioAction = { Status: 0, Power: 1, Tune: 2, Transmit: 3 } as const;
@@ -71,17 +72,8 @@ export const useRpRadioSource = () =>
     const outstanding = useRef<{ id: number; timer: number } | null>(null);
     const nextMessageId = useRef(0);
     const account = useRef(0);
-    const accountId = (() =>
-    {
-        try
-        {
-            return Number(GetSessionDataManager().userId) || 0;
-        }
-        catch
-        {
-            return 0;
-        }
-    })();
+    const userData = useUserDataSnapshot();
+    const accountId = Number(userData?.userId) || 0;
     // Event handlers outlive the render that registered them, so they read the current session from a ref.
     const session = useRef({ authenticated, accountId });
     session.current.authenticated = authenticated;

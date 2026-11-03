@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const read = (relative: string) => readFileSync(join(process.cwd(), relative), 'utf8');
+// Normalise CRLF so the contract holds on a Windows checkout too.
+const read = (relative: string) => readFileSync(join(process.cwd(), relative), 'utf8').replace(/\r\n/g, '\n');
 
 describe('AIR navigator visual contract', () => {
 

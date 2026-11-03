@@ -32,6 +32,7 @@ vi.mock('framer-motion', () => ({
     motion: { div: (({ children, className }: { children: ReactNode; className?: string }) => <div className={className}>{children}</div>) as FC }
 }));
 
+vi.mock('../roleplay/hud/CityBackdrop', () => ({ CityBackdrop: () => null }));
 vi.mock('./spectator/RoomSpectatorView', () => ({ RoomSpectatorView: () => null }));
 vi.mock('./widgets/RoomWidgetsView', () => ({ RoomWidgetsView: () => null }));
 vi.mock('./widgets/wired-fx/WiredVariableFxOverlayView', () => ({ WiredVariableFxOverlayView: () => null }));

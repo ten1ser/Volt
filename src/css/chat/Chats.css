@@ -1967,20 +1967,20 @@
 /* Ordinary room chat (styles 0/3/4): compact single-line bubble with a narrow avatar well.
    14px body / 19px line box at font scale 1, proportional with the saved scale. The skin's
    bottom border-image slice is 6px tall and is painted over the content box, so the bottom
-   padding must be at least 6px or descenders collide with the edge. 3px top / 6px bottom
-   gives a 28px bubble with the text seated under the top gloss; right padding is 6px.
+   padding must be at least 6px or descenders collide with the edge. 2px top / 7px bottom
+   gives a 28px bubble with the text centred (the DistrictRP font sits lower than Ubuntu); right padding is 8px.
    Only clamps the well; face size stays on the inline imageScale pipeline. */
 .bubble-container.native-room-bubble.district-plain-chat .chat-bubble {
     box-sizing: border-box;
     min-height: 28px;
     border-image-outset: 0;
-    font-family: HabboAirUbuntu, UbuntuRegular, sans-serif;
+    font-family: var(--district-font);
     font-size: calc(var(--chat-text-size) * 14 / 12);
     font-weight: 400;
     font-synthesis: none;
     line-height: calc(var(--chat-text-size) * 19 / 12);
-    letter-spacing: normal;
-    word-spacing: normal;
+    letter-spacing: 0.1px;
+    word-spacing: 0.5px;
     text-shadow: none;
     color: #000;
 }
@@ -1988,7 +1988,7 @@
 .bubble-container.native-room-bubble.district-plain-chat .chat-content {
     margin: 0;
     min-height: 0;
-    padding: 3px 6px 6px 32px;
+    padding: 2px 8px 7px 32px;
     font-family: inherit;
     font-size: inherit;
     line-height: inherit;

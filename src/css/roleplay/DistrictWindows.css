@@ -145,6 +145,15 @@
 .theme-district.volt-navigator-air .volt-navigator-search-saves-result__header { background: #444; }
 .theme-district.volt-navigator-air :is(.volt-navigator-air__empty, .volt-navigator-search-saves-result__empty) { color: #bbb; }
 .theme-district.volt-navigator-air .volt-navigator-air__busy-mask { background: #2227; }
+/* DistrictRP RP windows (Backpack, Profile, Gang, Business): the radio's dark rounded panel with the title on the left and a
+   plain close button. The window in front gets a brass edge. Selectors are deep enough to beat each window's own button rules. */
+.volt-card-shell.theme-district.district-rp-window { border: 1px solid #ffffff1a !important; border-radius: 12px !important; background: linear-gradient(160deg, #2f3238, #23252a 42%, #17181c) !important; box-shadow: 0 14px 32px #000a, inset 0 1px #ffffff1f !important; }
+.draggable-window.is-active-window .volt-card-shell.theme-district.district-rp-window { border-color: #d9b25a8c !important; }
+.district-rp-window .district-rp-titlebar { position: relative; display: flex; align-items: center; justify-content: flex-start; gap: 6px; min-height: 38px; margin: 0; padding: 8px 10px 8px 14px; box-sizing: border-box; background: none; border-bottom: 1px solid #ffffff1a; box-shadow: none; color: var(--district-ui-accent-hover); font: 700 12px/20px var(--district-ui-font); letter-spacing: .08em; text-shadow: none; text-transform: uppercase; cursor: grab; user-select: none; }
+.district-rp-window .district-rp-titlebar:active { cursor: grabbing; }
+.district-rp-window .district-rp-titlebar > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.district-rp-window .district-rp-titlebar .district-rp-close { position: static; flex: 0 0 auto; width: 22px; height: 22px; padding: 0; border: 1px solid #ffffff24; border-radius: 5px; background: #26292f; color: var(--district-ui-muted); font: 400 15px/20px var(--district-ui-font); letter-spacing: 0; text-shadow: none; cursor: pointer; }
+.district-rp-window .district-rp-titlebar .district-rp-close:hover { border-color: #ffffff40; background: #2f333a; color: #fff; }
 @media (max-width: 480px) {
     .theme-district.volt-group-members .volt-group-members-list-grid { grid-template-columns: minmax(0, 1fr) !important; }
     .theme-district .district-group-badge { flex-basis: 64px; }

@@ -212,7 +212,7 @@ export const GangView = () =>
             : <section className="gang-panel"><h3>Leave gang</h3>{confirm === 'leave' ? <button type="button" className="gang-danger" disabled={busy} onClick={() => run(GangAction.Leave)}>Confirm: leave {gang.name}</button> : <button type="button" onClick={() => setConfirm('leave')}>Leave gang…</button>}</section>}
     </div>;
 
-    return <VoltCardView theme="district" uniqueKey="district-gang" className="district-gang" isResizable={false} constrainToViewport>
+    return <VoltCardView theme="district" uniqueKey="district-gang" className="district-gang district-rp-window" isResizable={false} constrainToViewport cascade>
         <div ref={panel} role="dialog" aria-labelledby={`${windowId}-title`} onKeyDown={event =>
         {
             if(event.key === 'Escape' && !event.defaultPrevented)
@@ -220,7 +220,7 @@ export const GangView = () =>
                 event.stopPropagation(); close();
             }
         }}>
-            <header className="gang-titlebar drag-handler"><span id={`${windowId}-title`}>Gang</span><button type="button" className="gang-close" aria-label="Close Gang" onClick={close}>×</button></header>
+            <header className="gang-titlebar district-rp-titlebar drag-handler"><span id={`${windowId}-title`}>Gang</span><button type="button" className="gang-close district-rp-close" aria-label="Close Gang" onClick={close}>×</button></header>
             {gang && <div className="gang-banner">
                 <div className="gang-banner-badge"><LayoutBadgeImageView badgeCode={gang.badge} isGroup showInfo={false} /></div>
                 <div className="gang-banner-copy">

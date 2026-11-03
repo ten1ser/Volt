@@ -56,7 +56,20 @@ describe('Backpack window', () =>
         fireEvent.doubleClick(screen.getByRole('button', { name: 'Slot 3: MP5' }));
         expect(test.use).toHaveBeenCalledWith(3);
         fireEvent.click(screen.getByRole('button', { name: 'Slot 2: Armor Vest' }));
-        expect(screen.getByText(/Armor · 60\/100/)).toBeInTheDocument();
+        expect(screen.getByText(/Armor · Durability 60\/100/)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Slot 2: Armor Vest' })).toHaveAttribute('title', 'Armor Vest · Durability 60/100');
+    });
+
+    it('names an empty selected slot by what belongs there instead of its number', () =>
+    {
+        test.slots = [empty(1), empty(2), ...backpack().slice(2)];
+        open();
+        expect(screen.getByRole('status')).toHaveTextContent('Weapon slot');
+        expect(screen.getByRole('status')).toHaveTextContent('Empty');
+        fireEvent.click(screen.getByRole('button', { name: 'Slot 2: empty' }));
+        expect(screen.getByRole('status')).toHaveTextContent('Armor slot');
+        fireEvent.click(screen.getByRole('button', { name: 'Slot 7: empty' }));
+        expect(screen.getByRole('status')).toHaveTextContent('Bag slot 7');
     });
 
     it('dragging an item onto another slot moves it', () =>

@@ -41,6 +41,7 @@ export const VoltCardView: FC<VoltCardViewProps> = (props) => {
         constrainToViewport,
         unconstrainedPosition,
         onPositionChange,
+        cascade,
         ...rest
     } = props;
     const elementRef = useRef<HTMLDivElement>(null);
@@ -83,6 +84,7 @@ export const VoltCardView: FC<VoltCardViewProps> = (props) => {
                 constrainToViewport={constrainToViewport}
                 unconstrainedPosition={unconstrainedPosition}
                 onPositionChange={onPositionChange}
+                cascade={cascade}
                 uniqueKey={uniqueKey}
                 windowPosition={windowPosition}
             >

@@ -27,8 +27,8 @@ export const HudStat: FC<{ kind: 'health' | 'energy'; value: number; label: stri
             : <svg className="rp-stats-hud__icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M9 1 2 9h5l-1 6 8-9H9Z" /></svg>}
         <div className="rp-stats-hud__track" role="progressbar" aria-label={label} aria-valuenow={value} aria-valuemin={0} aria-valuemax={100} title={`${ value } / 100`}>
             <div className="rp-stats-hud__fill" style={{ width: `${ value }%` }} />
-            <span className="rp-stats-hud__value" aria-hidden="true">{value}</span>
         </div>
+        <span className="rp-stats-hud__value" aria-hidden="true">{value}</span>
     </div>
 );
 
@@ -47,7 +47,7 @@ export const StatsHud: FC = () =>
     return (
         <section className="rp-stats-hud" aria-label={label('roleplay.stats.title', 'Your stats')}>
             <div className="rp-stats-hud__main">
-                <HudPortrait figure={figure} gender={gender} size={58} />
+                <HudPortrait figure={figure} gender={gender} size={42} />
                 <div className="rp-stats-hud__body">
                     <div className="rp-stats-hud__identity">
                         <div className="rp-stats-hud__name" title={userName}>{userName}</div>

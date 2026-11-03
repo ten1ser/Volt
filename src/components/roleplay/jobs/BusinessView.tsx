@@ -99,7 +99,7 @@ export const BusinessView = ({ groupInformation, onClose, embedded = false }: Bu
                 event.stopPropagation(); close();
             }
         }}>
-            {!embedded && <header className="business-titlebar drag-handler"><span id={`${windowId}-title`}>Business/Corporation</span><button type="button" className="business-close" aria-label="Close Business/Corporation" onClick={close}>×</button></header>}
+            {!embedded && <header className="business-titlebar district-rp-titlebar drag-handler"><span id={`${windowId}-title`}>Business/Corporation</span><button type="button" className="business-close district-rp-close" aria-label="Close Business/Corporation" onClick={close}>×</button></header>}
             <div className="business-heading">
                 <div className="business-badge" aria-label="Job badge">{badge && <LayoutBadgeImageView badgeCode={badge} isGroup showInfo={false} />}</div>
                 <div className="business-heading-copy"><h2>{companyName}</h2><div className="business-summary">{data?.available ? <><span>{data.totalEmployees} employees</span><span>{data.onDutyCount} on duty</span></> : <span>Employee directory</span>}</div></div>
@@ -150,5 +150,5 @@ export const BusinessView = ({ groupInformation, onClose, embedded = false }: Bu
             {data?.available && <footer className="business-footer"><div><strong>{ownRank?.name || 'Not employed'}</strong><span>{ownRank ? `${ownRank.pay}c / 10 min` : 'Apply through My shift'}</span></div><div className="business-next-pay">{data.self.onDuty ? <>Next salary <strong>{clock(remainingMs)}</strong></> : 'Off duty'}</div>{dutyButton}</footer>}
         </div>;
     return embedded ? <div className="district-business is-embedded">{content}</div>
-        : <VoltCardView theme="district" uniqueKey={controlled ? `district-corporation-${groupInformation.id}` : 'district-business'} className="district-business" isResizable={false} constrainToViewport>{content}</VoltCardView>;
+        : <VoltCardView theme="district" uniqueKey={controlled ? `district-corporation-${groupInformation.id}` : 'district-business'} className="district-business district-rp-window" isResizable={false} constrainToViewport cascade>{content}</VoltCardView>;
 };

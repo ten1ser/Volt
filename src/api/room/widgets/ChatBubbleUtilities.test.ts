@@ -1,3 +1,4 @@
+import { GetAvatarRenderManager } from '@volt/renderer';
 import { afterEach, expect, it, vi } from 'vitest';
 import { ChatBubbleUtilities } from './ChatBubbleUtilities';
 vi.mock('../../volt/GetConfigurationValue', () => ({ GetConfigurationValue: () => false }));
@@ -36,4 +37,22 @@ it('allows retry after a head render fails', async () => {
     await expect(ChatBubbleUtilities.getUserImage('same')).rejects.toThrow('decode');
     await expect(ChatBubbleUtilities.getUserImage('same')).resolves.toBe('retry');
     expect(render).toHaveBeenCalledTimes(2);
+});
+
+it('waits for a loading figure and redraws the requested figure instead of caching the placeholder head', async () => {
+    let listener: { resetFigure: (figure: string) => void };
+    const placeholder = { isPlaceholder: () => true, dispose: vi.fn() };
+    vi.mocked(GetAvatarRenderManager).mockReturnValue({
+        createAvatarImage: (_figure: string, _size: string, _gender: string, imageListener: typeof listener) => { listener = imageListener; return placeholder; }
+    } as unknown as ReturnType<typeof GetAvatarRenderManager>);
+    const real = ChatBubbleUtilities.setFigureImage.bind(ChatBubbleUtilities);
+    const render = vi.spyOn(ChatBubbleUtilities, 'setFigureImage').mockImplementationOnce(real).mockResolvedValueOnce('real-head');
+    const head = ChatBubbleUtilities.setFigureImage('hr-100-61.hd-180-1', false, true);
+    await Promise.resolve();
+    // The renderer reports readiness with its normalised figure string.
+    listener.resetFigure('hd-180-1.hr-100-61');
+    await expect(head).resolves.toBe('real-head');
+    expect(render).toHaveBeenLastCalledWith('hr-100-61.hd-180-1', false, true, false);
+    expect(placeholder.dispose).toHaveBeenCalledOnce();
+    expect(ChatBubbleUtilities.AVATAR_IMAGE_CACHE.size).toBe(0);
 });

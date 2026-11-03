@@ -1,4 +1,5 @@
 import type { ChatBubbleMessage } from '../../../../api';
+import { isDistrictPlainStyle } from './nativeChatSkin';
 
 interface ChatCreation { mode: number; timestamp: number; }
 const creations = new WeakMap<ChatBubbleMessage, ChatCreation>();
@@ -109,6 +110,16 @@ const STYLE_GEOMETRY: Record<number, NativeChatGeometry> = {
     10000: { overlap: { x: 0, y: -2, width: 0, height: 0 }, unlimitedHeight: false },
 };
 export const getNativeChatGeometry = (styleId: number): NativeChatGeometry => STYLE_GEOMETRY[styleId] ?? STYLE_GEOMETRY[0];
+// Native collider: the measured height less 10, so stacked v75 bubbles tuck under each other. The taller DistrictRP
+// plain bubble would hide 7px of the line above that way, so its collider is the full height plus a 2px gap.
+const DISTRICT_PLAIN_GAP = 2;
+export const getNativeChatColliderHeight = (chat: ChatBubbleMessage, fontScale: number): number => {
+    // The collision pass parts rows by the collider height plus 1px.
+    if (isDistrictPlainStyle(chat.styleId)) return chat.height + DISTRICT_PLAIN_GAP - 1;
+    const geometry = getNativeChatGeometry(chat.styleId);
+    const height = geometry.unlimitedHeight ? chat.height : Math.min(Math.trunc(108 * fontScale), chat.height);
+    return height - 10 - geometry.overlap.y - geometry.overlap.height;
+};
 const intersects = (a: Rect, b: Rect) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 
 interface Collider {
@@ -158,8 +169,7 @@ export class NativeChatScroller {
             this.fontScale = fontScale;
             for (const bubble of this.bubbles) {
                 if (!bubble.chat) continue;
-                const geometry = getNativeChatGeometry(bubble.chat.styleId);
-                bubble.body.height = (geometry.unlimitedHeight ? bubble.chat.height : Math.min(Math.trunc(108 * fontScale), bubble.chat.height)) - 10 - bubble.overlap.y - bubble.overlap.height;
+                bubble.body.height = getNativeChatColliderHeight(bubble.chat, fontScale);
             }
         }
     }
@@ -179,7 +189,7 @@ export class NativeChatScroller {
         const geometry = getNativeChatGeometry(chat.styleId);
         const overlap = geometry.overlap;
         const width = chat.width - overlap.x - overlap.width;
-        const height = (geometry.unlimitedHeight ? chat.height : Math.min(Math.trunc(108 * this.fontScale), chat.height)) - 10 - overlap.y - overlap.height;
+        const height = getNativeChatColliderHeight(chat, this.fontScale);
         if (existing) {
             // A remeasured bubble keeps its centred reflow without changing collider mode.
             existing.body.x += (existing.body.width - width) / 2;

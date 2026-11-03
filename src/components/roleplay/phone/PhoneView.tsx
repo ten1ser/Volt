@@ -309,7 +309,7 @@ export const PhoneView: FC = () =>
         { id: 'settings', label: 'Settings', glyph: PHONE_GLYPHS.settings, run: () => setApp('settings') }
     ];
     const icon = (entry: App) => (
-        <button type="button" key={entry.id} className={`district-phone__app is-${entry.id}`} aria-label={entry.count ? `${entry.label}, ${entry.count}` : entry.label} onClick={event =>
+        <button type="button" key={entry.id} className={`district-phone__app is-${entry.id}`} title={entry.label} aria-label={entry.count ? `${entry.label}, ${entry.count}` : entry.label} onClick={event =>
         {
             if (isNativePhoneApp(entry.id))
             {

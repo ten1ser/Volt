@@ -93,7 +93,7 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
             margin: 0;
             overflow: hidden;
             color: $brass-light;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 700;
             letter-spacing: .08em;
             line-height: 20px;
@@ -129,12 +129,27 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
             border-radius: 5px;
             background: #26292f;
             color: $muted;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 700;
             line-height: 14px;
         }
 
         button[aria-pressed='true'] { border-color: $brass; color: $brass-light; }
+    }
+
+    &__log-toggle {
+        flex: 0 0 auto;
+        height: 20px;
+        padding: 0 7px;
+        border: 1px solid #ffffff24;
+        border-radius: 5px;
+        background: #26292f;
+        color: $muted;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 18px;
+
+        &[aria-pressed='true'] { border-color: $brass; color: $brass-light; }
     }
 
     &__close,
@@ -191,19 +206,34 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
         display: flex;
         justify-content: space-between;
         gap: 8px;
-        font-size: 9px;
+        font-size: 12px;
         font-weight: 700;
-        letter-spacing: .08em;
-        line-height: 12px;
+        letter-spacing: .06em;
+        line-height: 15px;
         text-transform: uppercase;
-        opacity: .8;
+        opacity: .85;
+    }
+
+    // The one status light: dim when off, green when on, brass while linking or transmitting, bright green on receive.
+    &__state {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+
+        i { width: 7px; height: 7px; border-radius: 50%; background: #4d5649; }
+        &.is-on i { background: #9adf7c; box-shadow: 0 0 5px #9adf7c; }
+        &.is-link i { background: $brass; }
+        &.is-tx { color: #f0c66f; animation: district-radio-pulse 700ms ease-out; }
+        &.is-tx i { background: #f0c66f; box-shadow: 0 0 6px #f0c66f; }
+        &.is-rx { color: #b6f09a; animation: district-radio-pulse 700ms ease-out; }
+        &.is-rx i { background: #b6f09a; box-shadow: 0 0 6px #b6f09a; }
     }
 
     &__lcd-note {
         overflow: hidden;
         color: #8fae82;
-        font-size: 9px;
-        line-height: 12px;
+        font-size: 12px;
+        line-height: 15px;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
@@ -227,62 +257,38 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
         &:focus-visible { outline: 1px solid $brass; outline-offset: 1px; }
     }
 
-    &__pulse {
-        display: block;
-        width: max-content;
-        min-width: 46px;
-        margin: 0 0 6px auto;
-        padding: 1px 6px;
-        border: 1px solid #3b3f35;
-        border-radius: 4px;
-        background: #151a13;
-        color: #8fae82;
-        font-size: 9px;
-        font-weight: 700;
-        letter-spacing: .08em;
-        line-height: 14px;
-        text-align: center;
-
-        &.is-tx { border-color: #6b5a2e; color: #f0c66f; animation: district-radio-pulse 700ms ease-out; }
-        &.is-rx { border-color: #3e6a35; color: #9adf7c; animation: district-radio-pulse 700ms ease-out; }
-    }
-
-    &__controls {
-        display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
-        align-items: center;
-        gap: 6px;
-    }
-
+    // Full-width power, then full-width channel tabs, so no label is cut off.
     &__power {
-        padding: 6px 8px;
+        width: 100%;
+        padding: 7px 8px;
         border: 1px solid $brass;
         border-radius: 6px;
         background: linear-gradient(180deg, #3a3d44, #262a30);
         color: $brass-light;
-        font-size: 10px;
+        font-size: 12px;
         font-weight: 700;
-        line-height: 14px;
+        line-height: 16px;
         white-space: nowrap;
     }
 
     &__channels {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 3px;
+        gap: 4px;
         min-width: 0;
+        margin-top: 6px;
 
         button {
             min-width: 0;
             overflow: hidden;
-            padding: 5px 2px;
+            padding: 6px 2px;
             border: 1px solid #4a4d54;
             border-radius: 5px;
             background: #2a2d33;
             color: $muted;
-            font-size: 9px;
+            font-size: 12px;
             font-weight: 700;
-            line-height: 13px;
+            line-height: 15px;
             text-align: center;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -298,8 +304,8 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
     &__hint {
         margin: 5px 0 0;
         color: $muted;
-        font-size: 9px;
-        line-height: 13px;
+        font-size: 12px;
+        line-height: 16px;
     }
 
     &__keypad {
@@ -337,7 +343,7 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
             border-radius: 6px;
             background: #26292f;
             color: $muted;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 700;
         }
     }
@@ -358,8 +364,8 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
         border-radius: 4px;
         background: #2c2a22;
         color: $text;
-        font-size: 10px;
-        line-height: 14px;
+        font-size: 12px;
+        line-height: 16px;
 
         &.is-refused { border-left-color: #c96b5a; background: #2e2222; }
 
@@ -367,13 +373,13 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
         button { flex: 0 0 auto; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: $muted; font-size: 13px; line-height: 14px; }
     }
 
-    &__error { margin: 5px 0 0; color: #e39c8f; font-size: 10px; line-height: 14px; }
+    &__error { margin: 5px 0 0; color: #e39c8f; font-size: 12px; line-height: 16px; }
 
     &__tx-hint {
         margin: 6px 0 0;
         color: $muted;
-        font-size: 9px;
-        line-height: 13px;
+        font-size: 12px;
+        line-height: 16px;
         text-align: center;
     }
 
@@ -389,30 +395,13 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
             border-radius: 5px;
             background: #26292f;
             color: $muted;
-            font-size: 9px;
+            font-size: 12px;
             font-weight: 700;
             white-space: nowrap;
         }
 
         > button[aria-pressed='true'] { border-color: $brass; color: $brass-light; }
         input { flex: 1 1 auto; min-width: 0; accent-color: $brass; }
-    }
-
-    &__actions {
-        display: flex;
-        gap: 5px;
-        margin-top: 6px;
-
-        button {
-            flex: 1 1 0;
-            padding: 4px 3px;
-            border: 1px solid #4a4d54;
-            border-radius: 5px;
-            background: #26292f;
-            color: $muted;
-            font-size: 9px;
-            font-weight: 700;
-        }
     }
 
     // The log is its own fixed panel, to the handset's left by default.
@@ -467,7 +456,7 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
             margin: 0;
             overflow: hidden;
             color: $brass-light;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 700;
             letter-spacing: .06em;
             line-height: 18px;
@@ -480,7 +469,7 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
     &__log-count {
         flex: 0 0 auto;
         color: $muted;
-        font-size: 9px;
+        font-size: 12px;
         font-variant-numeric: tabular-nums;
         line-height: 18px;
     }
@@ -498,6 +487,22 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
         line-height: 18px;
 
         &[aria-expanded='true'] { border-color: $brass; color: $brass-light; }
+    }
+
+    // Clear and hide live in the log itself; the handset only has the Log toggle.
+    &__log-button {
+        flex: 0 0 auto;
+        height: 20px;
+        padding: 0 7px;
+        border: 1px solid #ffffff24;
+        border-radius: 5px;
+        background: #26292f;
+        color: $muted;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 18px;
+
+        &:disabled { opacity: .45; cursor: default; }
     }
 
     &__log-settings {
@@ -520,10 +525,10 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
             justify-content: space-between;
             gap: 8px;
             color: $muted;
-            font-size: 9px;
+            font-size: 12px;
             font-weight: 700;
             letter-spacing: .04em;
-            line-height: 13px;
+            line-height: 15px;
             text-transform: uppercase;
         }
 
@@ -538,7 +543,7 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
         border-radius: 5px;
         background: #26292f;
         color: $muted;
-        font-size: 9px;
+        font-size: 12px;
         font-weight: 700;
     }
 
@@ -631,5 +636,5 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .district-radio__pulse { animation: none; }
+    .district-radio__state { animation: none !important; }
 }

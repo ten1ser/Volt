@@ -26,7 +26,7 @@ afterEach(() =>
 });
 describe('phone-first HUD', () =>
 {
-    it('shows only the clock and the room name at the top; coins, online count and logo live in the phone', () =>
+    it('shows only the wordmark, the clock and the room name at the top; coins and online count live in the phone', () =>
     {
         render(<DistrictHud />);
         expect(screen.getByText('DistrictRP City')).toBeInTheDocument();
@@ -34,7 +34,8 @@ describe('phone-first HUD', () =>
         expect(screen.queryByText(/min left/)).toBeNull();
         expect(screen.queryByTitle('RP Coins')).toBeNull();
         expect(screen.queryByText(/online/)).toBeNull();
-        expect(screen.queryByAltText('DistrictRP')).toBeNull();
+        expect(screen.getByAltText('DistrictRP')).toHaveClass('district-wordmark');
+        expect(document.querySelector('.district-topbar').contains(screen.getByAltText('DistrictRP'))).toBe(false);
         expect(screen.queryByRole('button', { name: 'Settings' })).toBeNull();
     });
     it('puts the own vitals above the target card, outside the top-right bar', () =>
@@ -63,12 +64,15 @@ describe('phone-first HUD', () =>
         const view = render(<DistrictHud />);
         const chip = screen.getByRole('button', { name: /Regency Café/ });
         expect(chip).toHaveAttribute('aria-expanded', 'false');
-        expect(chip.querySelector('img')).toHaveAttribute('src', roomIcon);
-        expect(chip.querySelector('img')).toHaveAttribute('width', '34');
-        expect(chip.querySelector('img')).toHaveAttribute('height', '55');
+        // Mirrored corner: text block (room name over clock), then the hotel icon on the far right.
         const topbar = document.querySelector('.district-topbar');
-        expect(topbar.firstElementChild).toBe(chip);
-        expect(topbar.lastElementChild).toHaveClass('district-clock');
+        const text = topbar.firstElementChild;
+        expect(text.firstElementChild).toBe(chip);
+        expect(text.lastElementChild).toHaveClass('district-clock');
+        expect(chip.querySelector('img')).toBeNull();
+        expect(topbar.lastElementChild).toHaveAttribute('src', roomIcon);
+        expect(topbar.lastElementChild).toHaveAttribute('width', '34');
+        expect(topbar.lastElementChild).toHaveAttribute('height', '55');
         expect(topbar.querySelectorAll('time')).toHaveLength(1);
         expect(screen.queryByText(/min left/)).toBeNull();
         fireEvent.click(chip);
@@ -76,6 +80,7 @@ describe('phone-first HUD', () =>
         expect(chip).toHaveAttribute('aria-expanded', 'true');
         test.roomSession = null; view.rerender(<DistrictHud />);
         expect(screen.queryByRole('button', { name: /DistrictRP City/ })).toBeNull();
+        expect(document.querySelector('.district-topbar__hotel')).toBeNull();
         useRoomToolsMenuStore.setState({ open: false });
     });
     it('uses an honest placeholder before synchronization', () =>

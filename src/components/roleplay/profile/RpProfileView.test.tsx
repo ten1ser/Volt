@@ -39,7 +39,19 @@ describe('DistrictRP profile window', () =>
         expect(screen.getByText('Hospital, Trainee')).toBeInTheDocument();
         expect(screen.getByTestId('avatar')).toBeInTheDocument();
         expect([statValue('K/D'), statValue('Kills'), statValue('Deaths'), statValue('Jailed')]).toEqual(['3.00', '12', '4', '2']);
-        expect([statValue('Punches thrown'), statValue('Punches missed'), statValue('Punches received')]).toEqual(['248', '61', '190']);
+        expect(screen.queryByText('Thrown')).toBeNull();
+        fireEvent.click(screen.getByRole('tab', { name: 'Punches' }));
+        expect(screen.getByRole('tab', { name: 'Punches' })).toHaveAttribute('aria-selected', 'true');
+        expect([statValue('Thrown'), statValue('Missed'), statValue('Received')]).toEqual(['248', '61', '190']);
+        expect(screen.queryByText('Kills')).toBeNull();
+    });
+
+    it('shows the kill count as a whole number when there are no deaths', () =>
+    {
+        test.card = card({ kills: 2, deaths: 0 });
+        render(<RpProfileView />);
+        expect(statValue('K/D')).toBe('2');
+        expect(screen.getByText('K/D').parentElement).toHaveAttribute('title', 'No deaths yet: K/D is the kill count');
     });
 
     it('shows the gang only when there is one, and says unemployed without a job', () =>

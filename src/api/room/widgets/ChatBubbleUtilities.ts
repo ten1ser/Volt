@@ -14,6 +14,8 @@ export class ChatBubbleUtilities {
     private static MAX_CACHE_SIZE: number = 1024;
     // Rows of the face icon a one-line bubble shows, in CSS pixels.
     private static FACE_WINDOW_HEIGHT: number = 28;
+    // How long a bubble waits for a speaker's clothing libraries before falling back to the placeholder head.
+    private static FIGURE_WAIT_MS: number = 8000;
 
     public static AVATAR_COLOR_CACHE: Map<string, number> = new Map();
     public static AVATAR_IMAGE_CACHE: Map<string, string> = new Map();
@@ -34,10 +36,12 @@ export class ChatBubbleUtilities {
         }
     }
 
-    public static async setFigureImage(figure: string, zoom: boolean = GetConfigurationValue<boolean>('zoom.enabled', false), highResolution: boolean = false): Promise<string> {
+    public static async setFigureImage(figure: string, zoom: boolean = GetConfigurationValue<boolean>('zoom.enabled', false), highResolution: boolean = false, waitForFigure: boolean = true): Promise<string> {
+        let figureReady: () => void = null;
+        const ready = new Promise<boolean>(resolve => { figureReady = () => resolve(true); });
         // Low-res keeps the half-size head. High-res keeps the LARGE head and crops it 1:1 into a 2x canvas.
         const avatarImage = GetAvatarRenderManager().createAvatarImage(figure, highResolution ? AvatarScaleType.LARGE : AvatarScaleType.SMALL, null, {
-            resetFigure: (figure) => this.setFigureImage(figure, zoom, highResolution),
+            resetFigure: () => figureReady(),
             dispose: () => {},
             disposed: false
         });
@@ -45,6 +49,17 @@ export class ChatBubbleUtilities {
         if (!avatarImage) return null;
 
         const isPlaceholder = avatarImage.isPlaceholder();
+
+        // The figure's libraries are still downloading: wait for them and draw the real head for the requested figure.
+        // The renderer reports readiness with its normalised figure string, so the retry keeps the original one;
+        // otherwise the placeholder would stay cached under the speaker's figure and every bubble would show it.
+        if (isPlaceholder && waitForFigure) {
+            avatarImage.dispose();
+            await Promise.race([ready, new Promise<boolean>(resolve => setTimeout(() => resolve(false), ChatBubbleUtilities.FIGURE_WAIT_MS))]);
+
+            return this.setFigureImage(figure, zoom, highResolution, false);
+        }
+
         const placeholderKey = this.getImageCacheVariant(zoom, highResolution);
         const placeholderImageUrl = this.PLACEHOLDER_IMAGE_CACHE.get(placeholderKey);
 
@@ -60,8 +75,10 @@ export class ChatBubbleUtilities {
         avatarImage.setDirection(AvatarSetType.HEAD, 2);
         const sourceUrl = avatarImage.processAsImageUrl(AvatarSetType.HEAD);
         const color = avatarImage.getPartColor(AvatarFigurePartType.CHEST);
-        this.AVATAR_COLOR_CACHE.set(requestedFigure, (color && color.rgb) || 16777215);
-        this.pruneCache(this.AVATAR_COLOR_CACHE);
+        if (!isPlaceholder) {
+            this.AVATAR_COLOR_CACHE.set(requestedFigure, (color && color.rgb) || 16777215);
+            this.pruneCache(this.AVATAR_COLOR_CACHE);
+        }
         avatarImage.dispose();
         const source = await new Promise<HTMLImageElement>((resolve, reject) => {
             const image = new Image();
@@ -70,11 +87,12 @@ export class ChatBubbleUtilities {
             image.src = sourceUrl;
         });
         const imageUrl = this.focusFace(source, (zoom ? 25 : 50) * (highResolution ? 2 : 1), highResolution ? 2 : 1).toDataURL('image/png');
+        // A placeholder head is never stored under the speaker's figure, so the next bubble tries the real head again.
         if (isPlaceholder) this.PLACEHOLDER_IMAGE_CACHE.set(placeholderKey, imageUrl);
-
-        this.AVATAR_IMAGE_CACHE.set(this.getAvatarImageCacheKey(requestedFigure, zoom, highResolution), imageUrl);
-
-        this.pruneCache(this.AVATAR_IMAGE_CACHE);
+        else {
+            this.AVATAR_IMAGE_CACHE.set(this.getAvatarImageCacheKey(requestedFigure, zoom, highResolution), imageUrl);
+            this.pruneCache(this.AVATAR_IMAGE_CACHE);
+        }
 
         return imageUrl;
     }

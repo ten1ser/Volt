@@ -22,6 +22,8 @@ const BOUNDS_THRESHOLD_TOP: number = 0;
 const BOUNDS_THRESHOLD_LEFT: number = 0;
 const DRAG_OUTSIDE_PERCENT: number = 0.8;
 const DRAG_START_THRESHOLD_PX: number = 3;
+// A cascading window opens this far below and right of each cascading window already open.
+const CASCADE_STEP_PX: number = 28;
 
 export interface DraggableWindowProps {
     uniqueKey?: Key;
@@ -35,6 +37,8 @@ export interface DraggableWindowProps {
     constrainToViewport?: boolean;
     unconstrainedPosition?: boolean;
     onPositionChange?: (position: { x: number; y: number }) => void;
+    /** Open staggered from other cascading windows instead of exactly on top of them; a remembered position still wins. */
+    cascade?: boolean;
     children?: ReactNode;
 }
 
@@ -58,7 +62,8 @@ const FloatingDraggableWindow: FC<DraggableWindowProps> = (props) => {
         initialPosition,
         constrainToViewport = false,
         unconstrainedPosition = false,
-        onPositionChange
+        onPositionChange,
+        cascade = false
     } = props;
     const [delta, setDelta] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
     const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -74,6 +79,8 @@ const FloatingDraggableWindow: FC<DraggableWindowProps> = (props) => {
         for (const existingWindow of CURRENT_WINDOWS) {
             zIndex += 1;
             existingWindow.style.zIndex = zIndex.toString();
+            // The front window is marked so themes can highlight it.
+            existingWindow.classList.toggle('is-active-window', existingWindow === CURRENT_WINDOWS[CURRENT_WINDOWS.length - 1]);
         }
     }, []);
 
@@ -139,6 +146,7 @@ const FloatingDraggableWindow: FC<DraggableWindowProps> = (props) => {
         return () => {
             const index = CURRENT_WINDOWS.indexOf(element);
             if (index >= 0) CURRENT_WINDOWS.splice(index, 1);
+            bringToTop();
         };
     }, [handleSelector, windowPosition, uniqueKey, disableDrag, offsetLeft, offsetTop, bringToTop]);
 
@@ -171,6 +179,12 @@ const FloatingDraggableWindow: FC<DraggableWindowProps> = (props) => {
                 break;
         }
 
+        if (cascade) {
+            const step = CASCADE_STEP_PX * CURRENT_WINDOWS.filter(existing => existing !== element && existing.dataset.cascade !== undefined).length;
+            offsetX += step;
+            offsetY += step;
+        }
+
         const clampedPos = clampPosition(initialX ?? offsetX, initialY ?? offsetY);
         offsetRef.current = { x: clampedPos.x, y: clampedPos.y };
         deltaRef.current = { x: 0, y: 0 };
@@ -179,7 +193,7 @@ const FloatingDraggableWindow: FC<DraggableWindowProps> = (props) => {
         setIsPositioned(true);
         if (hasInitialPosition && (clampedPos.x !== initialX || clampedPos.y !== initialY)) onPositionChange?.(clampedPos);
 
-    }, [handleSelector, windowPosition, uniqueKey, disableDrag, offsetLeft, offsetTop, clampPosition, initialX, initialY, hasInitialPosition, onPositionChange]);
+    }, [handleSelector, windowPosition, uniqueKey, disableDrag, offsetLeft, offsetTop, clampPosition, initialX, initialY, hasInitialPosition, onPositionChange, cascade]);
 
     useLayoutEffect(() => {
         if (!constrainToViewport || !elementRef.current) return;
@@ -299,6 +313,7 @@ const FloatingDraggableWindow: FC<DraggableWindowProps> = (props) => {
             ref={elementRef}
             className="absolute draggable-window"
             data-window-key={uniqueKey ?? undefined}
+            data-cascade={cascade ? '' : undefined}
             data-native-position={hasInitialPosition ? '' : undefined}
             style={{
                 ...dragStyle,

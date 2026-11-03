@@ -3,36 +3,7 @@
     max-width: calc(100vw - 24px);
     font-family: var(--district-ui-font);
 
-    .rp-profile__titlebar {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 28px;
-        background: var(--district-ui-titlebar);
-        border-bottom: 1px solid #0c0c0d;
-        color: #fff;
-        font-size: 14px;
-        font-weight: bold;
-    }
-
-    .rp-profile__close {
-        position: absolute;
-        right: 6px;
-        width: 18px;
-        height: 18px;
-        padding: 0;
-        background: #5a5c62;
-        border: 1px solid #0c0c0d;
-        color: #fff;
-        line-height: 14px;
-        cursor: pointer;
-    }
-
-    .rp-profile__close:focus-visible {
-        outline: 2px solid var(--district-ui-accent);
-        outline-offset: 1px;
-    }
+    // Title bar and close button come from the shared .district-rp-window frame (DistrictWindows.css).
 
     // The banner takes the gang's colour once gangs exist; until then it is the brass-tinted default.
     .rp-profile__banner {
@@ -101,8 +72,6 @@
 
     .rp-profile__body {
         padding: 46px 12px 12px;
-        background: #2a2b2f;
-        box-shadow: inset 0 0 0 1px #45464c;
     }
 
     .rp-profile__row {
@@ -112,7 +81,6 @@
 
         &--fights {
             grid-template-columns: repeat(4, 1fr);
-            margin-bottom: 10px;
         }
 
         &--punches {
@@ -139,9 +107,35 @@
 
         span {
             color: var(--district-ui-muted);
-            font-size: 11px;
-            line-height: 14px;
+            font-size: 12px;
+            line-height: 15px;
         }
+    }
+
+    // Combat / Punches tabs, styled like the radio's channel tabs.
+    .rp-profile__tabs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px;
+        margin-bottom: 10px;
+
+        button {
+            padding: 5px 4px;
+            border: 1px solid #4a4d54;
+            border-radius: 5px;
+            background: #2a2d33;
+            color: var(--district-ui-muted);
+            font: 700 12px/15px var(--district-ui-font);
+            cursor: pointer;
+        }
+
+        button[aria-selected='true'] {
+            border-color: var(--district-ui-accent);
+            background: #3a3324;
+            color: var(--district-ui-accent-hover);
+        }
+
+        button:focus-visible { outline: 2px solid var(--district-ui-accent); outline-offset: 2px; }
     }
 
     .rp-profile__row--punches .rp-profile__stat {

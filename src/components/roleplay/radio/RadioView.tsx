@@ -151,6 +151,8 @@ export const RadioView: FC = () =>
     const [open, setOpen] = useState(false);
     const [minimized, setMinimized] = useState(false);
     const [feedOpen, setFeedOpen] = useState(true);
+    // An empty log stays hidden until the first transmission, unless the player opens it with Log.
+    const [logChosen, setLogChosen] = useState(false);
     const [frequency, setFrequency] = useState('');
     const [inputError, setInputError] = useState('');
     const [muted, setMuted] = useState(true);
@@ -322,6 +324,7 @@ export const RadioView: FC = () =>
     // The feed is capped, so its length stops changing; the newest unique id is what marks new traffic.
     const latestMessageId = messages.length ? messages[messages.length - 1].id : 0;
     const visibleMessages = messages.slice(-5);
+    const showLog = feedOpen && (visibleMessages.length > 0 || logChosen);
 
     // Whatever is on screen is read; closing leaves the remaining count for the dock badge.
     useEffect(() =>
@@ -443,12 +446,26 @@ export const RadioView: FC = () =>
         setLogText(LOG_DEFAULTS.text);
     };
 
+    const toggleLog = () =>
+    {
+        if(showLog)
+        {
+            setFeedOpen(false);
+            return;
+        }
+        setLogChosen(true);
+        setFeedOpen(true);
+    };
+
     if(!open) return null;
 
     const label = status ? channelName(status.channel, status.channelLabel) : 'Connecting';
     const committed = !status ? '— — —' : status.channel === RadioChannel.Public ? formatFrequency(status.frequency) : label;
     const display = frequency || committed;
     const lcdNote = !status ? 'Checking radio…' : pending ? 'Waiting for server…' : status.powered ? 'Ready' : 'Power on to talk';
+    const poweredOff = !!status && !status.powered;
+    const stateKey = pulse ?? (!status ? 'link' : status.powered ? 'on' : 'off');
+    const stateText = pulse === 'tx' ? 'TX' : pulse === 'rx' ? 'RX' : !status ? 'LINK' : status.powered ? 'ON' : 'OFF';
     const privateHint = status && (!status.hospitalAccess || !status.gangAccess)
         ? [!status.hospitalAccess && 'Hospital needs on-duty access', !status.gangAccess && 'Gang needs membership'].filter(Boolean).join(' · ')
         : '';
@@ -483,8 +500,7 @@ export const RadioView: FC = () =>
                         <span className="district-radio__mini-frequency">{committed}</span>
                         <div className="district-radio__mini-actions">
                             <button ref={restoreButton} type="button" aria-label="Restore radio" onClick={() => setMinimized(false)}>Restore</button>
-                            <button type="button" aria-pressed={feedOpen} aria-label={feedOpen ? 'Hide log' : 'Show log'}
-                                onClick={() => setFeedOpen(value => !value)}>Log</button>
+                            <button type="button" aria-pressed={showLog} onClick={toggleLog}>Log</button>
                             <button type="button" className="district-radio__close" aria-label="Close radio" onClick={close}>×</button>
                         </div>
                     </header>
@@ -494,25 +510,27 @@ export const RadioView: FC = () =>
                         <div className="district-radio__body">
                         <header className="district-radio__header" {...handsetDrag.dragHandlers}>
                             <h2>District Radio</h2>
+                            <button type="button" className="district-radio__log-toggle" aria-pressed={showLog} onClick={toggleLog}>Log</button>
                             <button type="button" className="district-radio__minimize" aria-label="Minimize radio" onClick={() => setMinimized(true)}>–</button>
                             <button type="button" className="district-radio__close" aria-label="Close radio" onClick={close}>×</button>
                         </header>
                         <span className="district-radio__speaker" aria-hidden="true" />
+                        {/* One status light (TX/RX flash over ON/OFF) and the frequency shown once; the draft field only while it can tune. */}
                         <div className="district-radio__lcd" aria-live="polite">
                             <div className="district-radio__lcd-row">
-                                <span>{status ? status.powered ? 'ON' : 'OFF' : 'LINK'}</span>
-                                <span>{label}</span>
+                                <span className={`district-radio__state is-${stateKey}`}><i aria-hidden="true" />{stateText}</span>
+                                <span>{status ? CHANNEL_NAMES[status.channel] ?? label : label}</span>
                             </div>
                             <strong>{display}</strong>
                             <span className="district-radio__lcd-note">{lcdNote}</span>
-                            <input
+                            {!poweredOff && <input
                                 className="district-radio__lcd-input"
                                 aria-label="Public frequency"
                                 inputMode="decimal"
                                 pattern="[0-9]*[.]?[0-9]?"
                                 maxLength={5}
                                 value={frequency}
-                                placeholder={onPublic ? formatFrequency(statusFrequency) : '100.1'}
+                                placeholder="New frequency"
                                 disabled={!canTune}
                                 onChange={event =>
                                 {
@@ -524,15 +542,13 @@ export const RadioView: FC = () =>
                                     if(event.key !== 'Enter') return;
                                     event.preventDefault();
                                     submitFrequency();
-                                }} />
+                                }} />}
                         </div>
-                        <span className={`district-radio__pulse ${pulse ? `is-${pulse}` : ''}`} aria-live="polite">
-                            {pulse === 'tx' ? 'TX' : pulse === 'rx' ? 'RX' : 'Standby'}
-                        </span>
-                        <div className="district-radio__controls">
-                            <button type="button" className="district-radio__power" aria-pressed={!!status?.powered} disabled={!status || pending} onClick={togglePower}>
-                                {status?.powered ? 'Power off' : 'Power on'}
-                            </button>
+                        <button type="button" className="district-radio__power" aria-pressed={!!status?.powered} disabled={!status || pending} onClick={togglePower}>
+                            {status?.powered ? 'Power off' : 'Power on'}
+                        </button>
+                        {/* Switched off, the handset collapses to power and frequency; channels and keypad return with power. */}
+                        {!poweredOff && <>
                             <div className="district-radio__channels" role="group" aria-label="Channel">
                                 <button type="button" aria-pressed={onPublic} disabled={!canTune} onClick={() => selectChannel(RadioChannel.Public)}>Public</button>
                                 <button type="button" aria-pressed={statusChannel === RadioChannel.Hospital} disabled={!canTune || !status?.hospitalAccess}
@@ -544,20 +560,20 @@ export const RadioView: FC = () =>
                                     title={status && !status.gangAccess ? 'Requires gang membership' : undefined}
                                     onClick={() => selectChannel(RadioChannel.Gang)}>Gang</button>
                             </div>
-                        </div>
-                        {!!privateHint && <p className="district-radio__hint">{privateHint}</p>}
-                        <div className="district-radio__keypad" role="group" aria-label="Frequency keypad">
-                            {KEYPAD_KEYS.map(key => (
-                                <button key={key} type="button" className="district-radio__key" disabled={!canTune}
-                                    aria-label={key === '.' ? 'Decimal point' : undefined}
-                                    onClick={() => pressKey(key)}>{key}</button>
-                            ))}
-                            <button type="button" className="district-radio__key" aria-label="Backspace" disabled={!canTune} onClick={backspaceFrequency}>⌫</button>
-                        </div>
-                        <div className="district-radio__tune-actions">
-                            <button type="button" disabled={!canTune} onClick={clearFrequency}>Clear</button>
-                            <button type="button" className="district-radio__tune" disabled={!canTune} onClick={submitFrequency}>Tune</button>
-                        </div>
+                            {!!privateHint && <p className="district-radio__hint">{privateHint}</p>}
+                            <div className="district-radio__keypad" role="group" aria-label="Frequency keypad">
+                                {KEYPAD_KEYS.map(key => (
+                                    <button key={key} type="button" className="district-radio__key" disabled={!canTune}
+                                        aria-label={key === '.' ? 'Decimal point' : undefined}
+                                        onClick={() => pressKey(key)}>{key}</button>
+                                ))}
+                                <button type="button" className="district-radio__key" aria-label="Backspace" disabled={!canTune} onClick={backspaceFrequency}>⌫</button>
+                            </div>
+                            <div className="district-radio__tune-actions">
+                                <button type="button" disabled={!canTune} onClick={clearFrequency}>Clear</button>
+                                <button type="button" className="district-radio__tune" disabled={!canTune} onClick={submitFrequency}>Tune</button>
+                            </div>
+                        </>}
                         {notice && (
                             <div className={`district-radio__notice ${notice.refused ? 'is-refused' : ''}`} role="alert">
                                 <span>{notice.text}</span>
@@ -565,7 +581,7 @@ export const RadioView: FC = () =>
                             </div>
                         )}
                         {!!inputError && <p className="district-radio__error" role="alert">{inputError}</p>}
-                        <p className="district-radio__tx-hint">{TX_HINT}</p>
+                        {!poweredOff && <p className="district-radio__tx-hint">{TX_HINT}</p>}
                         <div className="district-radio__audio">
                             <button type="button" aria-pressed={!muted} onClick={() =>
                             {
@@ -576,24 +592,20 @@ export const RadioView: FC = () =>
                             }}>{muted ? 'Sound off' : 'Sound on'}</button>
                             <input type="range" min={0} max={1} step={0.05} value={volume} aria-label="Volume" onChange={event => setVolume(Number(event.target.value))} />
                         </div>
-                        <div className="district-radio__actions">
-                            <button type="button" aria-expanded={feedOpen} aria-controls={`${id}-feed`} onClick={() => setFeedOpen(value => !value)}>
-                                {feedOpen ? 'Hide log' : 'Show log'}
-                            </button>
-                            <button type="button" onClick={clear}>Clear log</button>
-                        </div>
                         </div>
                     </>
                 )}
             </section>
-            {feedOpen && (
+            {showLog && (
                 <aside ref={logPanel} id={`${id}-feed`} className={logClass} style={logStyle} role="complementary" aria-label="Radio log">
                     <header className="district-radio__log-header" {...logDrag.dragHandlers}>
                         <h3>Radio log</h3>
                         <span className="district-radio__log-count">{visibleMessages.length ? `${visibleMessages.length} shown` : 'Empty'}</span>
+                        <button type="button" className="district-radio__log-button" aria-label="Clear log" disabled={!visibleMessages.length} onClick={clear}>Clear</button>
                         <button type="button" className="district-radio__log-settings-toggle" aria-label="Log settings"
                             aria-expanded={settingsOpen} aria-controls={`${id}-log-settings`}
                             onClick={() => setSettingsOpen(value => !value)}><span aria-hidden="true">⚙</span></button>
+                        <button type="button" className="district-radio__log-settings-toggle" aria-label="Hide log" onClick={() => setFeedOpen(false)}>×</button>
                     </header>
                     {settingsOpen && (
                         <div id={`${id}-log-settings`} className="district-radio__log-settings">

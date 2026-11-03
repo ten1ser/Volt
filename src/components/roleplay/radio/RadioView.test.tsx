@@ -270,7 +270,8 @@ describe('RadioView', () =>
         expect(screen.queryByRole('complementary', { name: 'Radio log' })).toBeNull();
         expect(screen.getByRole('region', { name: 'Radio' })).toBeInTheDocument();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Show log' }));
+        expect(screen.getByRole('button', { name: 'Log' })).toHaveAttribute('aria-pressed', 'false');
+        fireEvent.click(screen.getByRole('button', { name: 'Log' }));
         expect(screen.getByRole('log')).toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: 'Clear log' }));
         expect(test.radio.clear).toHaveBeenCalledOnce();
@@ -285,6 +286,7 @@ describe('RadioView', () =>
     {
         render(<RadioView />);
         open();
+        fireEvent.click(screen.getByRole('button', { name: 'Log' }));
 
         fireEvent.click(screen.getByRole('button', { name: 'Minimize radio' }));
         expect(screen.queryByRole('button', { name: 'Power off' })).toBeNull();
@@ -316,6 +318,7 @@ describe('RadioView', () =>
     {
         render(<RadioView />);
         open();
+        fireEvent.click(screen.getByRole('button', { name: 'Log' }));
         let handset = screen.getByRole('region', { name: 'Radio' });
         let log = screen.getByRole('complementary', { name: 'Radio log' });
         const handsetHeader = handset.querySelector('.district-radio__header') as HTMLElement;
@@ -386,6 +389,7 @@ describe('RadioView', () =>
     {
         render(<RadioView />);
         open();
+        fireEvent.click(screen.getByRole('button', { name: 'Log' }));
         fireEvent.click(screen.getByRole('button', { name: 'Log settings' }));
         const log = screen.getByRole('complementary', { name: 'Radio log' });
         const handset = screen.getByRole('region', { name: 'Radio' });
@@ -440,6 +444,27 @@ describe('RadioView', () =>
         expect(screen.getByRole('button', { name: 'Tune' })).toBeDisabled();
     });
 
+    it('keeps an empty log hidden until traffic arrives or the player opens it, with clear and hide inside it', () =>
+    {
+        const { rerender } = render(<RadioView />);
+
+        open();
+        expect(screen.queryByRole('complementary', { name: 'Radio log' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Clear log' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Hide log' })).toBeNull();
+        // The frequency is shown once: no repeat in the corner, the draft field or a separate standby chip.
+        expect(screen.getAllByText('123.4')).toHaveLength(1);
+        expect(screen.queryByText('Standby')).toBeNull();
+        expect(screen.getByText('ON')).toBeInTheDocument();
+
+        test.radio.messages = [message(1)];
+        rerender(<RadioView />);
+        expect(screen.getByRole('complementary', { name: 'Radio log' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Log' })).toHaveAttribute('aria-pressed', 'true');
+        fireEvent.click(screen.getByRole('button', { name: 'Hide log' }));
+        expect(screen.queryByRole('complementary', { name: 'Radio log' })).toBeNull();
+    });
+
     it('closes when the session disconnects', () =>
     {
         const { rerender } = render(<RadioView />);
@@ -463,6 +488,14 @@ describe('RadioView', () =>
 
         expect(log.querySelectorAll('li')).toHaveLength(5);
         expect(power).toBeEnabled();
+
+        // Switched off, only power, the frequency and sound remain on the handset.
+        expect(screen.getByText('OFF')).toBeInTheDocument();
+        expect(screen.getByText('123.4')).toBeInTheDocument();
+        expect(screen.queryByRole('group', { name: 'Frequency keypad' })).toBeNull();
+        expect(screen.queryByRole('group', { name: 'Channel' })).toBeNull();
+        expect(screen.queryByLabelText('Public frequency')).toBeNull();
+        expect(screen.queryByText(':r <message> to transmit')).toBeNull();
 
         fireEvent.click(power);
         expect(test.radio.power).toHaveBeenCalledWith(true);

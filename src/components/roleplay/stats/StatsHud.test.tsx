@@ -49,8 +49,9 @@ describe('DistrictRP stats HUD', () =>
         expect(screen.getByRole('progressbar', { name: 'Energy' })).toHaveAttribute('aria-valuenow', '29');
         expect(screen.getByRole('progressbar', { name: 'Health' })).toHaveAttribute('title', '73 / 100');
         expect(screen.queryByText('73 / 100')).toBeNull();
-        expect(screen.getByRole('progressbar', { name: 'Health' })).toHaveTextContent('73');
-        expect(screen.getByRole('progressbar', { name: 'Energy' })).toHaveTextContent('29');
+        // The number sits to the right of its bar.
+        expect(screen.getByRole('progressbar', { name: 'Health' }).nextElementSibling).toHaveTextContent('73');
+        expect(screen.getByRole('progressbar', { name: 'Energy' }).nextElementSibling).toHaveTextContent('29');
     });
 
     it('refreshes periodically and stops polling when the HUD unmounts', () =>

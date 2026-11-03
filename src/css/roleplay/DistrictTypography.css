@@ -1,0 +1,23 @@
+/* DistrictRP typeface for the HUD, chat bar and ordinary chat bubbles: Plus Jakarta Sans (SIL OFL 1.1, licence beside
+   the font files), one variable file per style covering weights 200-800. Native windows keep the hotel fonts. */
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    src: url('../../assets/webfonts/PlusJakartaSans/PlusJakartaSans.ttf') format('truetype');
+    font-weight: 200 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    src: url('../../assets/webfonts/PlusJakartaSans/PlusJakartaSans-Italic.ttf') format('truetype');
+    font-weight: 200 800;
+    font-style: italic;
+    font-display: swap;
+}
+
+:root {
+    --district-font: 'Plus Jakarta Sans', HabboAirUbuntu, UbuntuRegular, sans-serif;
+    /* Text standing directly on the room: a crisp ink outline painted behind the letters, no blur. */
+    --district-ink: #16171b;
+}

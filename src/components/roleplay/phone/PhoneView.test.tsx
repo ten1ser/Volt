@@ -355,6 +355,8 @@ describe('DistrictRP phone', () =>
     it('puts the Phone app in the dock and shows the number and Load', () =>
     {
         render(<PhoneView />); open();
+        // Dock icons have no caption, so each carries its name as a tooltip.
+        expect(screen.getByRole('button', { name: 'Phone' })).toHaveAttribute('title', 'Phone');
         fireEvent.click(screen.getByRole('button', { name: 'Phone' }));
         expect(screen.getByText('Dialer app')).toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: 'Home' }));

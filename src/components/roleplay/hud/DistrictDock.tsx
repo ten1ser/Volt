@@ -45,7 +45,7 @@ export const DistrictDock: FC<{ isInRoom: boolean }> = ({ isInRoom }) =>
                     type="button"
                     className="district-command-bar__phone"
                     aria-label={phoneUnread ? `Phone, ${phoneUnread}` : 'Phone'}
-                    title="Phone · Right-click for dock tools"
+                    title="Phone (Alt+P) · Right-click for dock tools"
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     aria-controls={menuOpen ? menuId : undefined}
@@ -79,12 +79,12 @@ export const DistrictDock: FC<{ isInRoom: boolean }> = ({ isInRoom }) =>
                             items[index]?.focus();
                         }
                     }}>
-                    <button type="button" role="menuitem" className="district-dock-menu__bubble is-bag" onClick={() =>
+                    <button type="button" role="menuitem" className="district-dock-menu__bubble is-bag" title="Bag (Alt+B)" onClick={() =>
                     {
                         setMenuOpen(false); phone.current?.focus();
                         CreateLinkEvent('phone/hide'); CreateLinkEvent('backpack/show');
                     }}><img src={backpackIcon} alt="" draggable={false} /><span>Bag</span></button>
-                    <button type="button" role="menuitem" className="district-dock-menu__bubble is-radio"
+                    <button type="button" role="menuitem" className="district-dock-menu__bubble is-radio" title="Radio (Alt+R)"
                         aria-label={radioUnread ? `Radio, ${radioUnread}` : undefined}
                         onClick={() =>
                         {

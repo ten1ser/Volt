@@ -18,13 +18,22 @@ const WEAPON = 1;
 const ARMOR = 2;
 const BAG_SLOTS = [3, 4, 5, 6, 7, 8, 9, 10];
 
+const durability = (slot: RpInventorySlot) => `Durability ${slot.durability}/${slot.maxDurability}`;
+
+// The info box names what is selected: the item, or which slot is empty (slot 1 is the weapon slot, 2 the armor slot).
+const title = (slot: RpInventorySlot | undefined, selected: number) =>
+{
+    if(slot?.key) return slot.quantity > 1 ? `${slot.name} ×${slot.quantity}` : slot.name;
+    return selected === 1 ? 'Weapon slot' : selected === 2 ? 'Armor slot' : `Bag slot ${selected}`;
+};
+
 const describe = (slot: RpInventorySlot | undefined) =>
 {
-    if(!slot || !slot.key) return 'Empty slot';
+    if(!slot || !slot.key) return 'Empty';
     const equipped = slot.slot === 1 || slot.slot === 2;
-    const hint = equipped ? 'double-click to put away' : 'drag to its slot or double-click to equip';
+    const hint = equipped ? 'Double-click to put away' : 'Drag to its slot or double-click to equip';
     if(slot.kind === WEAPON) return `Weapon · ${hint}`;
-    if(slot.kind === ARMOR) return `Armor · ${slot.durability}/${slot.maxDurability} · ${hint}`;
+    if(slot.kind === ARMOR) return `Armor · ${durability(slot)} · ${hint}`;
     return 'Item';
 };
 
@@ -65,6 +74,7 @@ export const BackpackView = () =>
             type="button"
             className={`backpack-slot ${selected === slot ? 'is-selected' : ''}`}
             aria-label={`Slot ${slot}: ${item?.key ? item.name : 'empty'}`}
+            title={item?.kind === ARMOR && item.maxDurability > 0 ? `${item.name} · ${durability(item)}` : item?.key ? item.name : undefined}
             aria-pressed={selected === slot}
             draggable={!!item?.key}
             onClick={() => setSelected(slot)}
@@ -90,7 +100,7 @@ export const BackpackView = () =>
         </button>;
     };
 
-    return <VoltCardView theme="district" uniqueKey="district-backpack" className="district-backpack" isResizable={false} constrainToViewport>
+    return <VoltCardView theme="district" uniqueKey="district-backpack" className="district-backpack district-rp-window" isResizable={false} constrainToViewport cascade>
         <div role="dialog" aria-labelledby={`${windowId}-title`} onKeyDown={event =>
         {
             if(event.key === 'Escape' && !event.defaultPrevented)
@@ -98,14 +108,14 @@ export const BackpackView = () =>
                 event.stopPropagation(); setOpen(false);
             }
         }}>
-            <header className="backpack-titlebar drag-handler"><span id={`${windowId}-title`}>Backpack</span><button type="button" className="backpack-close" aria-label="Close Backpack" onClick={() => setOpen(false)}>×</button></header>
+            <header className="backpack-titlebar district-rp-titlebar drag-handler"><span id={`${windowId}-title`}>Backpack</span><button type="button" className="backpack-close district-rp-close" aria-label="Close Backpack" onClick={() => setOpen(false)}>×</button></header>
             <div className="backpack-body">
                 <h3 className="backpack-label">Equipped</h3>
                 <div className="backpack-equipped">
                     {slotButton(1, 'Weapon')}
                     {slotButton(2, 'Armor')}
                     <div className="backpack-info" role="status">
-                        <strong>{current?.key ? current.name : `Slot ${selected}`}</strong>
+                        <strong>{title(current, selected)}</strong>
                         <span>{describe(current)}</span>
                     </div>
                 </div>

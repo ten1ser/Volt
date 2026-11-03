@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from 'react';
-import wordmark from '@/assets/images/loading/districtrp-wordmark.png';
+import wordmark from '@/assets/images/loading/districtrp-logo.png';
 
 // DistrictRP client loading screen (75_classic-js HabboAirLauncher: eSe + JRe).
 
@@ -79,8 +79,8 @@ export const LoadingView: FC<LoadingViewProps> = (props) => {
                 className="classic-loading-screen__logo"
                 src={wordmark}
                 alt="DistrictRP"
-                width={2172}
-                height={724}
+                width={1040}
+                height={288}
                 draggable={false}
             />
             <div className="classic-loading-screen__text">{isError ? 'Loading failed' : REVOLVING_MESSAGES[messageIndex]}</div>

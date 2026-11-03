@@ -21,7 +21,7 @@ $panel-edge: #ffffff1a;
 }
 .district-vitals:empty { display: none; }
 
-// The wordmark, a 2x image shown at 160px, level with the corner text; it only decorates, so clicks reach the room.
+// The logo, a 2x image shown at 160px, level with the corner text; it only decorates, so clicks reach the room.
 .district-wordmark {
     position: fixed;
     top: max(16px, env(safe-area-inset-top));

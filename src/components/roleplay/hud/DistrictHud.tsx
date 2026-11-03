@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import clockIcon from '../../../assets/images/hc-center/clock.png';
-import wordmark from '../../../assets/images/roleplay/districtrp-wordmark-hud.png';
+import wordmark from '../../../assets/images/roleplay/districtrp-logo-hud.png';
 import roomIcon from '../../../assets/images/roleplay/room-hotel.png';
 import { useCityStatus } from '../../../hooks/roleplay/useCityStatus';
 import { useDistrictWindowKeys } from '../../../hooks/roleplay/useDistrictWindowKeys';
@@ -33,7 +33,7 @@ export const DistrictHud: FC = () =>
                 <StatsHud />
                 <TargetHud />
             </div>
-            <img className="district-wordmark" src={wordmark} alt="DistrictRP" width={160} height={27} draggable={false} />
+            <img className="district-wordmark" src={wordmark} alt="DistrictRP" width={160} height={45} draggable={false} />
             {/* Mirrors the vitals: a right-aligned text block, then the hotel icon on the far right where the portrait sits on the left. */}
             <header className="district-topbar" aria-label="DistrictRP city status">
                 <div className="district-topbar__text">

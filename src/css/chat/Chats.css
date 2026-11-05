@@ -1965,10 +1965,9 @@
 }
 
 /* Ordinary room chat (styles 0/3/4): compact single-line bubble with a narrow avatar well.
-   14px body / 19px line box at font scale 1, proportional with the saved scale. The skin's
-   bottom border-image slice is 6px tall and is painted over the content box, so the bottom
-   padding must be at least 6px or descenders collide with the edge. 2px top / 7px bottom
-   gives a 28px bubble with the text centred (the DistrictRP font sits lower than Ubuntu); right padding is 8px.
+   14px body / 19px line box at font scale 1, proportional with the saved scale. Vertical text
+   spacing is shared with the radio bubble: 4px top / 5px bottom, a fixed 9px inset that keeps the
+   28px bubble box; right padding is 8px.
    Only clamps the well; face size stays on the inline imageScale pipeline. */
 .bubble-container.native-room-bubble.district-plain-chat .chat-bubble {
     box-sizing: border-box;
@@ -1988,7 +1987,7 @@
 .bubble-container.native-room-bubble.district-plain-chat .chat-content {
     margin: 0;
     min-height: 0;
-    padding: 2px 8px 7px 32px;
+    padding: 4px 8px 5px 32px;
     font-family: inherit;
     font-size: inherit;
     line-height: inherit;
@@ -2034,8 +2033,8 @@
 
 /* Radio lines (client style 900): a night-gold strip with a brass edge, read next to speech. No skin image, so it
    also renders in chat history; the pointer is hidden because the line belongs to no avatar. */
-/* The edge is an inset shadow, not a border, so the strip keeps the plain bubble's exact 28px box. The plain padding
-   (2px top / 7px bottom) keeps text clear of the skin's 6px bottom slice; this strip has no skin, so 4px / 5px centres it. */
+/* The edge is an inset shadow, not a border, so the strip keeps the plain bubble's exact 28px box. The plain bubble shares
+   the strip's 4px / 5px vertical spacing, so the override below only restates it for this style. */
 .bubble-container.native-room-bubble .chat-bubble.bubble-900 {
     border-image: none;
     border-radius: 6px;

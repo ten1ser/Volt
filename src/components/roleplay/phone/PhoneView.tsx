@@ -4,7 +4,6 @@ import coinIcon from '../../../assets/images/roleplay/phone/coin.png';
 import loadIcon from '../../../assets/images/roleplay/phone/load.png';
 import moonIcon from '../../../assets/images/roleplay/phone/moon.png';
 import onlineIcon from '../../../assets/images/roleplay/phone/online.png';
-import simIcon from '../../../assets/images/roleplay/phone/sim.png';
 import sunIcon from '../../../assets/images/roleplay/phone/sun.png';
 import { DispatchUiEvent, GetConfigurationValue, MessengerIconState, MessengerThread } from '../../../api';
 import { Permission } from '../../../api/permissions';
@@ -359,7 +358,6 @@ export const PhoneView: FC = () =>
                 }}>
                 <div className="district-phone__screen" ref={screen}>
                     <div className="district-phone__status" title="Drag to move the phone, double-click to put it back" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onDoubleClick={resetPosition}>
-                        <time>{city?.time ?? '--:--'}</time>
                         <span className="district-phone__island" aria-hidden="true" />
                         {doNotDisturb && <span className="district-phone__dnd" title="Do not disturb" aria-label="Do not disturb">☾</span>}
                         {status?.hasSim
@@ -372,18 +370,14 @@ export const PhoneView: FC = () =>
                         <>
                             <div className="district-phone__home-content">
                             <div className="district-phone__widget">
-                                <div className="district-phone__city-line"><strong>{city?.time ?? '--:--'}</strong><span className="district-phone__brand">DistrictRP</span></div>
+                                {/* Clock hero (option A, 2026-11-04): the one time on the phone, the phase, then icon chips; the own number lives in the Dialer. */}
+                                <strong className="district-phone__clock">{city?.time ?? '--:--'}</strong>
                                 <span className="district-phone__phase">{city && <PixelIcon src={city.isDay ? sunIcon : moonIcon} />}{phase}</span>
-                                <div className="district-phone__account">
-                                    <div className="district-phone__account-row">
-                                        <span title="RP Coins"><PixelIcon src={coinIcon} /><b>{(purse?.credits ?? 0).toLocaleString()}</b>{' '}<small>RP Coins</small></span>
-                                        <span title="Players online"><PixelIcon src={onlineIcon} /><b>{city ? city.onlinePlayers.toLocaleString() : '—'}</b>{' '}<small>online</small></span>
-                                    </div>
-                                    <div className="district-phone__account-row is-sim">
-                                        <span title="Phone number"><PixelIcon src={simIcon} /><b>{status ? status.hasSim ? status.number : 'No SIM card' : 'Connecting'}</b></span>
-                                        <span title="Load"><PixelIcon src={loadIcon} /><b>{status ? status.load.toLocaleString() : '—'}</b>{' '}<small>Load</small></span>
-                                    </div>
-                                </div>
+                                <ul className="district-phone__chips" aria-label="Account">
+                                    <li className="is-coins" title="RP Coins"><PixelIcon src={coinIcon} /><b>{(purse?.credits ?? 0).toLocaleString()}</b><span className="district-phone__chip-label"> RP Coins</span></li>
+                                    <li title="Load"><PixelIcon src={loadIcon} /><b>{status ? status.load.toLocaleString() : '—'}</b><span className="district-phone__chip-label"> Load</span></li>
+                                    <li title="Players online"><PixelIcon src={onlineIcon} /><b>{city ? city.onlinePlayers.toLocaleString() : '—'}</b><span className="district-phone__chip-label"> online</span></li>
+                                </ul>
                             </div>
                             <div className="district-phone__grid" key={`${currentPage}-${pageSize}`}>{homeApps.slice(currentPage * pageSize, (currentPage + 1) * pageSize).map(icon)}</div>
                             <nav className="district-phone__pages" aria-label="App pages">

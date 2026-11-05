@@ -1,24 +1,19 @@
 import { FC, useEffect, useState } from 'react';
 import wordmark from '@/assets/images/loading/districtrp-logo.png';
 
-// DistrictRP client loading screen (75_classic-js HabboAirLauncher: eSe + JRe).
+// DistrictRP client loading screen.
 
-// default_localizations_en client.starting.revolving
 const REVOLVING_MESSAGES = [
-    'For science, you monster',
-    'Loading funny message…please wait.',
-    'Would you like fries with that?',
-    'Follow the yellow duck.',
-    'Time is just an illusion.',
-    'Are we there yet?!',
-    'I like your t-shirt.',
-    'Look left. Look right. Blink twice. Ta da!',
-    "It's not you, it's me.",
-    "Shhh! I'm trying to think here.",
-    'Loading pixel universe.'
+    'Unlocking the front door…',
+    'Waking up the district…',
+    'Checking who is on shift…',
+    'Turning on the street lamps…',
+    'Sweeping the pavement…',
+    'Topping up the vending machines…',
+    'Tuning the radios…'
 ];
 
-const BAR_TICK_MS = 750;
+const MESSAGE_MS = 2400;
 
 // The loading screen opens once the bootstrap is done, so real progress fills the last 40%.
 const BOOTSTRAP_PROGRESS = 0.6;
@@ -34,40 +29,15 @@ interface LoadingViewProps {
 
 export const LoadingView: FC<LoadingViewProps> = (props) => {
     const { backToHotelUrl, isError = false, message = '', progress = 0 } = props;
-    const [firstMessageIndex] = useState(() => randomBetween(0, REVOLVING_MESSAGES.length - 1));
-    const [messageIndex, setMessageIndex] = useState(firstMessageIndex);
-    const [barProgress, setBarProgress] = useState<number | null>(null);
+    const [messageIndex, setMessageIndex] = useState(() => randomBetween(0, REVOLVING_MESSAGES.length - 1));
 
     useEffect(() => {
         if (isError) return;
 
-        // The bar is decorative: it fills in random steps, holds full for one tick, then restarts with the next message.
-        let value = 0;
-        let swapMessage = false;
-        let nextIndex = firstMessageIndex;
-
-        const interval = window.setInterval(() => {
-            if (value === 100) {
-                if (swapMessage) {
-                    setMessageIndex(nextIndex);
-                    swapMessage = false;
-                }
-
-                value = 0;
-            } else {
-                value += Math.min(randomBetween(35, Math.min(randomBetween(45, 55), 100 - value)), 100 - value);
-            }
-
-            if (value === 100) {
-                swapMessage = true;
-                nextIndex = (nextIndex + 1) % (REVOLVING_MESSAGES.length - 1);
-            }
-
-            setBarProgress(value / 100);
-        }, BAR_TICK_MS);
+        const interval = window.setInterval(() => setMessageIndex(index => (index + 1) % REVOLVING_MESSAGES.length), MESSAGE_MS);
 
         return () => window.clearInterval(interval);
-    }, [isError, firstMessageIndex]);
+    }, [isError]);
 
     const percent = Math.round(Math.min(1, BOOTSTRAP_PROGRESS + (Math.max(0, Math.min(100, progress)) / 100) * (1 - BOOTSTRAP_PROGRESS)) * 100);
 
@@ -83,19 +53,22 @@ export const LoadingView: FC<LoadingViewProps> = (props) => {
                 height={288}
                 draggable={false}
             />
-            <div className="classic-loading-screen__text">{isError ? 'Loading failed' : REVOLVING_MESSAGES[messageIndex]}</div>
-            <div className="classic-loading-screen__bar">
-                {barProgress !== null && (
-                    <div
-                        className="classic-loading-screen__bar-fill"
-                        style={{ width: `${Math.round((barProgress ?? 0) * 100)}%` }}
-                    >
-                        <span className="classic-loading-screen__bar-top" />
-                        <span className="classic-loading-screen__bar-bottom" />
+            <div className="classic-loading-screen__text" aria-live="polite">{isError ? 'Loading failed' : REVOLVING_MESSAGES[messageIndex]}</div>
+            {!isError && (
+                <div
+                    className="classic-loading-screen__progress"
+                    role="progressbar"
+                    aria-label="Loading"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={percent}
+                >
+                    <div className="classic-loading-screen__bar">
+                        <div className="classic-loading-screen__bar-fill" style={{ width: `${percent}%` }} />
                     </div>
-                )}
-            </div>
-            {!isError && <div className="classic-loading-screen__percent">{percent}%</div>}
+                    <div className="classic-loading-screen__percent">{percent}%</div>
+                </div>
+            )}
             {isError && <div className="classic-loading-screen__error">{message}</div>}
             {isError && backToHotelUrl && (
                 <a className="classic-loading-screen__back" href={backToHotelUrl}>Back to Hotel</a>

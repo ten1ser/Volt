@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { AddLinkEventTracker } from '@volt/renderer';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,6 +11,7 @@ interface TestStatus
     channelLabel: string;
     hospitalAccess: boolean;
     gangAccess: boolean;
+    listeners: number;
 }
 
 interface TestMessage
@@ -33,13 +32,10 @@ interface RadioMock
     status: TestStatus | null;
     notice: { text: string; refused: boolean } | null;
     messages: TestMessage[];
-    unread: number;
     pending: boolean;
     refresh: ReturnType<typeof vi.fn>;
     power: ReturnType<typeof vi.fn>;
     tune: ReturnType<typeof vi.fn>;
-    clear: ReturnType<typeof vi.fn>;
-    markRead: ReturnType<typeof vi.fn>;
     clearNotice: ReturnType<typeof vi.fn>;
 }
 
@@ -59,16 +55,13 @@ vi.mock('../../../hooks/roleplay/useRpRadio', () => ({
 vi.mock('../../../hooks/events/useConnectionState', () => ({ useConnectionState: () => ({ authenticated: test.authenticated }) }));
 
 const makeRadio = (): RadioMock => ({
-    status: { powered: true, channel: 0, frequency: 1234, channelLabel: 'Public', hospitalAccess: false, gangAccess: true },
+    status: { powered: true, channel: 0, frequency: 1234, channelLabel: 'Public', hospitalAccess: false, gangAccess: true, listeners: 3 },
     notice: null,
     messages: [],
-    unread: 0,
     pending: false,
     refresh: vi.fn(),
     power: vi.fn(),
     tune: vi.fn(),
-    clear: vi.fn(),
-    markRead: vi.fn(),
     clearNotice: vi.fn()
 });
 const tracker = () => vi.mocked(AddLinkEventTracker).mock.calls.at(-1)?.[0] as unknown as LinkTracker;
@@ -114,7 +107,7 @@ describe('RadioView', () =>
     });
     afterEach(cleanup);
 
-    it('opens from the link tracker, refreshes, marks read and restores focus on Escape', () =>
+    it('opens from the link tracker, refreshes and restores focus on Escape', () =>
     {
         const opener = document.createElement('button');
 
@@ -126,10 +119,8 @@ describe('RadioView', () =>
         open();
         expect(screen.getByRole('region', { name: 'Radio' })).toBeInTheDocument();
         expect(test.radio.refresh).toHaveBeenCalledOnce();
-        expect(test.radio.markRead).toHaveBeenCalled();
         fireEvent.keyDown(screen.getByRole('region', { name: 'Radio' }), { key: 'Escape' });
         expect(screen.queryByRole('region', { name: 'Radio' })).toBeNull();
-        expect(screen.queryByRole('complementary', { name: 'Radio log' })).toBeNull();
         expect(opener).toHaveFocus();
         opener.remove();
     });
@@ -157,6 +148,19 @@ describe('RadioView', () =>
 
         fireEvent.click(screen.getByRole('button', { name: 'Sound off' }));
         expect(screen.getByRole('button', { name: 'Sound on' })).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('shows a muted radio at zero volume and turns the sound on when the slider moves', () =>
+    {
+        render(<RadioView />);
+        open();
+        const slider = screen.getByRole('slider', { name: 'Volume' });
+
+        expect(screen.getByRole('button', { name: 'Sound off' })).toBeInTheDocument();
+        expect(slider).toHaveValue('0');
+        fireEvent.change(slider, { target: { value: '0.5' } });
+        expect(screen.getByRole('button', { name: 'Sound on' })).toHaveAttribute('aria-pressed', 'true');
+        expect(slider).toHaveValue('0.5');
     });
 
     it('builds the frequency draft with the keypad and keyboard, then commits integer tenths', () =>
@@ -224,83 +228,36 @@ describe('RadioView', () =>
         expect(test.radio.power).toHaveBeenCalledWith(false);
     });
 
-    it('shows only the five latest transmissions and auto-scrolls on a new id at the cap', () =>
+    it('has no log window or Log button; new traffic only flashes RX on the open handset', () =>
     {
         test.radio.messages = feed(1);
         const { rerender } = render(<RadioView />);
 
         open();
-        const log = screen.getByRole('log');
+        expect(screen.queryByRole('log')).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Log' })).toBeNull();
+        expect(screen.queryByText('line 100')).toBeNull();
+        expect(screen.getByText('ON')).toBeInTheDocument();
 
-        expect(log.querySelectorAll('li')).toHaveLength(5);
-        expect(screen.getByText('5 shown')).toBeInTheDocument();
-        expect(screen.getByText('line 96')).toBeInTheDocument();
-        expect(screen.getByText('line 100')).toBeInTheDocument();
-        expect(screen.queryByText('line 95')).toBeNull();
-
-        Object.defineProperty(log, 'scrollHeight', { configurable: true, value: 480 });
-        log.scrollTop = 0;
-        test.radio.markRead.mockClear();
         test.radio.messages = feed(2);
         rerender(<RadioView />);
-
-        expect(test.radio.markRead).toHaveBeenCalled();
-        expect(log.scrollTop).toBe(480);
-        expect(log.querySelectorAll('li')).toHaveLength(5);
-        expect(screen.getByText('line 101')).toBeInTheDocument();
-        expect(screen.queryByText('line 96')).toBeNull();
         expect(screen.getByText('RX')).toBeInTheDocument();
+        expect(screen.queryByText('line 101')).toBeNull();
     });
 
-    it('renders transmissions safely, hides and shows the log separately, and clears it', () =>
-    {
-        test.radio.messages = [message(1, { text: '<b>meet</b>', senderRank: 'Medic' })];
-        const { rerender } = render(<RadioView />);
-
-        open();
-        const log = screen.getByRole('log');
-
-        expect(log).toHaveTextContent('<b>meet</b>');
-        expect(log.querySelector('b')).toBeNull();
-        expect(screen.getByText('Public · 123.4')).toBeInTheDocument();
-        expect(screen.getByText('Medic')).toBeInTheDocument();
-
-        fireEvent.click(screen.getByRole('button', { name: 'Hide log' }));
-        expect(screen.queryByRole('log')).toBeNull();
-        expect(screen.queryByRole('complementary', { name: 'Radio log' })).toBeNull();
-        expect(screen.getByRole('region', { name: 'Radio' })).toBeInTheDocument();
-
-        expect(screen.getByRole('button', { name: 'Log' })).toHaveAttribute('aria-pressed', 'false');
-        fireEvent.click(screen.getByRole('button', { name: 'Log' }));
-        expect(screen.getByRole('log')).toBeInTheDocument();
-        fireEvent.click(screen.getByRole('button', { name: 'Clear log' }));
-        expect(test.radio.clear).toHaveBeenCalledOnce();
-
-        test.radio.markRead.mockClear();
-        test.radio.messages = [...test.radio.messages, message(2, { channel: 1, frequency: 0, channelLabel: 'Hospital', senderName: 'nurse', text: 'on my way' })];
-        rerender(<RadioView />);
-        expect(test.radio.markRead).toHaveBeenCalled();
-    });
-
-    it('minimizes the handset while keeping the log and settings usable, and restores focus', () =>
+    it('minimizes the handset and restores focus', () =>
     {
         render(<RadioView />);
         open();
-        fireEvent.click(screen.getByRole('button', { name: 'Log' }));
 
         fireEvent.click(screen.getByRole('button', { name: 'Minimize radio' }));
         expect(screen.queryByRole('button', { name: 'Power off' })).toBeNull();
         expect(screen.getByRole('button', { name: 'Restore radio' })).toHaveFocus();
-        expect(screen.getByRole('complementary', { name: 'Radio log' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Log' })).toBeNull();
         expect(test.radio.power).not.toHaveBeenCalled();
-
-        fireEvent.click(screen.getByRole('button', { name: 'Log settings' }));
-        fireEvent.change(screen.getByLabelText('Panel opacity'), { target: { value: '40' } });
-        expect(screen.getByRole('complementary', { name: 'Radio log' }).style.getPropertyValue('--radio-log-opacity')).toBe('0.4');
 
         act(() => tracker().linkReceived('radio/show'));
         expect(screen.getByRole('button', { name: 'Power off' })).toBeInTheDocument();
-        expect(screen.getByLabelText('Panel opacity')).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: 'Minimize radio' }));
         expect(screen.getByRole('button', { name: 'Restore radio' })).toHaveFocus();
@@ -311,26 +268,20 @@ describe('RadioView', () =>
         fireEvent.click(screen.getByRole('button', { name: 'Minimize radio' }));
         fireEvent.click(screen.getByRole('button', { name: 'Close radio' }));
         expect(screen.queryByRole('region', { name: 'Radio' })).toBeNull();
-        expect(screen.queryByRole('complementary', { name: 'Radio log' })).toBeNull();
     });
 
-    it('drags the handset and log separately, ignores controls, retains positions and clamps on resize', () =>
+    it('drags the handset, ignores controls, retains its position and clamps on resize', () =>
     {
         render(<RadioView />);
         open();
-        fireEvent.click(screen.getByRole('button', { name: 'Log' }));
         let handset = screen.getByRole('region', { name: 'Radio' });
-        let log = screen.getByRole('complementary', { name: 'Radio log' });
         const handsetHeader = handset.querySelector('.district-radio__header') as HTMLElement;
-        const logHeader = log.querySelector('.district-radio__log-header') as HTMLElement;
 
         setRect(handset, panelRect(500, 300, 240, 400));
-        setRect(log, panelRect(150, 300, 300, 400));
         act(() => { window.dispatchEvent(new Event('resize')); });
 
         expect(handset.style.left).toBe('500px');
         expect(handset.style.top).toBe('300px');
-        expect(log.style.left).toBe('150px');
 
         fireEvent.pointerDown(handsetHeader, { pointerId: 1, pointerType: 'mouse', button: 0, clientX: 10, clientY: 10 });
         fireEvent.pointerMove(handsetHeader, { pointerId: 1, pointerType: 'mouse', button: 0, clientX: 60, clientY: 40 });
@@ -338,31 +289,19 @@ describe('RadioView', () =>
 
         expect(handset.style.left).toBe('550px');
         expect(handset.style.top).toBe('330px');
-        expect(log.style.left).toBe('150px');
 
-        fireEvent.pointerDown(logHeader, { pointerId: 2, pointerType: 'mouse', button: 0, clientX: 20, clientY: 20 });
-        fireEvent.pointerMove(logHeader, { pointerId: 2, pointerType: 'mouse', button: 0, clientX: 70, clientY: 40 });
-        fireEvent.pointerUp(logHeader, { pointerId: 2, pointerType: 'mouse', button: 0, clientX: 70, clientY: 40 });
+        const minimize = screen.getByRole('button', { name: 'Minimize radio' });
 
-        expect(log.style.left).toBe('200px');
-        expect(log.style.top).toBe('320px');
+        fireEvent.pointerDown(minimize, { pointerId: 2, pointerType: 'mouse', button: 0, clientX: 20, clientY: 20 });
+        fireEvent.pointerMove(handsetHeader, { pointerId: 2, pointerType: 'mouse', button: 0, clientX: 120, clientY: 120 });
         expect(handset.style.left).toBe('550px');
-
-        const gear = screen.getByRole('button', { name: 'Log settings' });
-
-        fireEvent.pointerDown(gear, { pointerId: 3, pointerType: 'mouse', button: 0, clientX: 20, clientY: 20 });
-        fireEvent.pointerMove(logHeader, { pointerId: 3, pointerType: 'mouse', button: 0, clientX: 120, clientY: 120 });
-        expect(log.style.left).toBe('200px');
 
         fireEvent.click(screen.getByRole('button', { name: 'Close radio' }));
         act(() => tracker().linkReceived('radio/show'));
         handset = screen.getByRole('region', { name: 'Radio' });
-        log = screen.getByRole('complementary', { name: 'Radio log' });
         expect(handset.style.left).toBe('550px');
-        expect(log.style.left).toBe('200px');
 
         setRect(handset, panelRect(500, 300, 240, 400));
-        setRect(log, panelRect(150, 300, 300, 400));
         const width = Object.getOwnPropertyDescriptor(window, 'innerWidth');
         const height = Object.getOwnPropertyDescriptor(window, 'innerHeight');
 
@@ -373,8 +312,6 @@ describe('RadioView', () =>
             act(() => { window.dispatchEvent(new Event('resize')); });
             expect(handset.style.left).toBe('72px');
             expect(handset.style.top).toBe('92px');
-            expect(log.style.left).toBe('12px');
-            expect(log.style.top).toBe('92px');
         }
         finally
         {
@@ -383,38 +320,6 @@ describe('RadioView', () =>
             if(height) Object.defineProperty(window, 'innerHeight', height);
             else delete (window as unknown as Record<string, unknown>).innerHeight;
         }
-    });
-
-    it('applies log-only settings, shows their values and resets them', () =>
-    {
-        render(<RadioView />);
-        open();
-        fireEvent.click(screen.getByRole('button', { name: 'Log' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Log settings' }));
-        const log = screen.getByRole('complementary', { name: 'Radio log' });
-        const handset = screen.getByRole('region', { name: 'Radio' });
-
-        expect(log.style.getPropertyValue('--radio-log-opacity')).toBe('0.92');
-        expect(log.style.getPropertyValue('--radio-log-width')).toBe('300px');
-        expect(log.style.getPropertyValue('--radio-log-text')).toBe('12px');
-        expect(handset.style.getPropertyValue('--radio-log-width')).toBe('');
-
-        fireEvent.change(screen.getByLabelText('Panel opacity'), { target: { value: '40' } });
-        fireEvent.change(screen.getByLabelText('Log width'), { target: { value: '400' } });
-        fireEvent.change(screen.getByLabelText('Text size'), { target: { value: '15' } });
-
-        expect(log.style.getPropertyValue('--radio-log-opacity')).toBe('0.4');
-        expect(log.style.getPropertyValue('--radio-log-width')).toBe('400px');
-        expect(log.style.getPropertyValue('--radio-log-text')).toBe('15px');
-        expect(screen.getByText('40%')).toBeInTheDocument();
-        expect(screen.getByText('400px')).toBeInTheDocument();
-        expect(screen.getByText('15px')).toBeInTheDocument();
-        expect(handset.style.getPropertyValue('--radio-log-text')).toBe('');
-
-        fireEvent.click(screen.getByRole('button', { name: 'Reset defaults' }));
-        expect(log.style.getPropertyValue('--radio-log-opacity')).toBe('0.92');
-        expect(log.style.getPropertyValue('--radio-log-width')).toBe('300px');
-        expect(log.style.getPropertyValue('--radio-log-text')).toBe('12px');
     });
 
     it('shows server denials and disables controls while a request is pending', () =>
@@ -444,25 +349,27 @@ describe('RadioView', () =>
         expect(screen.getByRole('button', { name: 'Tune' })).toBeDisabled();
     });
 
-    it('keeps an empty log hidden until traffic arrives or the player opens it, with clear and hide inside it', () =>
+    it('shows the frequency once with one status light', () =>
     {
-        const { rerender } = render(<RadioView />);
+        render(<RadioView />);
 
         open();
-        expect(screen.queryByRole('complementary', { name: 'Radio log' })).toBeNull();
-        expect(screen.queryByRole('button', { name: 'Clear log' })).toBeNull();
-        expect(screen.queryByRole('button', { name: 'Hide log' })).toBeNull();
         // The frequency is shown once: no repeat in the corner, the draft field or a separate standby chip.
         expect(screen.getAllByText('123.4')).toHaveLength(1);
         expect(screen.queryByText('Standby')).toBeNull();
         expect(screen.getByText('ON')).toBeInTheDocument();
+    });
 
-        test.radio.messages = [message(1)];
+    it('shows how many powered radios share the channel', () =>
+    {
+        const { rerender } = render(<RadioView />);
+
+        open();
+        expect(screen.getByText('3 connected')).toBeInTheDocument();
+
+        test.radio.status = { ...test.radio.status!, listeners: 1 };
         rerender(<RadioView />);
-        expect(screen.getByRole('complementary', { name: 'Radio log' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Log' })).toHaveAttribute('aria-pressed', 'true');
-        fireEvent.click(screen.getByRole('button', { name: 'Hide log' }));
-        expect(screen.queryByRole('complementary', { name: 'Radio log' })).toBeNull();
+        expect(screen.getByText('Only you connected')).toBeInTheDocument();
     });
 
     it('closes when the session disconnects', () =>
@@ -473,23 +380,17 @@ describe('RadioView', () =>
         test.authenticated = false;
         rerender(<RadioView />);
         expect(screen.queryByRole('region', { name: 'Radio' })).toBeNull();
-        expect(screen.queryByRole('complementary', { name: 'Radio log' })).toBeNull();
     });
 
-    it('powers on with a populated log without clearing it, and stacks the handset above the log', () =>
+    it('collapses to power, frequency and sound while switched off and powers on', () =>
     {
-        test.radio.status = { powered: false, channel: 0, frequency: 1234, channelLabel: 'Public', hospitalAccess: false, gangAccess: true };
-        test.radio.messages = feed(1);
+        test.radio.status = { powered: false, channel: 0, frequency: 1234, channelLabel: 'Public', hospitalAccess: false, gangAccess: true, listeners: 0 };
         render(<RadioView />);
         open();
 
-        const log = screen.getByRole('log');
         const power = screen.getByRole('button', { name: 'Power on' });
 
-        expect(log.querySelectorAll('li')).toHaveLength(5);
         expect(power).toBeEnabled();
-
-        // Switched off, only power, the frequency and sound remain on the handset.
         expect(screen.getByText('OFF')).toBeInTheDocument();
         expect(screen.getByText('123.4')).toBeInTheDocument();
         expect(screen.queryByRole('group', { name: 'Frequency keypad' })).toBeNull();
@@ -499,16 +400,5 @@ describe('RadioView', () =>
 
         fireEvent.click(power);
         expect(test.radio.power).toHaveBeenCalledWith(true);
-        expect(test.radio.clear).not.toHaveBeenCalled();
-        expect(screen.getByRole('log').querySelectorAll('li')).toHaveLength(5);
-
-        // jsdom has no layout or hit-testing, so the stacking fix is asserted on the stylesheet itself.
-        const scss = readFileSync(resolve(process.cwd(), 'src/components/roleplay/radio/RadioView.scss'), 'utf8');
-        const handsetScope = scss.slice(scss.indexOf('.district-radio {'), scss.indexOf('&__log {'));
-        const logScope = scss.slice(scss.indexOf('&__log {'), scss.indexOf('&__log-header'));
-        const handsetLayer = Number(handsetScope.match(/z-index:\s*(\d+)/)?.[1]);
-        const logLayer = Number(logScope.match(/z-index:\s*(\d+)/)?.[1]);
-
-        expect(handsetLayer).toBeGreaterThan(logLayer);
     });
 });

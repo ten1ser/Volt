@@ -1,13 +1,16 @@
 /* DistrictRP window chrome. theme-district windows get the full dark theme; every other window gets
    district-frame (from VoltCardView): the same frame, title bar and close button over its native body
-   until that window's content is converted. Game artwork keeps its own palette. */
+   until that window's content is converted. Game artwork keeps its own palette.
+   DistrictRP's theme is the night-gold palette (decision 2026-11-04): charcoal night surfaces, ivory text and brass gold
+   accents, as on the login page, loading screen, HUD and every RP window. New UI uses these tokens and the
+   .district-btn kit below rather than its own greys or button styles. */
 :root {
-    --district-ui-surface: #262626;
-    --district-ui-raised: #323232;
-    --district-ui-inset: #222;
-    --district-ui-border: #4b4b4b;
-    --district-ui-text: #f1f1ed;
-    --district-ui-muted: #b6b6b3;
+    --district-ui-surface: #23252a;
+    --district-ui-raised: #2f3238;
+    --district-ui-inset: #17181c;
+    --district-ui-border: #4a4d54;
+    --district-ui-text: #f1eee6;
+    --district-ui-muted: #b4b6b2;
     --district-ui-accent: #d9b25a;
     --district-ui-accent-hover: #e4c477;
     --district-ui-on-accent: #2a2008;
@@ -154,6 +157,18 @@
 .district-rp-window .district-rp-titlebar > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .district-rp-window .district-rp-titlebar .district-rp-close { position: static; flex: 0 0 auto; width: 22px; height: 22px; padding: 0; border: 1px solid #ffffff24; border-radius: 5px; background: #26292f; color: var(--district-ui-muted); font: 400 15px/20px var(--district-ui-font); letter-spacing: 0; text-shadow: none; cursor: pointer; }
 .district-rp-window .district-rp-titlebar .district-rp-close:hover { border-color: #ffffff40; background: #2f333a; color: #fff; }
+/* Night-gold button kit, three kinds: .district-btn (dark secondary), .district-btn.is-primary (gold, the window's main
+   action) and .district-btn.is-danger. aria-pressed / aria-expanded light a dark button in brass. Owners keep layout
+   (width, margins); the kit owns colour, type, height and states. */
+.district-btn { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 26px; padding: 0 10px; border: 1px solid #ffffff24; border-radius: 6px; background: #26292f; color: var(--district-ui-muted); font: 700 12px/16px var(--district-ui-font); letter-spacing: 0; text-shadow: none; white-space: nowrap; cursor: pointer; }
+.district-btn:hover:not(:disabled) { border-color: #ffffff40; background: #2f333a; color: var(--district-ui-text); }
+.district-btn:is([aria-pressed='true'], [aria-expanded='true']) { border-color: var(--district-ui-accent); color: var(--district-ui-accent-hover); }
+.district-btn.is-primary { border-color: var(--district-ui-accent-hover); background: linear-gradient(#e4c477, #c9a24c); color: var(--district-ui-on-accent); }
+.district-btn.is-primary:hover:not(:disabled) { border-color: #f0d79a; background: linear-gradient(#ecd08a, #d4ad58); color: var(--district-ui-on-accent); }
+.district-btn.is-danger { border-color: #cd6772; background: var(--district-ui-danger); color: #fff; }
+.district-btn.is-danger:hover:not(:disabled) { border-color: #dc7f89; background: #c45a66; color: #fff; }
+.district-btn:disabled { opacity: .45; cursor: default; }
+.district-btn:focus-visible { outline: 2px solid var(--district-ui-accent); outline-offset: 2px; }
 @media (max-width: 480px) {
     .theme-district.volt-group-members .volt-group-members-list-grid { grid-template-columns: minmax(0, 1fr) !important; }
     .theme-district .district-group-badge { flex-basis: 64px; }

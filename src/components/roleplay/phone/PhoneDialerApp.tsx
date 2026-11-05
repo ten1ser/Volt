@@ -47,6 +47,7 @@ export const PhoneDialerApp: FC<{ onHome: () => void }> = ({ onHome }) =>
                 <button type="button" role="tab" aria-selected={tab === 'keypad'} className={tab === 'keypad' ? 'is-active' : ''} onClick={() => setTab('keypad')}>Keypad</button>
                 <button type="button" role="tab" aria-selected={tab === 'recents'} className={tab === 'recents' ? 'is-active' : ''} onClick={() => setTab('recents')}>Recents</button>
             </div>
+            {hasSim && <p className="district-phone__own-number" title="Phone number">My number <b>{status.number}</b></p>}
             {status && !hasSim && <p className="district-phone__sim-warning">No SIM card. Only emergency calls work. Buy a SIM card from a store.</p>}
             <p className="district-phone__dial-notice" role="status">{callNotice}</p>
             {tab === 'recents'

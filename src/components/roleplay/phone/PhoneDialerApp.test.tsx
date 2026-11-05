@@ -39,6 +39,7 @@ describe('Phone dialer and call screen', () =>
         fireEvent.click(screen.getByRole('button', { name: 'Hospital 112' }));
         expect(test.dial).toHaveBeenLastCalledWith('112');
         expect(screen.getByText(/1 Load every 30 seconds. You have 8 Load/)).toBeInTheDocument();
+        expect(screen.getByTitle('Phone number')).toHaveTextContent('My number +12-345-6');
     });
 
     it('warns without a SIM card and shows why a call failed', () =>
@@ -47,6 +48,7 @@ describe('Phone dialer and call screen', () =>
         test.notice = 'bob is busy.';
         render(<PhoneDialerApp onHome={vi.fn()} />);
         expect(screen.getByText(/Only emergency calls work/)).toBeInTheDocument();
+        expect(screen.queryByTitle('Phone number')).toBeNull();
         expect(screen.getByRole('status')).toHaveTextContent('bob is busy.');
         expect(screen.getByRole('button', { name: 'Call' })).toBeDisabled();
     });

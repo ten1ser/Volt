@@ -46,6 +46,7 @@ import { RightSideView } from './right-side/RightSideView';
 import { RoomView } from './room/RoomView';
 import { DistrictDock } from './roleplay/hud/DistrictDock';
 import { DistrictHud } from './roleplay/hud/DistrictHud';
+import { RoleplayFeedView } from './roleplay/feed/RoleplayFeedView';
 import { TraxEditorView } from './trax-editor/TraxEditorView';
 import { RpProfileView } from './roleplay/profile/RpProfileView';
 import { UserSettingsView } from './user-settings/UserSettingsView';
@@ -138,6 +139,9 @@ export const MainView: FC<{}> = (props) =>
             <div className="hidden" data-localization-version={localizationVersion} />
             <NativeTextHaloFilter />
             <DistrictHud />
+            <WidgetErrorBoundary name="RoleplayFeed">
+                <RoleplayFeedView />
+            </WidgetErrorBoundary>
             <BusinessView />
             <GangView />
             <HealOfferView />

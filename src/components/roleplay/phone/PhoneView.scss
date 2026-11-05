@@ -57,7 +57,8 @@
         font-size: 13px;
         font-weight: 700;
 
-        time { flex: 1; font-variant-numeric: tabular-nums; }
+        // The time lives only in the widget's clock; the island and icons sit at the right.
+        justify-content: flex-end;
 
         // The status bar is the phone's handle.
         cursor: grab;
@@ -137,27 +138,34 @@
     }
 
     &__widget { flex: 0 0 auto; margin: 8px 18px 12px; }
-    &__city-line {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        strong { font-size: 30px; line-height: 34px; font-variant-numeric: tabular-nums; }
-    }
-    &__brand { color: #d6b875; font-size: 12px; font-weight: 700; }
+    &__clock { display: block; font-size: 34px; line-height: 38px; font-weight: 700; font-variant-numeric: tabular-nums; }
     &__pixel { flex: 0 0 16px; width: 16px; height: 16px; image-rendering: pixelated; }
-    &__phase { display: flex; align-items: center; gap: 6px; margin-top: 2px; color: #bdcbd0; font-size: 12px; }
+    &__phase { display: flex; align-items: center; gap: 6px; margin-top: 2px; color: var(--district-ui-muted, #b4b6b2); font-size: 12px; }
 
-    &__account { margin-top: 12px; border-top: 1px solid #ffffff21; border-bottom: 1px solid #ffffff21; padding: 9px 0; }
-    &__account-row {
+    // Night-gold chips: icon + number, the word only in the tooltip and for screen readers.
+    &__chips {
         display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        > span { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; min-width: 0; }
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+        li {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            min-width: 0;
+            padding: 3px 9px 3px 6px;
+            border: 1px solid #ffffff21;
+            border-radius: 12px;
+            background: #23252acc;
+        }
         b { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-        small { font-size: 10px; color: #aebfc4; }
-        &.is-sim { margin-top: 8px; b { font-size: 11px; font-weight: 400; color: #d0dade; } }
+        .is-coins { border-color: #a98c4d; color: #e4c477; }
     }
+    &__chip-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    &__own-number { margin: 0 0 6px; color: var(--district-ui-muted, #b4b6b2); font-size: 12px; text-align: center; b { color: var(--district-ui-text, #f1eee6); font-variant-numeric: tabular-nums; } }
 
     &__pages {
         display: flex;
@@ -1176,17 +1184,17 @@
 
 @media (max-height: 759px) {
     .district-phone__widget { margin-top: 2px; margin-bottom: 8px; }
-    .district-phone__city-line strong { font-size: 26px; line-height: 28px; }
-    .district-phone__account { margin-top: 8px; padding: 7px 0; }
+    .district-phone__clock { font-size: 28px; line-height: 30px; }
+    .district-phone__chips { margin-top: 8px; }
 }
 @media (max-height: 579px) {
     .district-phone { bottom: 62px; max-height: calc(100dvh - 78px); }
     .district-phone__phase { display: none; }
-    .district-phone__account { margin-top: 4px; padding: 5px 0; }
-    .district-phone__account-row.is-sim { margin-top: 4px; }
+    .district-phone__chips { margin-top: 4px; }
     .district-phone__dock { margin-bottom: 22px; padding-top: 2px; padding-bottom: 2px; }
 }
 @media (max-height: 460px) {
-    .district-phone__city-line { display: none; }
+    // The widget clock is the phone's only time, so it shrinks instead of hiding.
+    .district-phone__clock { font-size: 22px; line-height: 24px; }
     .district-phone__widget { margin-bottom: 4px; }
 }

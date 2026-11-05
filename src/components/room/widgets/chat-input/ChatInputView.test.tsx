@@ -231,4 +231,22 @@ describe('ChatInputView keyboard (AIR RoomChatInputView, no command lister)', ()
 
         expect(input.value).toBe(':tell Alice hi');
     });
+
+    it('keeps ":r " after a radio line is sent and clears it on Backspace when empty', () => {
+        renderChatInput();
+        const input = getInput();
+
+        fireEvent.change(input, { target: { value: ':r on my way' } });
+        fireEvent.keyDown(input, { key: 'Enter' });
+
+        expect(mocks.sendChat).toHaveBeenLastCalledWith(':r on my way', 0, '', 0);
+        expect(input.value).toBe(':r ');
+
+        fireEvent.keyDown(input, { key: 'Backspace' });
+        expect(input.value).toBe('');
+
+        fireEvent.change(input, { target: { value: ':rob' } });
+        fireEvent.keyDown(input, { key: 'Enter' });
+        expect(input.value).toBe('');
+    });
 });

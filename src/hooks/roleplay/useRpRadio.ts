@@ -21,6 +21,8 @@ export interface RadioStatus
     channelLabel: string;
     hospitalAccess: boolean;
     gangAccess: boolean;
+    /** Powered radios on this channel, this one included; 0 while switched off. */
+    listeners: number;
 }
 
 export interface RadioTransmission
@@ -67,7 +69,6 @@ export const useRpRadioSource = () =>
     const [status, setStatus] = useState<RadioStatus | null>(null);
     const [notice, setNotice] = useState<RadioNotice | null>(null);
     const [messages, setMessages] = useState<RadioTransmission[]>([]);
-    const [unread, setUnread] = useState(0);
     const [pending, setPending] = useState(false);
     const outstanding = useRef<{ id: number; timer: number } | null>(null);
     const nextMessageId = useRef(0);
@@ -95,7 +96,7 @@ export const useRpRadioSource = () =>
         if(parser.requestId !== 0 && parser.requestId !== outstanding.current?.id) return;
         setStatus({
             powered: parser.powered, channel: parser.channel, frequency: parser.frequency, channelLabel: parser.channelLabel,
-            hospitalAccess: parser.hospitalAccess, gangAccess: parser.gangAccess
+            hospitalAccess: parser.hospitalAccess, gangAccess: parser.gangAccess, listeners: parser.listeners
         });
         if(parser.requestId === 0) return;
         if(parser.notice) setNotice({ text: parser.notice, refused: parser.refused });
@@ -111,7 +112,6 @@ export const useRpRadioSource = () =>
             senderId: parser.senderId, senderName: parser.senderName, senderRank: parser.senderRank, text: parser.text, sentAt: parser.sentAt
         };
         setMessages(previous => [...previous.slice(-(MAX_MESSAGES - 1)), message]);
-        setUnread(previous => Math.min(99, previous + 1));
     }, []));
     // A different account (or a sign-out) starts with no radio state from the previous session.
     useEffect(() =>
@@ -124,7 +124,6 @@ export const useRpRadioSource = () =>
         setStatus(null);
         setNotice(null);
         setMessages([]);
-        setUnread(0);
         nextMessageId.current = 0;
     }, [accountId, authenticated]);
     const request = useCallback((action: number, channel: number, frequency: number, text = '') =>
@@ -171,26 +170,17 @@ export const useRpRadioSource = () =>
         if(!current?.powered || text.length < 1 || text.length > 120) return false;
         return request(RadioAction.Transmit, current.channel, current.channel === RadioChannel.Public ? current.frequency : 0, text);
     }, [request, status]);
-    const clear = useCallback(() =>
-    {
-        setMessages([]);
-        setUnread(0);
-    }, []);
-    const markRead = useCallback(() => setUnread(0), []);
     const clearNotice = useCallback(() => setNotice(null), []);
 
     return {
         status: authenticated ? status : null,
         notice,
         messages,
-        unread,
         pending: authenticated && pending,
         refresh,
         power,
         tune,
         transmit,
-        clear,
-        markRead,
         clearNotice
     };
 };

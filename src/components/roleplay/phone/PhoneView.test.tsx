@@ -94,6 +94,10 @@ describe('DistrictRP phone', () =>
         open();
         expect(phone()).toHaveClass('is-open');
         expect(screen.getByText('Day · 6 min left')).toBeInTheDocument();
+        // Clock hero: the widget clock is the phone's only time and the brand line is gone.
+        expect(document.querySelectorAll('.district-phone time')).toHaveLength(0);
+        expect(document.querySelector('.district-phone__clock')).toHaveTextContent(/\d\d:\d\d|--:--/);
+        expect(screen.queryByText('DistrictRP')).toBeNull();
         expect(screen.getByTitle('RP Coins')).toHaveTextContent('50,200 RP Coins');
         expect(screen.getByTitle('Players online')).toHaveTextContent('32 online');
         expect(screen.queryByRole('button', { name: 'Backpack' })).toBeNull();
@@ -360,7 +364,8 @@ describe('DistrictRP phone', () =>
         fireEvent.click(screen.getByRole('button', { name: 'Phone' }));
         expect(screen.getByText('Dialer app')).toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: 'Home' }));
-        expect(screen.getByTitle('Phone number')).toHaveTextContent('+12-345-6');
+        // The own number moved to the Dialer; home shows Load as an icon chip.
+        expect(screen.queryByTitle('Phone number')).toBeNull();
         expect(screen.getByTitle('Load')).toHaveTextContent('9 Load');
         expect(screen.getByLabelText('Signal')).toBeInTheDocument();
     });
@@ -370,7 +375,6 @@ describe('DistrictRP phone', () =>
         test.phone = { ...test.phone, status: { hasSim: false, number: '', load: 5 } };
         render(<PhoneView />); open();
         expect(screen.getByText('No SIM')).toBeInTheDocument();
-        expect(screen.getByTitle('Phone number')).toHaveTextContent('No SIM card');
         expect(screen.getByTitle('Load')).toHaveTextContent('5 Load');
     });
 

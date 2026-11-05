@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DistrictHud } from './DistrictHud';
-import roomIcon from '../../../assets/images/roleplay/room-hotel.png';
+import { DistrictHud, displayRoomName } from './DistrictHud';
+import moonIcon from '../../../assets/images/roleplay/phone/moon.png';
+import sunIcon from '../../../assets/images/roleplay/phone/sun.png';
 import { useRoomToolsMenuStore } from '../../room/widgets/room-tools/roomToolsMenuStore';
 
 interface TestState
@@ -64,15 +65,13 @@ describe('phone-first HUD', () =>
         const view = render(<DistrictHud />);
         const chip = screen.getByRole('button', { name: /Regency Café/ });
         expect(chip).toHaveAttribute('aria-expanded', 'false');
-        // Mirrored corner: text block (room name over clock), then the hotel icon on the far right.
+        // Minimal corner: the room name over the time chip, no hotel icon.
         const topbar = document.querySelector('.district-topbar');
-        const text = topbar.firstElementChild;
-        expect(text.firstElementChild).toBe(chip);
-        expect(text.lastElementChild).toHaveClass('district-clock');
+        expect(topbar.firstElementChild).toBe(chip);
+        expect(topbar.lastElementChild).toHaveClass('district-clock');
         expect(chip.querySelector('img')).toBeNull();
-        expect(topbar.lastElementChild).toHaveAttribute('src', roomIcon);
-        expect(topbar.lastElementChild).toHaveAttribute('width', '34');
-        expect(topbar.lastElementChild).toHaveAttribute('height', '55');
+        expect(topbar.querySelectorAll('img')).toHaveLength(1);
+        expect(topbar.querySelector('img')).toHaveAttribute('src', sunIcon);
         expect(topbar.querySelectorAll('time')).toHaveLength(1);
         expect(screen.queryByText(/min left/)).toBeNull();
         fireEvent.click(chip);
@@ -80,8 +79,19 @@ describe('phone-first HUD', () =>
         expect(chip).toHaveAttribute('aria-expanded', 'true');
         test.roomSession = null; view.rerender(<DistrictHud />);
         expect(screen.queryByRole('button', { name: /DistrictRP City/ })).toBeNull();
-        expect(document.querySelector('.district-topbar__hotel')).toBeNull();
         useRoomToolsMenuStore.setState({ open: false });
+    });
+    it('shows the room name without its navigator tag and keeps the full name as the tooltip', () =>
+    {
+        test.roomSession = { roomId: 1 }; test.room = { roomId: 1, roomName: '[HOSP] District Hospital' };
+        test.city = { time: '01:20', isDay: false, phaseRemainingMs: 60000, onlinePlayers: 1 };
+        render(<DistrictHud />);
+        const chip = screen.getByRole('button', { name: 'District Hospital' });
+        expect(chip).toHaveAttribute('title', '[HOSP] District Hospital · room tools');
+        expect(document.querySelector('.district-clock img')).toHaveAttribute('src', moonIcon);
+        expect(displayRoomName('[DEV] Exterior Build Lab')).toBe('Exterior Build Lab');
+        expect(displayRoomName('Regency Café')).toBe('Regency Café');
+        expect(displayRoomName('[HOSP]')).toBe('[HOSP]');
     });
     it('uses an honest placeholder before synchronization', () =>
     {

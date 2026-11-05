@@ -1,0 +1,98 @@
+// Night-gold roleplay log (bottom left) and action progress bar (above the chat bar). Both float over the room without catching clicks.
+$bottom: max(16px, env(safe-area-inset-bottom));
+// The chat bar is 54px tall; the progress bar sits 10px above it.
+$above-chat: calc(#{$bottom} + 64px);
+
+.district-feed {
+    position: fixed;
+    left: max(16px, env(safe-area-inset-left));
+    bottom: $bottom;
+    z-index: 71;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    width: min(380px, calc(100vw - 32px));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    pointer-events: none;
+    font: 500 13px/18px var(--district-font);
+    color: var(--district-ui-muted, #b4b6b2);
+
+    li {
+        max-width: 100%;
+        padding: 5px 10px;
+        border-left: 3px solid var(--district-ui-border, #4a4d54);
+        border-radius: 4px;
+        background: #17181cd9;
+        box-shadow: 0 2px 8px #00000059;
+        overflow-wrap: anywhere;
+        // Slides in, holds, then fades over the last second and a half of its life.
+        animation: district-feed-in 160ms ease-out, district-feed-out var(--district-feed-life, 15s) linear forwards;
+    }
+
+    b { color: var(--district-ui-text, #f1eee6); font-weight: 700; }
+    .is-kill { border-left-color: var(--district-ui-danger, #b74d59); }
+    .is-wanted, .is-bounty { border-left-color: var(--district-ui-accent, #d9b25a); }
+    .is-arrest { border-left-color: #7dada4; }
+}
+
+@keyframes district-feed-in { from { opacity: 0; transform: translateX(-8px); } }
+@keyframes district-feed-out { 0%, 90% { opacity: 1; } 100% { opacity: 0; } }
+
+.district-action-progress {
+    position: fixed;
+    left: 50%;
+    bottom: $above-chat;
+    z-index: 72;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-sizing: border-box;
+    width: min(380px, calc(100vw - 32px));
+    padding: 4px 12px;
+    border: 1px solid #ffffff1a;
+    border-radius: 12px;
+    background: #17181ceb;
+    box-shadow: 0 4px 14px #00000066;
+    color: var(--district-ui-text, #f1eee6);
+    font: 700 12px/16px var(--district-font);
+    transform: translateX(-50%);
+    pointer-events: none;
+
+    span { flex: 0 0 auto; white-space: nowrap; }
+
+    > i {
+        flex: 1 1 auto;
+        height: 6px;
+        overflow: hidden;
+        border-radius: 3px;
+        background: #ffffff1f;
+
+        i {
+            display: block;
+            height: 100%;
+            background: linear-gradient(90deg, #b8913f, var(--district-ui-accent-hover, #e4c477));
+            transform-origin: left;
+            animation: district-progress-fill var(--district-progress-ms, 1s) linear forwards;
+        }
+    }
+}
+
+@keyframes district-progress-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+// Below this width the bottom-left log would run under the centred chat bar (720px + gutters), so it rises above the
+// chat bar and the progress bar's row (26px + 10px), which it would also meet below about 1170px.
+@media (max-width: 1503px) {
+    .district-feed { bottom: calc(#{$bottom} + 100px); }
+}
+
+@media (max-width: 700px) {
+    .district-feed { left: max(12px, env(safe-area-inset-left)); width: min(320px, calc(100vw - 24px)); font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    // The fill still shows time passing; only the decorative slide-in goes.
+    .district-feed li { animation: district-feed-out var(--district-feed-life, 15s) linear forwards; }
+}

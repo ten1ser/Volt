@@ -4,6 +4,9 @@ import { ChatMessageTypeEnum, CreateLinkEvent, GetConfigurationValue, LocalizeTe
 import { Text } from '../../../../common';
 import { useChatHelpButton, useChatInputWidget, useRoom, useSessionInfo, useUiEvent } from '../../../../hooks';
 
+// The server's :r radio interceptor matches the prefix in any case.
+const isRadioPrefix = (word: string) => word.toLowerCase() === ':r';
+
 export const ChatInputView: FC<{}> = (props) => {
     const [chatValue, setChatValue] = useState<string>('');
     const [portalTarget, setPortalTarget] = useState<HTMLElement>(null);
@@ -80,6 +83,10 @@ export const ChatInputView: FC<{}> = (props) => {
 
                     parts.shift();
                     break;
+                default:
+                    // DistrictRP radio: like a whisper, ":r " stays in the bar so the next line transmits too.
+                    if (isRadioPrefix(parts[0]) && parts.length > 1) append = parts[0] + ' ';
+                    break;
             }
 
             text = parts.join(' ');
@@ -137,6 +144,10 @@ export const ChatInputView: FC<{}> = (props) => {
                         const parts = value.split(' ');
 
                         if (parts[0] === chatModeIdWhisper && parts.length === 3 && parts[2] === '') {
+                            setChatValue('');
+                        }
+
+                        if (isRadioPrefix(parts[0]) && parts.length === 2 && parts[1] === '') {
                             setChatValue('');
                         }
                     }

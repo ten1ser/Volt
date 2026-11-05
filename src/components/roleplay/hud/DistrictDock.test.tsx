@@ -3,9 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DistrictDock } from './DistrictDock';
 import { useGameContextMenu } from '../../../hooks/useGameContextMenu';
 
-const test = vi.hoisted(() => ({ link: vi.fn(), moderator: false, radioUnread: 0 }));
+const test = vi.hoisted(() => ({ link: vi.fn(), moderator: false }));
 vi.mock('@volt/renderer', () => ({ CreateLinkEvent: test.link }));
-vi.mock('../../../hooks/roleplay/useRpRadio', () => ({ useRpRadio: () => ({ unread: test.radioUnread }) }));
 vi.mock('../../../api', () => ({ MessengerIconState: { HIDDEN: 0, UNREAD: 2 } }));
 vi.mock('../../../api/permissions', () => ({ Permission: { ModerationTool: 'moderator' } }));
 vi.mock('../../../hooks', () => ({
@@ -24,7 +23,7 @@ describe('DistrictRP chat bar', () =>
     {
         vi.clearAllMocks();
         test.moderator = false;
-        test.radioUnread = 0;
+        
     });
     afterEach(cleanup);
 
@@ -109,12 +108,11 @@ describe('DistrictRP chat bar', () =>
         expect(screen.queryByRole('menu')).toBeNull();
     });
 
-    it('badges only the Radio with its unread transmissions', () =>
+    it('shows no radio badge; transmissions are read in room chat', () =>
     {
-        test.radioUnread = 4;
         render(<DistrictDock isInRoom />);
         expect(button(/^Phone/)).toHaveTextContent('3');
         fireEvent.contextMenu(button(/^Phone/));
-        expect(screen.getByRole('menuitem', { name: 'Radio, 4' })).toHaveTextContent('4');
+        expect(screen.getByRole('menuitem', { name: 'Radio' }).querySelector('.district-badge')).toBeNull();
     });
 });

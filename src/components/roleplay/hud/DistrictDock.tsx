@@ -5,7 +5,6 @@ import radioIcon from '../../../assets/images/roleplay/dock/radio.svg';
 import { MessengerIconState } from '../../../api';
 import { Permission } from '../../../api/permissions';
 import { useFriends, useHasPermission, useInventoryUnseenTracker, useMessenger, useOpenIssueCount } from '../../../hooks';
-import { useRpRadio } from '../../../hooks/roleplay/useRpRadio';
 
 // The phone button also anchors the hidden dock tools, without adding permanent buttons beside chat.
 export const DistrictDock: FC<{ isInRoom: boolean }> = ({ isInRoom }) =>
@@ -21,7 +20,6 @@ export const DistrictDock: FC<{ isInRoom: boolean }> = ({ isInRoom }) =>
     const isMod = useHasPermission(Permission.ModerationTool);
     const openIssues = useOpenIssueCount();
     const phoneUnread = requests.length + (iconState === MessengerIconState.UNREAD ? 1 : 0) + getFullCount + (isMod ? openIssues : 0);
-    const { unread: radioUnread } = useRpRadio();
 
     useEffect(() =>
     {
@@ -85,14 +83,12 @@ export const DistrictDock: FC<{ isInRoom: boolean }> = ({ isInRoom }) =>
                         CreateLinkEvent('phone/hide'); CreateLinkEvent('backpack/show');
                     }}><img src={backpackIcon} alt="" draggable={false} /><span>Bag</span></button>
                     <button type="button" role="menuitem" className="district-dock-menu__bubble is-radio" title="Radio (Alt+R)"
-                        aria-label={radioUnread ? `Radio, ${radioUnread}` : undefined}
                         onClick={() =>
                         {
                             setMenuOpen(false); phone.current?.focus();
                             CreateLinkEvent('phone/hide'); CreateLinkEvent('radio/show');
                         }}>
                         <img src={radioIcon} alt="" width={24} height={34} draggable={false} /><span>Radio</span>
-                        {!!radioUnread && <b className="district-badge">{radioUnread}</b>}
                     </button>
                 </div>
                 </div>

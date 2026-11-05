@@ -27,9 +27,9 @@ const title = (slot: RpInventorySlot | undefined, selected: number) =>
     return selected === 1 ? 'Weapon slot' : selected === 2 ? 'Armor slot' : `Bag slot ${selected}`;
 };
 
-const describe = (slot: RpInventorySlot | undefined) =>
+const describe = (slot: RpInventorySlot | undefined, selected: number) =>
 {
-    if(!slot || !slot.key) return 'Empty';
+    if(!slot || !slot.key) return selected === 1 ? 'Empty · drag a weapon here' : selected === 2 ? 'Empty · drag armor here' : 'Empty';
     const equipped = slot.slot === 1 || slot.slot === 2;
     const hint = equipped ? 'Double-click to put away' : 'Drag to its slot or double-click to equip';
     if(slot.kind === WEAPON) return `Weapon · ${hint}`;
@@ -116,7 +116,7 @@ export const BackpackView = () =>
                     {slotButton(2, 'Armor')}
                     <div className="backpack-info" role="status">
                         <strong>{title(current, selected)}</strong>
-                        <span>{describe(current)}</span>
+                        <span>{describe(current, selected)}</span>
                     </div>
                 </div>
                 <h3 className="backpack-label">Items</h3>
@@ -124,14 +124,14 @@ export const BackpackView = () =>
                 {notice && <p className="backpack-notice" role="alert">{notice}<button type="button" aria-label="Dismiss" onClick={clearNotice}>×</button></p>}
                 {pendingDestroy && <div className="backpack-confirm" role="alertdialog" aria-label="Destroy item">
                     <span>{pendingDestroy.message}</span>
-                    <button type="button" onClick={confirmDestroy}>Destroy</button>
-                    <button type="button" onClick={cancelDestroy}>Cancel</button>
+                    <button type="button" className="district-btn is-danger" onClick={confirmDestroy}>Destroy</button>
+                    <button type="button" className="district-btn" onClick={cancelDestroy}>Cancel</button>
                 </div>}
                 <footer className="backpack-footer">
                     <span>{used} of 10 slots used</span>
                     <span className="backpack-actions">
-                        <button type="button" disabled={!current?.key} onClick={() => use(selected)}>Use</button>
-                        <button type="button" disabled={!current?.key} onClick={() => drop(selected, targetUserId)}>Drop</button>
+                        <button type="button" className="district-btn is-primary" disabled={!current?.key} onClick={() => use(selected)}>Use</button>
+                        <button type="button" className="district-btn" disabled={!current?.key} onClick={() => drop(selected, targetUserId)}>Drop</button>
                     </span>
                 </footer>
             </div>

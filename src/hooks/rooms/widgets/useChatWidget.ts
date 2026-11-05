@@ -28,11 +28,13 @@ import {
 } from '../../../api';
 import { captureNativeChatCreation } from '../../../components/room/widgets/chat/nativeChatScroller';
 import { getChatTextSize } from '../../../components/room/widgets/chat-input/chatTextSize';
+import radioIcon from '../../../assets/images/roleplay/dock/radio.svg';
 import { useChatHistory } from './../../chat-history';
 import { useMessageEvent, useVoltEvent } from '../../events';
 import { useChatPreferences } from '../../useChatPreferences';
 import { useRoom } from '../useRoom';
 import { useSessionInfo } from '../../session/useSessionInfo';
+import { DISTRICT_RADIO_STYLE, radioChatName, useRadioChatLines } from '../../roleplay/useRadioChatLines';
 import { createChatLineQueue, reserveChatLine, resetChatLineQueue, settleChatLine, takeReadyChatLines } from './chatLineQueue';
 
 const CHAT_MESSAGES_MAX = 250;
@@ -299,6 +301,47 @@ const useChatWidgetState = () => {
             console.error('[RoomChat] Failed to process chat event', error);
         } finally {
             // Settlement is idempotent: preserve queued text, or close a failed/skipped slot.
+            abandonLine(seq);
+        }
+    });
+
+    // Radio transmissions are read here, next to speech, rather than in a separate log window.
+    useRadioChatLines((transmission) => {
+        if (!roomSession || isDisposed.current) return;
+
+        const seq = reserveChatLine(lineQueueRef.current);
+
+        try {
+            const location = GetRoomObjectScreenLocation(roomSession.roomId, roomSession.ownRoomIndex, RoomObjectCategory.UNIT)
+                ?? { x: window.innerWidth / 2, y: 0 };
+            const name = radioChatName(transmission);
+            const formattedText = RoomChatFormatter(transmission.text);
+            // senderId -1: a radio line belongs to no avatar in this room, so clicking it selects nothing.
+            const chatMessage = new ChatBubbleMessage(-1, RoomObjectCategory.UNIT, roomSession.roomId, transmission.text, formattedText,
+                name, { x: location.x, y: location.y }, 0, DISTRICT_RADIO_STYLE, radioIcon, null);
+
+            chatMessage.textSize = getChatTextSize(chatFontScale);
+            captureNativeChatCreation(chatMessage, chatSettings.mode);
+            chatMessage.bubbleWidthOverride = resolveChatBubbleWidth(undefined, chatSettings.weight);
+            settleChatLine(lineQueueRef.current, seq, chatMessage);
+            scheduleLineFlush();
+            addChatEntry({
+                id: -1,
+                webId: -1,
+                entityId: -1,
+                name,
+                imageUrl: radioIcon,
+                textSize: chatMessage.textSize,
+                style: DISTRICT_RADIO_STYLE,
+                chatType: 0,
+                message: formattedText,
+                timestamp: ChatHistoryCurrentDate(),
+                type: ChatEntryType.TYPE_CHAT,
+                roomId: roomSession.roomId
+            });
+        } catch (error) {
+            console.error('[RoomChat] Failed to show radio line', error);
+        } finally {
             abandonLine(seq);
         }
     });

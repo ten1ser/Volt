@@ -151,7 +151,7 @@ export const ChatWidgetMessageView: FC<ChatWidgetMessageViewProps> = ({
             className={`bubble-container native-room-bubble chat-text-size${plainRoomChat ? ' district-plain-chat' : ''} ${layout === 'history' ? 'native-history-bubble relative' : 'newbubblehe absolute'} ${isVisible ? 'visible' : 'invisible'} w-max select-none pointer-events-auto`}
             style={{ '--chat-text-size': `${getNativeChatBaseFontSize(chat.styleId) * fontScale}px`, transition: 'none' } as CSSProperties}
             onClick={() => {
-                if (!anonymous) GetRoomEngine().selectRoomObject(chat.roomId, chat.senderId, RoomObjectCategory.UNIT);
+                if (!anonymous && chat.senderId >= 0) GetRoomEngine().selectRoomObject(chat.roomId, chat.senderId, RoomObjectCategory.UNIT);
             }}
         >
             <div

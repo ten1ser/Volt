@@ -5,7 +5,7 @@ describe('DistrictRP plain chat styles', () =>
 {
     it('draws ordinary talk and every RP action colour as plain text', () =>
     {
-        expect([0, 3, 4, 5, 6, 7, 11, 12, 13].every(isDistrictPlainStyle)).toBe(true);
+        expect([0, 3, 4, 5, 6, 7, 11, 12, 13, 900].every(isDistrictPlainStyle)).toBe(true);
     });
 
     it('leaves system, bot and decorated bubbles native', () =>

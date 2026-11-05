@@ -54,7 +54,7 @@ vi.mock('../../state/useSharedHook', () => ({ registerSharedHook: vi.fn(), useSh
 const renderer = await import('@volt/renderer');
 const deliver = (type: unknown, parser: object) => act(() => test.handlers.get(type)({ getParser: () => parser }));
 const status = (requestId: number, overrides: object = {}) => ({ requestId, refused: false, notice: '', powered: true, channel: 0, frequency: 1234,
-    channelLabel: 'Public', hospitalAccess: false, gangAccess: true, ...overrides });
+    channelLabel: 'Public', hospitalAccess: false, gangAccess: true, listeners: 2, ...overrides });
 const transmission = (overrides: object = {}) => ({ channel: 0, frequency: 1234, channelLabel: 'Public', senderId: 2, senderName: 'bob',
     senderRank: '', text: 'meet at the bank', sentAt: 1700000000, ...overrides });
 describe('useRpRadio', () =>
@@ -70,7 +70,7 @@ describe('useRpRadio', () =>
         const { result } = renderHook(() => useRpRadioSource());
         expect(test.sent[0]).toMatchObject({ action: 0, channel: 0, frequency: 0, text: '' });
         deliver(renderer.RpRadioStatusEvent, status(test.sent[0].requestId));
-        expect(result.current.status).toMatchObject({ powered: true, channel: 0, frequency: 1234, gangAccess: true });
+        expect(result.current.status).toMatchObject({ powered: true, channel: 0, frequency: 1234, gangAccess: true, listeners: 2 });
         expect(result.current.notice).toBeNull();
 
         act(() => result.current.power(false));
@@ -107,7 +107,7 @@ describe('useRpRadio', () =>
         expect(test.sent).toHaveLength(2);
     });
 
-    it('records real transmissions, keeps the feed bounded and tracks unread', () =>
+    it('records real transmissions and keeps the feed bounded', () =>
     {
         const { result } = renderHook(() => useRpRadioSource());
         deliver(renderer.RpRadioStatusEvent, status(test.sent[0].requestId));
@@ -117,15 +117,6 @@ describe('useRpRadio', () =>
         }
         expect(result.current.messages).toHaveLength(100);
         expect(result.current.messages.at(-1)?.text).toBe('line 104');
-        expect(result.current.unread).toBe(99);
-
-        act(() => result.current.markRead());
-        expect(result.current.unread).toBe(0);
-        deliver(renderer.RpRadioTransmissionEvent, transmission({ senderName: 'carl' }));
-        expect(result.current.unread).toBe(1);
-        act(() => result.current.clear());
-        expect(result.current.messages).toEqual([]);
-        expect(result.current.unread).toBe(0);
     });
     it('sends power, tune and transmit against the committed channel', () =>
     {
@@ -155,11 +146,11 @@ describe('useRpRadio', () =>
         const { result, rerender } = renderHook(() => useRpRadioSource());
         deliver(renderer.RpRadioStatusEvent, status(test.sent[0].requestId));
         deliver(renderer.RpRadioTransmissionEvent, transmission());
-        expect([result.current.messages.length, result.current.unread]).toEqual([1, 1]);
+        expect(result.current.messages).toHaveLength(1);
 
         test.authenticated = false;
         rerender();
-        expect([result.current.status, result.current.messages, result.current.unread]).toEqual([null, [], 0]);
+        expect([result.current.status, result.current.messages]).toEqual([null, []]);
 
         test.authenticated = true;
         test.userId = 2;
@@ -197,7 +188,6 @@ describe('useRpRadio', () =>
         deliver(renderer.RpRadioTransmissionEvent, transmission());
         expect(result.current.status).toBeNull();
         expect(result.current.messages).toEqual([]);
-        expect(result.current.unread).toBe(0);
     });
 
     it('clears its pending timeout when the shared hook unmounts', () =>

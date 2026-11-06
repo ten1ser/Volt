@@ -157,6 +157,10 @@
 .district-rp-window .district-rp-titlebar > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .district-rp-window .district-rp-titlebar .district-rp-close { position: static; flex: 0 0 auto; width: 22px; height: 22px; padding: 0; border: 1px solid #ffffff24; border-radius: 5px; background: #26292f; color: var(--district-ui-muted); font: 400 15px/20px var(--district-ui-font); letter-spacing: 0; text-shadow: none; cursor: pointer; }
 .district-rp-window .district-rp-titlebar .district-rp-close:hover { border-color: #ffffff40; background: #2f333a; color: #fff; }
+/* Extra title-bar buttons (minimize, restore, power) look like close but are never what Esc clicks. */
+.district-rp-window .district-rp-titlebar .district-rp-tool { flex: 0 0 auto; min-width: 22px; height: 22px; padding: 0 5px; border: 1px solid #ffffff24; border-radius: 5px; background: #26292f; color: var(--district-ui-muted); font: 700 12px/20px var(--district-ui-font); letter-spacing: 0; text-shadow: none; text-transform: none; cursor: pointer; }
+.district-rp-window .district-rp-titlebar .district-rp-tool:hover:not(:disabled) { border-color: #ffffff40; background: #2f333a; color: #fff; }
+.district-rp-window .district-rp-titlebar .district-rp-tool:disabled { cursor: default; opacity: .45; }
 /* Night-gold button kit, three kinds: .district-btn (dark secondary), .district-btn.is-primary (gold, the window's main
    action) and .district-btn.is-danger. aria-pressed / aria-expanded light a dark button in brass. Owners keep layout
    (width, margins); the kit owns colour, type, height and states. */

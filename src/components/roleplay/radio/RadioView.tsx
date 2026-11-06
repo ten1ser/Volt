@@ -1,5 +1,7 @@
 import { AddLinkEventTracker, ILinkEventTracker, RemoveLinkEventTracker } from '@volt/renderer';
-import { CSSProperties, FC, PointerEvent as ReactPointerEvent, RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { FC, useCallback, useEffect, useRef, useState } from 'react';
+import { GetLocalStorage, SetLocalStorage } from '../../../api';
+import { DraggableWindowPosition, VoltCardView } from '../../../common';
 import { useConnectionState } from '../../../hooks/events/useConnectionState';
 import { PUBLIC_MAX, PUBLIC_MIN, RadioChannel, useRpRadio } from '../../../hooks/roleplay/useRpRadio';
 import './RadioView.scss';
@@ -10,10 +12,10 @@ const CHANNEL_NAMES: Record<number, string> = {
     [RadioChannel.Gang]: 'Gang'
 };
 const PULSE_MS = 700;
-const TX_HINT = ':r <message> to transmit';
-const KEYPAD_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0'];
-const PANEL_MARGIN = 8;
-const INTERACTIVE = 'button, input, select, textarea, a, [role="button"], [role="slider"], [contenteditable="true"]';
+const RECENT_KEY = 'district.radio.recent';
+// One more than shown, so the current frequency can be left out and three still remain.
+const RECENT_STORED = 4;
+const RECENT_SHOWN = 3;
 
 const channelName = (channel: number, label = '') => label || CHANNEL_NAMES[channel] || 'Radio';
 
@@ -36,104 +38,11 @@ const sanitizeFrequency = (value: string) =>
     return fraction.length ? `${whole.slice(0, 3)}.${fraction.join('').slice(0, 1)}` : whole.slice(0, 3);
 };
 
-interface PanelPosition
+const readRecent = (): number[] =>
 {
-    x: number;
-    y: number;
-}
+    const stored = GetLocalStorage<unknown>(RECENT_KEY);
 
-const clampPanelPosition = (x: number, y: number, width: number, height: number): PanelPosition =>
-{
-    const maxX = Math.max(PANEL_MARGIN, window.innerWidth - width - PANEL_MARGIN);
-    const maxY = Math.max(PANEL_MARGIN, window.innerHeight - height - PANEL_MARGIN);
-
-    return {
-        x: Math.round(Math.min(Math.max(PANEL_MARGIN, x), maxX)),
-        y: Math.round(Math.min(Math.max(PANEL_MARGIN, y), maxY))
-    };
-};
-
-const isInteractiveTarget = (target: EventTarget | null) =>
-    target instanceof Element && !!target.closest(INTERACTIVE);
-
-/** Pointer dragging for one fixed panel. Positions live only in memory for the session. */
-const usePanelDrag = (ref: RefObject<HTMLElement | null>) =>
-{
-    const [position, setPosition] = useState<PanelPosition | null>(null);
-    const drag = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number } | null>(null);
-
-    const clamp = useCallback((adopt = false) =>
-    {
-        const element = ref.current;
-
-        if(!element) return;
-        const rect = element.getBoundingClientRect();
-
-        setPosition(current =>
-        {
-            if(!current && !adopt) return current;
-            const base = current ?? { x: rect.left, y: rect.top };
-            const next = clampPanelPosition(base.x, base.y, rect.width, rect.height);
-
-            return current && next.x === current.x && next.y === current.y ? current : next;
-        });
-    }, [ref]);
-
-    const onPointerDown = useCallback((event: ReactPointerEvent<HTMLElement>) =>
-    {
-        if(event.pointerType === 'mouse' && event.button !== 0) return;
-        if(isInteractiveTarget(event.target)) return;
-        const element = ref.current;
-
-        if(!element) return;
-        const rect = element.getBoundingClientRect();
-
-        drag.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originX: rect.left, originY: rect.top };
-        setPosition(clampPanelPosition(rect.left, rect.top, rect.width, rect.height));
-        try
-        {
-            event.currentTarget.setPointerCapture(event.pointerId);
-        }
-        catch
-        {
-            // Pointer capture is an enhancement; handlers still work without it.
-        }
-        event.preventDefault();
-    }, [ref]);
-
-    const onPointerMove = useCallback((event: ReactPointerEvent<HTMLElement>) =>
-    {
-        const active = drag.current;
-
-        if(!active || active.pointerId !== event.pointerId) return;
-        const element = ref.current;
-
-        if(!element) return;
-        const rect = element.getBoundingClientRect();
-
-        setPosition(clampPanelPosition(
-            active.originX + (event.clientX - active.startX),
-            active.originY + (event.clientY - active.startY),
-            rect.width,
-            rect.height
-        ));
-    }, [ref]);
-
-    const onPointerEnd = useCallback((event: ReactPointerEvent<HTMLElement>) =>
-    {
-        if(drag.current?.pointerId !== event.pointerId) return;
-        drag.current = null;
-        try
-        {
-            event.currentTarget.releasePointerCapture(event.pointerId);
-        }
-        catch
-        {
-            // Releasing an uncaptured pointer is harmless.
-        }
-    }, []);
-
-    return { position, clamp, dragHandlers: { onPointerDown, onPointerMove, onPointerUp: onPointerEnd, onPointerCancel: onPointerEnd } };
+    return Array.isArray(stored) ? stored.filter((value): value is number => Number.isInteger(value) && value >= PUBLIC_MIN && value <= PUBLIC_MAX).slice(0, RECENT_STORED) : [];
 };
 
 /** The built-in radio handset. Transmissions are read in room chat; the server owns power, channel and access. */
@@ -146,7 +55,8 @@ export const RadioView: FC = () =>
     const [muted, setMuted] = useState(true);
     const [volume, setVolume] = useState(0.35);
     const [pulse, setPulse] = useState<'tx' | 'rx' | null>(null);
-    const frame = useRef<HTMLElement>(null);
+    const [recent, setRecent] = useState<number[]>(readRecent);
+    const frame = useRef<HTMLDivElement>(null);
     const opener = useRef<HTMLElement | null>(null);
     const restoreButton = useRef<HTMLButtonElement>(null);
     const wasMinimized = useRef(false);
@@ -157,7 +67,6 @@ export const RadioView: FC = () =>
     const previousMessageId = useRef(0);
     const { authenticated } = useConnectionState();
     const { status, notice, messages, pending, refresh, power, tune, clearNotice } = useRpRadio();
-    const handsetDrag = usePanelDrag(frame);
     openRef.current = open;
     minimizedRef.current = minimized;
 
@@ -265,29 +174,6 @@ export const RadioView: FC = () =>
         }
     }, [authenticated]);
 
-    // The handset changing size or the viewport moving has to bring it back inside.
-    useLayoutEffect(() =>
-    {
-        if(open) handsetDrag.clamp();
-    }, [open, minimized, notice, inputError, handsetDrag.clamp]);
-
-    useEffect(() =>
-    {
-        if(!open) return;
-        const clampAll = () => handsetDrag.clamp(true);
-        const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(clampAll);
-
-        window.addEventListener('resize', clampAll);
-        window.addEventListener('orientationchange', clampAll);
-        if(observer && frame.current) observer.observe(frame.current);
-        return () =>
-        {
-            window.removeEventListener('resize', clampAll);
-            window.removeEventListener('orientationchange', clampAll);
-            observer?.disconnect();
-        };
-    }, [open, handsetDrag.clamp]);
-
     // The feed is capped, so its length stops changing; the newest unique id is what marks new traffic.
     const latestMessageId = messages.length ? messages[messages.length - 1].id : 0;
 
@@ -321,14 +207,33 @@ export const RadioView: FC = () =>
     // A committed public frequency replaces a stale draft; the draft only holds what the user is entering.
     const statusChannel = status?.channel;
     const statusFrequency = status?.frequency;
+    const statusPowered = !!status?.powered;
 
     useEffect(() =>
     {
         if(statusChannel === RadioChannel.Public && statusFrequency) setFrequency('');
     }, [statusChannel, statusFrequency]);
 
-    const canTune = !!status?.powered && !pending;
+    // Every public frequency the server confirms goes to the front of the recent list (adjusted while rendering, saved after).
+    const confirmedPublic = statusPowered && statusChannel === RadioChannel.Public && statusFrequency ? statusFrequency : 0;
+
+    if(confirmedPublic && recent[0] !== confirmedPublic) setRecent([confirmedPublic, ...recent.filter(value => value !== confirmedPublic)].slice(0, RECENT_STORED));
+
+    useEffect(() =>
+    {
+        try
+        {
+            SetLocalStorage(RECENT_KEY, recent);
+        }
+        catch
+        {
+            // Storage is a convenience; the list still works for this session.
+        }
+    }, [recent]);
+
+    const canTune = statusPowered && !pending;
     const onPublic = statusChannel === RadioChannel.Public;
+    const rangeError = `Enter a public frequency from ${formatFrequency(PUBLIC_MIN)} to ${formatFrequency(PUBLIC_MAX)}.`;
 
     const togglePower = () =>
     {
@@ -342,32 +247,20 @@ export const RadioView: FC = () =>
 
         if(value === null)
         {
-            setInputError(`Enter a public frequency from ${formatFrequency(PUBLIC_MIN)} to ${formatFrequency(PUBLIC_MAX)}.`);
+            setInputError(rangeError);
             return;
         }
         setInputError('');
         tune(RadioChannel.Public, value);
     };
-    const pressKey = (key: string) =>
+    // One tenth up or down from the draft, else the tuned public frequency, else the bottom of the band.
+    const stepFrequency = (delta: number) =>
     {
         if(!canTune) return;
+        const base = parseFrequency(frequency) ?? (onPublic && statusFrequency ? statusFrequency : PUBLIC_MIN);
+
         setInputError('');
-        setFrequency(current =>
-        {
-            if(key === '.' && (!current || current.includes('.'))) return current;
-            return sanitizeFrequency(`${current}${key}`);
-        });
-    };
-    const backspaceFrequency = () =>
-    {
-        if(!canTune) return;
-        setInputError('');
-        setFrequency(current => current.slice(0, -1));
-    };
-    const clearFrequency = () =>
-    {
-        setInputError('');
-        setFrequency('');
+        setFrequency(formatFrequency(Math.min(PUBLIC_MAX, Math.max(PUBLIC_MIN, base + delta))));
     };
     const selectChannel = (channel: number) =>
     {
@@ -379,7 +272,7 @@ export const RadioView: FC = () =>
 
             if(value === null)
             {
-                setInputError(`Enter a public frequency from ${formatFrequency(PUBLIC_MIN)} to ${formatFrequency(PUBLIC_MAX)}.`);
+                setInputError(rangeError);
                 return;
             }
             setInputError('');
@@ -403,14 +296,12 @@ export const RadioView: FC = () =>
     const privateHint = status && (!status.hospitalAccess || !status.gangAccess)
         ? [!status.hospitalAccess && 'Hospital needs on-duty access', !status.gangAccess && 'Gang needs membership'].filter(Boolean).join(' · ')
         : '';
-    const handsetStyle: CSSProperties = handsetDrag.position ? { left: handsetDrag.position.x, top: handsetDrag.position.y } : {};
-    const handsetClass = `district-radio${minimized ? ' is-minimized' : ''}${handsetDrag.position ? ' is-positioned' : ''}`;
+    const recentChips = recent.filter(value => !(onPublic && value === statusFrequency)).slice(0, RECENT_SHOWN);
 
-    return (
-        <section
+    return <VoltCardView theme="district" uniqueKey="district-radio" className="district-radio-window district-rp-window" isResizable={false} constrainToViewport windowPosition={DraggableWindowPosition.BOTTOM_LANE}>
+        <div
             ref={frame}
-            className={handsetClass}
-            style={handsetStyle}
+            className={`district-radio${minimized ? ' is-minimized' : ''}`}
             role="region"
             aria-label="Radio"
             onKeyDown={event =>
@@ -420,40 +311,50 @@ export const RadioView: FC = () =>
                 event.stopPropagation();
                 close();
             }}>
-            {minimized ? (
-                <header className="district-radio__header district-radio__header--minimized" {...handsetDrag.dragHandlers}>
-                    <h2>District Radio</h2>
-                    <span className="district-radio__mini-frequency">{committed}</span>
-                    <div className="district-radio__mini-actions">
-                        <button ref={restoreButton} type="button" aria-label="Restore radio" onClick={() => setMinimized(false)}>Restore</button>
-                        <button type="button" className="district-radio__close" aria-label="Close radio" onClick={close}>×</button>
+            <header className="district-rp-titlebar drag-handler">
+                <span>District Radio</span>
+                {minimized && <strong className="district-radio__mini-frequency">{committed}</strong>}
+                {!minimized && statusPowered && <button type="button" className="district-rp-tool district-radio__power" aria-label="Power off" title="Power off" disabled={pending} onClick={togglePower}>Off</button>}
+                {minimized
+                    ? <button ref={restoreButton} type="button" className="district-rp-tool" aria-label="Restore radio" title="Restore" onClick={() => setMinimized(false)}>+</button>
+                    : <button type="button" className="district-rp-tool district-radio__minimize" aria-label="Minimize radio" title="Minimize" onClick={() => setMinimized(true)}>–</button>}
+                <button type="button" className="district-rp-close" aria-label="Close radio" onClick={close}>×</button>
+            </header>
+            {!minimized && <div className="district-radio__body">
+                {/* One status light (TX/RX flash over ON/OFF) and the frequency shown once. */}
+                <div className="district-radio__lcd" aria-live="polite">
+                    <div className="district-radio__lcd-row">
+                        <span className={`district-radio__state is-${stateKey}`}><i aria-hidden="true" />{stateText}</span>
+                        <span>{status ? CHANNEL_NAMES[status.channel] ?? label : label}</span>
                     </div>
-                </header>
-            ) : (
-                <>
-                    <div className="district-radio__body">
-                    <header className="district-radio__header" {...handsetDrag.dragHandlers}>
-                        <h2>District Radio</h2>
-                        <button type="button" className="district-radio__minimize" aria-label="Minimize radio" onClick={() => setMinimized(true)}>–</button>
-                        <button type="button" className="district-radio__close" aria-label="Close radio" onClick={close}>×</button>
-                    </header>
-                    <span className="district-radio__speaker" aria-hidden="true" />
-                    {/* One status light (TX/RX flash over ON/OFF) and the frequency shown once; the draft field only while it can tune. */}
-                    <div className="district-radio__lcd" aria-live="polite">
-                        <div className="district-radio__lcd-row">
-                            <span className={`district-radio__state is-${stateKey}`}><i aria-hidden="true" />{stateText}</span>
-                            <span>{status ? CHANNEL_NAMES[status.channel] ?? label : label}</span>
-                        </div>
-                        <strong>{display}</strong>
-                        {!!lcdNote && <span className="district-radio__lcd-note">{lcdNote}</span>}
-                        {!poweredOff && <input
-                            className="district-radio__lcd-input"
+                    <strong>{display}</strong>
+                    {!!lcdNote && <span className="district-radio__lcd-note">{lcdNote}</span>}
+                </div>
+                {!statusPowered && <button type="button" className="district-radio__power district-radio__power-on district-btn is-primary" aria-pressed={false} disabled={!status || pending} onClick={togglePower}>Power on</button>}
+                {/* Switched off, the handset collapses to power and frequency; channels and tuner return with power. */}
+                {!poweredOff && <>
+                    <div className="district-radio__channels" role="group" aria-label="Channel">
+                        <button type="button" aria-pressed={onPublic} disabled={!canTune} onClick={() => selectChannel(RadioChannel.Public)}>Public</button>
+                        <button type="button" aria-pressed={statusChannel === RadioChannel.Hospital} disabled={!canTune || !status?.hospitalAccess}
+                            aria-description={status && !status.hospitalAccess ? 'Requires on-duty hospital access' : undefined}
+                            title={status && !status.hospitalAccess ? 'Requires on-duty hospital access' : undefined}
+                            onClick={() => selectChannel(RadioChannel.Hospital)}>Hospital</button>
+                        <button type="button" aria-pressed={statusChannel === RadioChannel.Gang} disabled={!canTune || !status?.gangAccess}
+                            aria-description={status && !status.gangAccess ? 'Requires gang membership' : undefined}
+                            title={status && !status.gangAccess ? 'Requires gang membership' : undefined}
+                            onClick={() => selectChannel(RadioChannel.Gang)}>Gang</button>
+                    </div>
+                    {!!privateHint && <p className="district-radio__hint">{privateHint}</p>}
+                    <div className="district-radio__tuner">
+                        <button type="button" className="district-radio__step" aria-label="Lower frequency" disabled={!canTune} onClick={() => stepFrequency(-1)}>−</button>
+                        <input
+                            className="district-radio__tuner-input"
                             aria-label="Public frequency"
                             inputMode="decimal"
                             pattern="[0-9]*[.]?[0-9]?"
                             maxLength={5}
                             value={frequency}
-                            placeholder="New frequency"
+                            placeholder="Freq."
                             disabled={!canTune}
                             onChange={event =>
                             {
@@ -465,66 +366,45 @@ export const RadioView: FC = () =>
                                 if(event.key !== 'Enter') return;
                                 event.preventDefault();
                                 submitFrequency();
-                            }} />}
+                            }} />
+                        <button type="button" className="district-radio__step" aria-label="Raise frequency" disabled={!canTune} onClick={() => stepFrequency(1)}>+</button>
+                        <button type="button" className="district-radio__tune district-btn is-primary" disabled={!canTune} onClick={submitFrequency}>Tune</button>
                     </div>
-                    <button type="button" className={`district-radio__power district-btn${status?.powered ? '' : ' is-primary'}`} aria-pressed={!!status?.powered} disabled={!status || pending} onClick={togglePower}>
-                        {status?.powered ? 'Power off' : 'Power on'}
-                    </button>
-                    {/* Switched off, the handset collapses to power and frequency; channels and keypad return with power. */}
-                    {!poweredOff && <>
-                        <div className="district-radio__channels" role="group" aria-label="Channel">
-                            <button type="button" aria-pressed={onPublic} disabled={!canTune} onClick={() => selectChannel(RadioChannel.Public)}>Public</button>
-                            <button type="button" aria-pressed={statusChannel === RadioChannel.Hospital} disabled={!canTune || !status?.hospitalAccess}
-                                aria-description={status && !status.hospitalAccess ? 'Requires on-duty hospital access' : undefined}
-                                title={status && !status.hospitalAccess ? 'Requires on-duty hospital access' : undefined}
-                                onClick={() => selectChannel(RadioChannel.Hospital)}>Hospital</button>
-                            <button type="button" aria-pressed={statusChannel === RadioChannel.Gang} disabled={!canTune || !status?.gangAccess}
-                                aria-description={status && !status.gangAccess ? 'Requires gang membership' : undefined}
-                                title={status && !status.gangAccess ? 'Requires gang membership' : undefined}
-                                onClick={() => selectChannel(RadioChannel.Gang)}>Gang</button>
-                        </div>
-                        {!!privateHint && <p className="district-radio__hint">{privateHint}</p>}
-                        <div className="district-radio__keypad" role="group" aria-label="Frequency keypad">
-                            {KEYPAD_KEYS.map(key => (
-                                <button key={key} type="button" className="district-radio__key" disabled={!canTune}
-                                    aria-label={key === '.' ? 'Decimal point' : undefined}
-                                    onClick={() => pressKey(key)}>{key}</button>
-                            ))}
-                            <button type="button" className="district-radio__key" aria-label="Backspace" disabled={!canTune} onClick={backspaceFrequency}>⌫</button>
-                        </div>
-                        <div className="district-radio__tune-actions">
-                            <button type="button" disabled={!canTune} onClick={clearFrequency}>Clear</button>
-                            <button type="button" className="district-radio__tune" disabled={!canTune} onClick={submitFrequency}>Tune</button>
-                        </div>
-                    </>}
-                    {notice && (
-                        <div className={`district-radio__notice ${notice.refused ? 'is-refused' : ''}`} role="alert">
-                            <span>{notice.text}</span>
-                            <button type="button" aria-label="Dismiss message" onClick={clearNotice}>×</button>
-                        </div>
-                    )}
-                    {!!inputError && <p className="district-radio__error" role="alert">{inputError}</p>}
-                    {!poweredOff && <p className="district-radio__tx-hint">{TX_HINT}</p>}
-                    <div className="district-radio__audio">
-                        <button type="button" aria-pressed={!muted} onClick={() =>
+                    {recentChips.length > 0 && <div className="district-radio__recent" role="group" aria-label="Recent frequencies">
+                        {recentChips.map(value => <button key={value} type="button" disabled={!canTune} onClick={() =>
                         {
-                            const next = !muted;
-
-                            setMuted(next);
-                            if(!next) playClick(false);
-                        }}>{muted ? 'Sound off' : 'Sound on'}</button>
-                        {/* Muted reads as zero on the slider; moving it turns the sound back on. */}
-                        <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} aria-label="Volume" onChange={event =>
-                        {
-                            const next = Number(event.target.value);
-
-                            setVolume(next);
-                            if(muted && next > 0) setMuted(false);
-                        }} />
+                            setInputError('');
+                            setFrequency('');
+                            tune(RadioChannel.Public, value);
+                        }}>{formatFrequency(value)}</button>)}
+                    </div>}
+                </>}
+                {notice && (
+                    <div className={`district-radio__notice ${notice.refused ? 'is-refused' : ''}`} role="alert">
+                        <span>{notice.text}</span>
+                        <button type="button" aria-label="Dismiss message" onClick={clearNotice}>×</button>
                     </div>
-                    </div>
-                </>
-            )}
-        </section>
-    );
+                )}
+                {!!inputError && <p className="district-radio__error" role="alert">{inputError}</p>}
+                {!poweredOff && <p className="district-radio__tx-hint"><kbd>:r &lt;message&gt;</kbd> to transmit</p>}
+                <div className="district-radio__audio">
+                    <button type="button" aria-pressed={!muted} onClick={() =>
+                    {
+                        const next = !muted;
+
+                        setMuted(next);
+                        if(!next) playClick(false);
+                    }}>{muted ? 'Sound off' : 'Sound on'}</button>
+                    {/* Muted reads as zero on the slider; moving it turns the sound back on. */}
+                    <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} aria-label="Volume" onChange={event =>
+                    {
+                        const next = Number(event.target.value);
+
+                        setVolume(next);
+                        if(muted && next > 0) setMuted(false);
+                    }} />
+                </div>
+            </div>}
+        </div>
+    </VoltCardView>;
 };

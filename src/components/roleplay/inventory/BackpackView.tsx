@@ -7,7 +7,7 @@ import mp5Icon from '../../../assets/images/roleplay/items/mp5.png';
 import pistolIcon from '../../../assets/images/roleplay/items/pistol.png';
 import magazineIcon from '../../../assets/images/roleplay/items/pistol_ammo.png';
 import vestIcon from '../../../assets/images/roleplay/items/vest.png';
-import { VoltCardView } from '../../../common';
+import { DraggableWindowPosition, VoltCardView } from '../../../common';
 import { useRpInventory, useSelectedUserId } from '../../../hooks/roleplay/useRpInventory';
 import './BackpackView.scss';
 
@@ -100,7 +100,7 @@ export const BackpackView = () =>
         </button>;
     };
 
-    return <VoltCardView theme="district" uniqueKey="district-backpack" className="district-backpack district-rp-window" isResizable={false} constrainToViewport cascade>
+    return <VoltCardView theme="district" uniqueKey="district-backpack" className="district-backpack district-rp-window" isResizable={false} constrainToViewport windowPosition={DraggableWindowPosition.BOTTOM_LANE}>
         <div role="dialog" aria-labelledby={`${windowId}-title`} onKeyDown={event =>
         {
             if(event.key === 'Escape' && !event.defaultPrevented)

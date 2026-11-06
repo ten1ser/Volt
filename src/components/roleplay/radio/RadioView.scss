@@ -1,45 +1,25 @@
-$charcoal: var(--district-ui-surface, #23252a);
-$charcoal-dark: var(--district-ui-raised, #17181c);
 $brass: var(--district-ui-accent, #d4b369);
 $brass-light: var(--district-ui-accent-hover, #e4c477);
 $text: var(--district-ui-text, #f1eee6);
 $muted: var(--district-ui-muted, #b1b1ad);
-$panel-edge: #ffffff1a;
-$panel-right: max(16px, env(safe-area-inset-right));
-$panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
 
+// Frame, title bar, close button and click-to-front come from the shared .district-rp-window (DistrictWindows.css).
 // Buttons take the panel's font and colour at zero class weight, so every class rule below (and the shared
-// .district-btn kit) sets its own size; a plain `.district-radio button { font: inherit }` used to override them to 16px.
+// .district-btn kit) sets its own size.
 :where(.district-radio) button {
     font: inherit;
     color: inherit;
     cursor: pointer;
 }
 
-// A compact fixed handset with no transparent wrapper. Transmissions are read in room chat.
 .district-radio {
-    position: fixed;
-    right: $panel-right;
-    bottom: $panel-bottom;
-    z-index: 490;
     box-sizing: border-box;
     width: 240px;
     max-width: calc(100vw - 24px);
-    padding: 10px 12px 12px;
-    border: 1px solid $panel-edge;
-    border-radius: 16px 16px 20px 20px;
-    background: linear-gradient(160deg, #2f3238, $charcoal 42%, $charcoal-dark);
-    box-shadow: 0 14px 32px #000a, inset 0 1px #ffffff1f, inset 0 0 0 1px #0006;
     color: $text;
     font-family: var(--district-ui-font, HabboAirUbuntu, UbuntuRegular, sans-serif);
-    pointer-events: auto;
 
-    &.is-positioned { right: auto; bottom: auto; }
-
-    &.is-minimized {
-        width: 252px;
-        padding: 8px 10px;
-    }
+    &.is-minimized { width: 252px; }
 
     button {
         &:disabled { cursor: default; opacity: .45; }
@@ -49,104 +29,26 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
     input { font: inherit; }
 
     &__body {
-        max-height: calc(100dvh - 112px - env(safe-area-inset-top));
+        max-height: calc(100dvh - 160px - env(safe-area-inset-top));
+        padding: 8px 12px 12px;
         overflow-y: auto;
         overscroll-behavior: contain;
         scrollbar-width: thin;
         scrollbar-color: #4a4d54 transparent;
     }
 
-    &__header {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        cursor: grab;
-        touch-action: none;
-        user-select: none;
-
-        &:active { cursor: grabbing; }
-
-        h2 {
-            flex: 1 1 auto;
-            min-width: 0;
-            margin: 0;
-            overflow: hidden;
-            color: $brass-light;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: .08em;
-            line-height: 20px;
-            text-overflow: ellipsis;
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-    }
-
-    &__header--minimized {
-        flex-wrap: wrap;
-        gap: 3px 8px;
-    }
-
     &__mini-frequency {
         flex: 0 0 auto;
         color: $brass-light;
-        font-size: 12px;
         font-variant-numeric: tabular-nums;
-        font-weight: 700;
-        line-height: 20px;
-    }
-
-    &__mini-actions {
-        display: flex;
-        flex: 0 0 auto;
-        gap: 4px;
-        margin-left: auto;
-
-        button {
-            padding: 3px 6px;
-            border: 1px solid #4a4d54;
-            border-radius: 5px;
-            background: #26292f;
-            color: $muted;
-            font-size: 12px;
-            font-weight: 700;
-            line-height: 14px;
-        }
-
-        button[aria-pressed='true'] { border-color: $brass; color: $brass-light; }
-    }
-
-    &__close,
-    &__minimize {
-        flex: 0 0 auto;
-        width: 20px;
-        height: 20px;
-        padding: 0;
-        border: 1px solid #ffffff24;
-        border-radius: 5px;
-        background: #26292f;
-        color: $muted;
-        font-size: 14px;
-        line-height: 18px;
-    }
-
-    &__minimize { font-size: 15px; }
-
-    // Speaker grille slots, purely decorative.
-    &__speaker {
-        display: block;
-        height: 10px;
-        margin: 7px 0 0;
-        border-radius: 3px;
-        background: repeating-linear-gradient(180deg, #101114 0 2px, #3a3e45 2px 4px);
-        box-shadow: inset 0 1px 2px #0008;
+        letter-spacing: .04em;
     }
 
     &__lcd {
         display: flex;
         flex-direction: column;
         gap: 1px;
-        margin: 8px 0 6px;
+        margin: 0 0 6px;
         padding: 6px 8px 7px;
         border: 1px solid #0a0b0d;
         border-radius: 7px;
@@ -202,28 +104,8 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
         white-space: nowrap;
     }
 
-    // Keyboard entry still works; the keypad writes into the same draft.
-    &__lcd-input {
-        width: 100%;
-        box-sizing: border-box;
-        margin-top: 3px;
-        padding: 2px 5px;
-        border: 1px solid #3e5a35;
-        border-radius: 4px;
-        background: #0a1009c9;
-        color: #d7f2c2;
-        font-size: 12px;
-        font-variant-numeric: tabular-nums;
-        text-align: right;
-
-        &::placeholder { color: #6f8a65; opacity: 1; }
-        &:disabled { opacity: .55; }
-        &:focus-visible { outline: 1px solid $brass; outline-offset: 1px; }
-    }
-
-    // Full-width power, then full-width channel tabs, so no label is cut off.
-    // Colours come from the .district-btn kit: gold while off (switching on is the main action), dark once on.
-    &__power {
+    // Switched off, the one big action is turning it on; colours from the .district-btn kit.
+    &__power-on {
         width: 100%;
         min-height: 32px;
     }
@@ -233,7 +115,6 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 4px;
         min-width: 0;
-        margin-top: 6px;
 
         button {
             min-width: 0;
@@ -265,50 +146,64 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
         line-height: 16px;
     }
 
-    &__keypad {
+    // − field + Tune on one row; typing still works, the steppers move one tenth.
+    &__tuner {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: 26px minmax(0, 1fr) 26px auto;
         gap: 4px;
         margin-top: 8px;
     }
 
-    &__key {
-        min-width: 0;
-        padding: 6px 0;
+    &__step {
+        padding: 0;
         border: 1px solid #4a4d54;
-        border-radius: 6px;
-        background: linear-gradient(180deg, #34383f, #23262b);
-        color: $text;
-        font-size: 13px;
-        font-variant-numeric: tabular-nums;
+        border-radius: 5px;
+        background: #26292f;
+        color: $brass-light;
+        font-size: 15px;
         font-weight: 700;
-        line-height: 16px;
-
-        &:active { transform: translateY(1px); }
-        &[aria-label='Backspace'] { color: $brass-light; }
+        line-height: 26px;
     }
 
-    &__tune-actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+    &__tuner-input {
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        padding: 4px 6px;
+        border: 1px solid #3e5a35;
+        border-radius: 5px;
+        background: #0a1009c9;
+        color: #d7f2c2;
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+        text-align: center;
+
+        &::placeholder { color: #6f8a65; opacity: 1; }
+        &:disabled { opacity: .55; }
+        &:focus-visible { outline: 1px solid $brass; outline-offset: 1px; }
+    }
+
+    &__tune { padding: 0 10px; }
+
+    &__recent {
+        display: flex;
+        flex-wrap: wrap;
         gap: 4px;
-        margin-top: 4px;
+        margin-top: 6px;
 
         button {
-            padding: 5px 0;
+            padding: 3px 8px;
             border: 1px solid #4a4d54;
-            border-radius: 6px;
+            border-radius: 999px;
             background: #26292f;
             color: $muted;
             font-size: 12px;
+            font-variant-numeric: tabular-nums;
             font-weight: 700;
-        }
-    }
+            line-height: 14px;
 
-    &__tune {
-        border-color: $brass !important;
-        background: linear-gradient(180deg, $brass-light, #c9a557) !important;
-        color: #2a2008 !important;
+            &:hover:not(:disabled) { border-color: $brass; color: $brass-light; }
+        }
     }
 
     &__notice {
@@ -332,19 +227,32 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
 
     &__error { margin: 5px 0 0; color: #e39c8f; font-size: 12px; line-height: 16px; }
 
+    // Wraps rather than clipping; the command itself never breaks.
     &__tx-hint {
-        margin: 6px 0 0;
+        margin: 8px 0 0;
         color: $muted;
         font-size: 12px;
-        line-height: 16px;
+        line-height: 18px;
         text-align: center;
+        overflow-wrap: anywhere;
+
+        kbd {
+            padding: 1px 5px;
+            border: 1px solid #4a4d54;
+            border-radius: 4px;
+            background: #1b1d21;
+            color: $brass-light;
+            font: inherit;
+            font-weight: 700;
+            white-space: nowrap;
+        }
     }
 
     &__audio {
         display: flex;
         align-items: center;
         gap: 6px;
-        margin-top: 6px;
+        margin-top: 8px;
 
         > button {
             padding: 4px 7px;
@@ -366,17 +274,6 @@ $panel-bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
     from { opacity: .35; }
     50% { opacity: 1; }
     to { opacity: 1; }
-}
-
-@media (max-width: 720px) {
-    .district-radio {
-        right: max(12px, env(safe-area-inset-right));
-        bottom: max(76px, calc(68px + env(safe-area-inset-bottom)));
-        width: min(240px, calc(100vw - 24px));
-    }
-
-    .district-radio__body { max-height: calc(100dvh - 160px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
-
 }
 
 @media (prefers-reduced-motion: reduce) {

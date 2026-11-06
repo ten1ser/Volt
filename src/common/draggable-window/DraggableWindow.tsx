@@ -24,6 +24,10 @@ const DRAG_OUTSIDE_PERCENT: number = 0.8;
 const DRAG_START_THRESHOLD_PX: number = 3;
 // A cascading window opens this far below and right of each cascading window already open.
 const CASCADE_STEP_PX: number = 28;
+// Bottom-lane windows start this far from the left edge, leave this gap between them and stay this far above the bottom (chat bar).
+const LANE_START_PX: number = 16;
+const LANE_GAP_PX: number = 12;
+const LANE_BOTTOM_PX: number = 84;
 
 export interface DraggableWindowProps {
     uniqueKey?: Key;
@@ -177,6 +181,14 @@ const FloatingDraggableWindow: FC<DraggableWindowProps> = (props) => {
                 offsetY = 50 + offsetTop;
                 offsetX = 50 + offsetLeft;
                 break;
+            case DraggableWindowPosition.BOTTOM_LANE: {
+                // shortcut: counts every open lane window, even one dragged away; past the right edge the viewport clamp overlaps them.
+                const laneRight = CURRENT_WINDOWS.filter(existing => existing !== element && existing.dataset.lane !== undefined)
+                    .reduce((right, existing) => Math.max(right, existing.getBoundingClientRect().right), 0);
+                offsetX = (laneRight > 0 ? laneRight + LANE_GAP_PX : LANE_START_PX) + offsetLeft;
+                offsetY = window.innerHeight - windowHeight - LANE_BOTTOM_PX + offsetTop;
+                break;
+            }
         }
 
         if (cascade) {
@@ -314,6 +326,7 @@ const FloatingDraggableWindow: FC<DraggableWindowProps> = (props) => {
             className="absolute draggable-window"
             data-window-key={uniqueKey ?? undefined}
             data-cascade={cascade ? '' : undefined}
+            data-lane={windowPosition === DraggableWindowPosition.BOTTOM_LANE ? '' : undefined}
             data-native-position={hasInitialPosition ? '' : undefined}
             style={{
                 ...dragStyle,

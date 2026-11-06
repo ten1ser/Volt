@@ -11,7 +11,7 @@ vi.mock('@volt/renderer', () => ({ AddLinkEventTracker: (tracker: any) =>
 {
     test.tracker = tracker;
 }, RemoveLinkEventTracker: vi.fn() }));
-vi.mock('../../../common', () => ({ VoltCardView: ({ children }: any) => <div>{children}</div> }));
+vi.mock('../../../common', () => ({ VoltCardView: ({ children }: any) => <div>{children}</div>, DraggableWindowPosition: { BOTTOM_LANE: 'DWP_BOTTOM_LANE' } }));
 vi.mock('../../../hooks/roleplay/useRpInventory', () => ({
     useRpInventory: () => ({ slots: test.slots, notice: '', clearNotice: vi.fn(), pendingDestroy: test.pendingDestroy, move: test.move, use: test.use,
         drop: test.drop, confirmDestroy: test.confirmDestroy, cancelDestroy: test.cancelDestroy, authenticated: true }),

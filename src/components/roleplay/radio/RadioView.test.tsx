@@ -53,6 +53,7 @@ vi.mock('../../../hooks/roleplay/useRpRadio', () => ({
     PUBLIC_MAX: 9999
 }));
 vi.mock('../../../hooks/events/useConnectionState', () => ({ useConnectionState: () => ({ authenticated: test.authenticated }) }));
+vi.mock('../../../common', () => ({ VoltCardView: ({ children }: { children: unknown }) => <div>{children as never}</div>, DraggableWindowPosition: { BOTTOM_LANE: 'DWP_BOTTOM_LANE' } }));
 
 const makeRadio = (): RadioMock => ({
     status: { powered: true, channel: 0, frequency: 1234, channelLabel: 'Public', hospitalAccess: false, gangAccess: true, listeners: 3 },
@@ -81,27 +82,12 @@ const message = (id: number, overrides: Partial<TestMessage> = {}): TestMessage 
 });
 const feed = (firstId: number) => Array.from({ length: 100 }, (_, index) => message(firstId + index));
 
-const panelRect = (left: number, top: number, width: number, height: number): DOMRect => ({
-    x: left,
-    y: top,
-    left,
-    top,
-    width,
-    height,
-    right: left + width,
-    bottom: top + height,
-    toJSON: () => ({})
-});
-const setRect = (element: HTMLElement, rect: DOMRect) =>
-{
-    element.getBoundingClientRect = () => rect;
-};
-
 describe('RadioView', () =>
 {
     beforeEach(() =>
     {
         vi.clearAllMocks();
+        window.localStorage.clear();
         test.authenticated = true;
         test.radio = makeRadio();
     });
@@ -144,7 +130,7 @@ describe('RadioView', () =>
         expect(screen.queryByLabelText('Message')).toBeNull();
         expect(screen.queryByRole('textbox', { name: 'Message' })).toBeNull();
         expect(screen.queryByRole('button', { name: 'Transmit' })).toBeNull();
-        expect(screen.getByText(':r <message> to transmit')).toBeInTheDocument();
+        expect(document.querySelector('.district-radio__tx-hint')).toHaveTextContent(':r <message> to transmit');
 
         fireEvent.click(screen.getByRole('button', { name: 'Sound off' }));
         expect(screen.getByRole('button', { name: 'Sound on' })).toHaveAttribute('aria-pressed', 'true');
@@ -163,7 +149,7 @@ describe('RadioView', () =>
         expect(slider).toHaveValue('0.5');
     });
 
-    it('builds the frequency draft with the keypad and keyboard, then commits integer tenths', () =>
+    it('steps the frequency draft one tenth from the tuned frequency, clamped to the band, then commits integer tenths', () =>
     {
         render(<RadioView />);
         open();
@@ -171,20 +157,22 @@ describe('RadioView', () =>
 
         expect(frequency).toHaveValue('');
         expect(screen.getByText('123.4')).toBeInTheDocument();
+        expect(screen.queryByRole('group', { name: 'Frequency keypad' })).toBeNull();
 
-        fireEvent.click(screen.getByRole('button', { name: '1' }));
-        fireEvent.click(screen.getByRole('button', { name: '2' }));
-        fireEvent.click(screen.getByRole('button', { name: '3' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Decimal point' }));
-        fireEvent.click(screen.getByRole('button', { name: '4' }));
-        expect(frequency).toHaveValue('123.4');
+        fireEvent.click(screen.getByRole('button', { name: 'Raise frequency' }));
+        expect(frequency).toHaveValue('123.5');
+        fireEvent.click(screen.getByRole('button', { name: 'Lower frequency' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Lower frequency' }));
+        expect(frequency).toHaveValue('123.3');
         fireEvent.click(screen.getByRole('button', { name: 'Tune' }));
-        expect(test.radio.tune).toHaveBeenLastCalledWith(0, 1234);
+        expect(test.radio.tune).toHaveBeenLastCalledWith(0, 1233);
 
-        fireEvent.click(screen.getByRole('button', { name: 'Backspace' }));
-        expect(frequency).toHaveValue('123.');
-        fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
-        expect(frequency).toHaveValue('');
+        fireEvent.change(frequency, { target: { value: '999.9' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Raise frequency' }));
+        expect(frequency).toHaveValue('999.9');
+        fireEvent.change(frequency, { target: { value: '100.1' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Lower frequency' }));
+        expect(frequency).toHaveValue('100.1');
 
         fireEvent.change(frequency, { target: { value: '150.5' } });
         fireEvent.keyDown(frequency, { key: 'Enter' });
@@ -270,56 +258,35 @@ describe('RadioView', () =>
         expect(screen.queryByRole('region', { name: 'Radio' })).toBeNull();
     });
 
-    it('drags the handset, ignores controls, retains its position and clamps on resize', () =>
+    it('keeps the last confirmed public frequencies as chips, without the current one, and tunes from them', () =>
+    {
+        window.localStorage.setItem('district.radio.recent', JSON.stringify([1500, 'bad', 1000, 2222, 3333]));
+        const { rerender } = render(<RadioView />);
+
+        open();
+        const chips = () => Array.from(screen.getByRole('group', { name: 'Recent frequencies' }).querySelectorAll('button')).map(chip => chip.textContent);
+
+        expect(chips()).toEqual(['150.0', '222.2', '333.3']);
+        expect(JSON.parse(window.localStorage.getItem('district.radio.recent'))).toEqual([1234, 1500, 2222, 3333]);
+
+        fireEvent.click(screen.getByRole('button', { name: '222.2' }));
+        expect(test.radio.tune).toHaveBeenLastCalledWith(0, 2222);
+
+        test.radio.status = { ...test.radio.status, frequency: 2222 };
+        rerender(<RadioView />);
+        expect(chips()).toEqual(['123.4', '150.0', '333.3']);
+    });
+
+    it('puts power off and minimize in the title bar, and leaves only Close for Esc to find', () =>
     {
         render(<RadioView />);
         open();
-        let handset = screen.getByRole('region', { name: 'Radio' });
-        const handsetHeader = handset.querySelector('.district-radio__header') as HTMLElement;
+        const header = document.querySelector('.district-rp-titlebar') as HTMLElement;
 
-        setRect(handset, panelRect(500, 300, 240, 400));
-        act(() => { window.dispatchEvent(new Event('resize')); });
-
-        expect(handset.style.left).toBe('500px');
-        expect(handset.style.top).toBe('300px');
-
-        fireEvent.pointerDown(handsetHeader, { pointerId: 1, pointerType: 'mouse', button: 0, clientX: 10, clientY: 10 });
-        fireEvent.pointerMove(handsetHeader, { pointerId: 1, pointerType: 'mouse', button: 0, clientX: 60, clientY: 40 });
-        fireEvent.pointerUp(handsetHeader, { pointerId: 1, pointerType: 'mouse', button: 0, clientX: 60, clientY: 40 });
-
-        expect(handset.style.left).toBe('550px');
-        expect(handset.style.top).toBe('330px');
-
-        const minimize = screen.getByRole('button', { name: 'Minimize radio' });
-
-        fireEvent.pointerDown(minimize, { pointerId: 2, pointerType: 'mouse', button: 0, clientX: 20, clientY: 20 });
-        fireEvent.pointerMove(handsetHeader, { pointerId: 2, pointerType: 'mouse', button: 0, clientX: 120, clientY: 120 });
-        expect(handset.style.left).toBe('550px');
-
-        fireEvent.click(screen.getByRole('button', { name: 'Close radio' }));
-        act(() => tracker().linkReceived('radio/show'));
-        handset = screen.getByRole('region', { name: 'Radio' });
-        expect(handset.style.left).toBe('550px');
-
-        setRect(handset, panelRect(500, 300, 240, 400));
-        const width = Object.getOwnPropertyDescriptor(window, 'innerWidth');
-        const height = Object.getOwnPropertyDescriptor(window, 'innerHeight');
-
-        Object.defineProperty(window, 'innerWidth', { configurable: true, value: 320 });
-        Object.defineProperty(window, 'innerHeight', { configurable: true, value: 500 });
-        try
-        {
-            act(() => { window.dispatchEvent(new Event('resize')); });
-            expect(handset.style.left).toBe('72px');
-            expect(handset.style.top).toBe('92px');
-        }
-        finally
-        {
-            if(width) Object.defineProperty(window, 'innerWidth', width);
-            else delete (window as unknown as Record<string, unknown>).innerWidth;
-            if(height) Object.defineProperty(window, 'innerHeight', height);
-            else delete (window as unknown as Record<string, unknown>).innerHeight;
-        }
+        expect(header).toHaveClass('drag-handler');
+        expect(header).toContainElement(screen.getByRole('button', { name: 'Power off' }));
+        expect(screen.getByRole('button', { name: 'Power off' })).toHaveFocus();
+        expect(Array.from(document.querySelectorAll('.district-rp-close')).map(button => button.getAttribute('aria-label'))).toEqual(['Close radio']);
     });
 
     it('shows server denials and disables controls while a request is pending', () =>
@@ -331,7 +298,7 @@ describe('RadioView', () =>
         expect(screen.getByRole('alert')).toHaveTextContent('No response from the server.');
         expect(screen.getByRole('button', { name: 'Power off' })).toBeDisabled();
         expect(screen.getByRole('button', { name: 'Tune' })).toBeDisabled();
-        expect(screen.getByRole('button', { name: '1' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Raise frequency' })).toBeDisabled();
         expect(screen.getByLabelText('Public frequency')).toBeDisabled();
         fireEvent.click(screen.getByRole('button', { name: 'Dismiss message' }));
         expect(test.radio.clearNotice).toHaveBeenCalledOnce();
@@ -393,10 +360,11 @@ describe('RadioView', () =>
         expect(power).toBeEnabled();
         expect(screen.getByText('OFF')).toBeInTheDocument();
         expect(screen.getByText('123.4')).toBeInTheDocument();
-        expect(screen.queryByRole('group', { name: 'Frequency keypad' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Power off' })).toBeNull();
         expect(screen.queryByRole('group', { name: 'Channel' })).toBeNull();
         expect(screen.queryByLabelText('Public frequency')).toBeNull();
-        expect(screen.queryByText(':r <message> to transmit')).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Raise frequency' })).toBeNull();
+        expect(document.querySelector('.district-radio__tx-hint')).toBeNull();
 
         fireEvent.click(power);
         expect(test.radio.power).toHaveBeenCalledWith(true);

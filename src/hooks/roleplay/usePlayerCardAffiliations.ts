@@ -13,6 +13,8 @@ export interface PlayerCardAffiliations
     jobBadge: string;
     gang: string;
     gangBadge: string;
+    gangRank: string;
+    onDuty: boolean;
     rank: string;
     kills: number;
     deaths: number;
@@ -24,7 +26,7 @@ export interface PlayerCardAffiliations
 
 export const PLAYER_CARD_AFFILIATION_TIMEOUT_MS = 5000;
 
-const NO_STATS = { rank: '', kills: 0, deaths: 0, punchesThrown: 0, punchesMissed: 0, punchesReceived: 0, timesJailed: 0 };
+const NO_STATS = { gangRank: '', onDuty: false, rank: '', kills: 0, deaths: 0, punchesThrown: 0, punchesMissed: 0, punchesReceived: 0, timesJailed: 0 };
 
 const EMPTY: PlayerCardAffiliations = { loading: false, unavailable: false, job: '', jobBadge: '', gang: '', gangBadge: '', ...NO_STATS };
 const LOADING: PlayerCardAffiliations = { loading: true, unavailable: false, job: '', jobBadge: '', gang: '', gangBadge: '', ...NO_STATS };
@@ -71,6 +73,8 @@ export const usePlayerCardAffiliations = (userId: number): PlayerCardAffiliation
                     jobBadge: parser.jobBadge,
                     gang: parser.gang,
                     gangBadge: parser.gangBadge,
+                    gangRank: parser.gangRank,
+                    onDuty: parser.onDuty,
                     rank: parser.rank,
                     kills: parser.kills,
                     deaths: parser.deaths,

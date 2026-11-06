@@ -118,7 +118,19 @@ vi.mock('./menu/AvatarInfoWidgetOwnPetView', () => ({ AvatarInfoWidgetOwnPetView
 vi.mock('./menu/AvatarInfoWidgetPetView', () => ({ AvatarInfoWidgetPetView: () => null }));
 vi.mock('./menu/AvatarInfoWidgetRentableBotView', () => ({ AvatarInfoWidgetRentableBotView: () => null }));
 
-const cardState = () => usePlayerCardStore.getState();
+// Flattened view of the two card slots (own first); these tests open one card at a time unless they say otherwise.
+const cardState = () => {
+    const store = usePlayerCardStore.getState();
+    const card = store.own ?? store.other;
+
+    return {
+        avatarInfo: card?.avatarInfo ?? null,
+        initialTab: card?.initialTab ?? 'overview',
+        source: card?.source ?? null,
+        open: store.open,
+        close: () => store.close()
+    };
+};
 
 beforeEach(() => {
     state.avatarInfo = null;
@@ -248,7 +260,7 @@ describe('avatar info player card', () => {
         expect(cardState().avatarInfo).toBeNull();
     });
 
-    it('replaces an open peer card with the own card from the HUD toggle', () => {
+    it('opens the own card next to an open peer card from the HUD toggle', () => {
         const ownInfo = { type: 'IUI_OWN_USER', webID: 1, roomIndex: 5, isOwnUser: true, isSpectatorMode: false };
         const peerInfo = { type: 'IUI_PEER', webID: 6, roomIndex: 6, name: 'Peer' };
 
@@ -258,7 +270,14 @@ describe('avatar info player card', () => {
 
         act(() => state.tracker.linkReceived('avatar-info/toggle-own'));
 
-        expect(cardState()).toMatchObject({ avatarInfo: ownInfo, initialTab: 'overview', source: 'room' });
+        expect(usePlayerCardStore.getState().own).toMatchObject({ avatarInfo: ownInfo, initialTab: 'overview', source: 'room' });
+        expect(usePlayerCardStore.getState().other).toMatchObject({ avatarInfo: peerInfo, initialTab: 'stats', source: 'profile' });
+
+        // Closing your own card leaves the peer card open.
+        act(() => state.tracker.linkReceived('avatar-info/toggle-own'));
+
+        expect(usePlayerCardStore.getState().own).toBeNull();
+        expect(usePlayerCardStore.getState().other).toMatchObject({ avatarInfo: peerInfo });
     });
 
     it('opens the own card from the HUD when the own avatar was selected by the world', () => {

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InfoStandWidgetUserView } from './InfoStandWidgetUserView';
 
@@ -14,6 +14,8 @@ const state = vi.hoisted(() => ({
         jobBadge: '',
         gang: '',
         gangBadge: '',
+        gangRank: '',
+        onDuty: false,
         rank: '',
         kills: 0,
         deaths: 0,
@@ -148,6 +150,28 @@ describe('user infostand redesign', () => {
         expect(state.affiliationsUserId).toBe(7);
     });
 
+    it('shows the duty ribbon and the job and gang ranks only for employed or ranked players', () => {
+        state.affiliations = affiliations({ job: 'Hospital', jobBadge: 'b-job', rank: 'Doctor', gang: 'Kings', gangBadge: 'b-gang', gangRank: 'Enforcer', onDuty: true });
+        const view = render(<InfoStandWidgetUserView avatarInfo={createAvatarInfo('IUI_PEER') as any} setAvatarInfo={vi.fn()} onClose={vi.fn()} />);
+
+        expect(screen.getByText('On duty · Hospital')).toHaveClass('volt-infostand__duty', 'is-on');
+        expect(document.querySelector('.volt-infostand__stage')).toHaveClass('has-duty');
+        expect(within(screen.getByRole('group', { name: 'Job badge' })).getByText('Doctor')).toHaveClass('is-accent');
+        expect(within(screen.getByRole('group', { name: 'Gang badge' })).getByText('Enforcer')).toBeInTheDocument();
+
+        state.affiliations = affiliations({ job: 'Hospital', jobBadge: 'b-job', rank: 'Doctor', onDuty: false });
+        view.rerender(<InfoStandWidgetUserView avatarInfo={createAvatarInfo('IUI_PEER') as any} setAvatarInfo={vi.fn()} onClose={vi.fn()} />);
+
+        expect(screen.getByText('Off duty')).not.toHaveClass('is-on');
+
+        state.affiliations = affiliations({ job: '', jobBadge: '', rank: '', gang: '', gangBadge: '', gangRank: 'Enforcer' });
+        view.rerender(<InfoStandWidgetUserView avatarInfo={createAvatarInfo('IUI_PEER') as any} setAvatarInfo={vi.fn()} onClose={vi.fn()} />);
+
+        expect(document.querySelector('.volt-infostand__duty')).toBeNull();
+        expect(document.querySelector('.volt-infostand__stage')).not.toHaveClass('has-duty');
+        expect(screen.queryByText('Enforcer')).toBeNull();
+    });
+
     it('renders the requested avatar affiliations for own and peer cards', () => {
         state.affiliations = affiliations({ job: 'Hospital', jobBadge: 'b-job', gang: 'Kings', gangBadge: 'b-gang' });
 
@@ -190,17 +214,15 @@ describe('user infostand redesign', () => {
         expect(screen.getAllByText('Unavailable')).toHaveLength(2);
     });
 
-    it('selects Stats from the username and avatar without opening the profile window', () => {
+    it('has no name header and selects Stats from the avatar without opening the profile window', () => {
         const onClose = vi.fn();
 
         render(<InfoStandWidgetUserView avatarInfo={createAvatarInfo('IUI_PEER') as any} setAvatarInfo={vi.fn()} onClose={onClose} />);
 
-        fireEvent.click(screen.getByRole('button', { name: 'Ada' }));
+        // The HUD above names the player; the card only carries it in the tab list's accessible name.
+        expect(screen.queryByText('Ada')).toBeNull();
+        expect(screen.getByRole('tablist', { name: 'Ada player card' })).toBeInTheDocument();
 
-        expect(screen.getByRole('tab', { name: 'Stats' })).toHaveAttribute('aria-selected', 'true');
-        expect(state.profile).not.toHaveBeenCalled();
-
-        fireEvent.click(screen.getByRole('tab', { name: 'Overview' }));
         fireEvent.click(screen.getByRole('button', { name: 'View stats' }));
 
         expect(screen.getByRole('tab', { name: 'Stats' })).toHaveAttribute('aria-selected', 'true');
@@ -232,36 +254,57 @@ describe('user infostand redesign', () => {
 
         expect(screen.getByRole('tab', { name: 'Stats' })).toHaveAttribute('aria-selected', 'true');
         expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', screen.getByRole('tab', { name: 'Stats' }).id);
-        expect(screen.getByText('Captain · Hospital')).toBeInTheDocument();
-        expect(screen.getByText('3.00')).toBeInTheDocument();
-        expect(screen.getByText('Kills')).toBeInTheDocument();
-        expect(screen.getByText('12')).toBeInTheDocument();
-        expect(screen.getByText('Deaths')).toBeInTheDocument();
-        expect(screen.getByText('4')).toBeInTheDocument();
-        expect(screen.getByText('Jailed')).toBeInTheDocument();
-        expect(screen.getByText('2')).toBeInTheDocument();
         expect(document.querySelector('.volt-infostand__avatar-well')).toBeNull();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Punches' }));
+        // K/D hero with rank, and the kills-versus-deaths split (12 of 16 fights = 75%).
+        const combat = within(screen.getByRole('region', { name: 'Combat' }));
+        expect(combat.getByText('3.00')).toBeInTheDocument();
+        expect(combat.getByText('Captain')).toBeInTheDocument();
+        expect(combat.getByTitle('12 kills')).toBeInTheDocument();
+        expect(combat.getByTitle('4 deaths')).toBeInTheDocument();
+        expect(document.querySelector('.volt-infostand__kd-bar')).toHaveClass('has-deaths');
+        expect((document.querySelector('.volt-infostand__kd-bar span') as HTMLElement).style.width).toBe('75%');
 
-        expect(screen.getByRole('button', { name: 'Punches' })).toHaveAttribute('aria-pressed', 'true');
-        expect(screen.getByText('Thrown')).toBeInTheDocument();
-        expect(screen.getByText('20')).toBeInTheDocument();
-        expect(screen.getByText('Missed')).toBeInTheDocument();
-        expect(screen.getByText('5')).toBeInTheDocument();
-        expect(screen.getByText('Received')).toBeInTheDocument();
-        expect(screen.getByText('9')).toBeInTheDocument();
-        expect(screen.queryByText('3.00')).toBeNull();
+        // Fists: accuracy is landed / thrown, and the tiles read Thrown, Landed and Taken.
+        const fists = within(screen.getByRole('region', { name: 'Fists' }));
+        expect(fists.getByText('75%')).toBeInTheDocument();
+        expect(fists.getByTitle('20')).toHaveTextContent('Thrown');
+        expect(fists.getByTitle('15')).toHaveTextContent('Landed');
+        expect(fists.getByTitle('9')).toHaveTextContent('Taken');
+        expect(screen.queryByText('Received')).toBeNull();
+
+        const record = within(screen.getByRole('region', { name: 'Record' }));
+        expect(record.getByText('Times jailed')).toBeInTheDocument();
+        expect(record.getByText('2')).toBeInTheDocument();
+        expect(record.getByText('Known offender')).toBeInTheDocument();
+    });
+
+    it('shows a dash for accuracy and a clean record before any punches or arrests', () => {
+        state.affiliations = affiliations({ kills: 0, deaths: 0, punchesThrown: 0, punchesMissed: 0, punchesReceived: 0, timesJailed: 0 });
+        render(<InfoStandWidgetUserView avatarInfo={createAvatarInfo('IUI_PEER') as any} setAvatarInfo={vi.fn()} onClose={vi.fn()} initialTab="stats" />);
+
+        expect(within(screen.getByRole('region', { name: 'Fists' })).getByText('—')).toBeInTheDocument();
+        expect(screen.getByText('Clean record')).toBeInTheDocument();
+        expect(document.querySelector('.volt-infostand__kd-bar')).not.toHaveClass('has-deaths');
+    });
+
+    it('shows a zero-death K/D with two decimals', () => {
+        state.affiliations = affiliations({ kills: 2, deaths: 0 });
+
+        render(<InfoStandWidgetUserView avatarInfo={createAvatarInfo('IUI_PEER') as any} setAvatarInfo={vi.fn()} onClose={vi.fn()} initialTab="stats" />);
+
+        expect(screen.getByText('2.00').parentElement).toHaveAttribute('title', 'No deaths yet: K/D is the kill count');
+        expect((document.querySelector('.volt-infostand__kd-bar span') as HTMLElement).style.width).toBe('100%');
     });
 
     it('keeps the full counter value in its title when the cell clips it', () => {
         const largeValue = 123456789012345;
 
-        state.affiliations = affiliations({ kills: largeValue, deaths: 1 });
+        state.affiliations = affiliations({ punchesThrown: largeValue });
 
         render(<InfoStandWidgetUserView avatarInfo={createAvatarInfo('IUI_PEER') as any} setAvatarInfo={vi.fn()} onClose={vi.fn()} initialTab="stats" />);
 
-        expect(screen.getByText(String(largeValue)).parentElement).toHaveAttribute('title', String(largeValue));
+        expect(screen.getAllByText(String(largeValue))[0].parentElement).toHaveAttribute('title', String(largeValue));
     });
 
     it('honours the initialTab request', () => {
@@ -290,21 +333,20 @@ describe('user infostand redesign', () => {
         expect(screen.queryByText('0')).toBeNull();
     });
 
-    it('resets the tab and stat section when the viewed user changes', () => {
+    it('resets the tab when the viewed user changes', () => {
         state.affiliations = affiliations({ kills: 3 });
         const view = render(
             <InfoStandWidgetUserView avatarInfo={createAvatarInfo('IUI_PEER', { webID: 7 }) as any} setAvatarInfo={vi.fn()} onClose={vi.fn()} initialTab="stats" />
         );
 
-        fireEvent.click(screen.getByRole('button', { name: 'Punches' }));
-        expect(screen.getByRole('button', { name: 'Punches' })).toHaveAttribute('aria-pressed', 'true');
+        fireEvent.click(screen.getByRole('tab', { name: 'Overview' }));
+        expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
 
         view.rerender(
             <InfoStandWidgetUserView avatarInfo={createAvatarInfo('IUI_PEER', { webID: 9 }) as any} setAvatarInfo={vi.fn()} onClose={vi.fn()} initialTab="stats" />
         );
 
         expect(screen.getByRole('tab', { name: 'Stats' })).toHaveAttribute('aria-selected', 'true');
-        expect(screen.getByRole('button', { name: 'Combat' })).toHaveAttribute('aria-pressed', 'true');
         expect(state.affiliationsUserId).toBe(9);
     });
 

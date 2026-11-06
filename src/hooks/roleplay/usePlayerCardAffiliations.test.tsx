@@ -50,6 +50,8 @@ const reply = (requestId: number, userId: number, fields: Partial<{
     jobBadge: string;
     gang: string;
     gangBadge: string;
+    gangRank: string;
+    onDuty: boolean;
     rank: string;
     kills: number;
     deaths: number;
@@ -74,6 +76,8 @@ const reply = (requestId: number, userId: number, fields: Partial<{
         timesJailed: 0,
         jobBadge: '',
         gangBadge: '',
+        gangRank: '',
+        onDuty: false,
         ...fields
     })
 });
@@ -107,6 +111,8 @@ describe('usePlayerCardAffiliations', () =>
             jobBadge: 'b-job',
             gang: 'Kings',
             gangBadge: 'b-gang',
+            gangRank: 'Enforcer',
+            onDuty: true,
             rank: 'Captain',
             kills: 12,
             deaths: 4,
@@ -123,6 +129,8 @@ describe('usePlayerCardAffiliations', () =>
             jobBadge: 'b-job',
             gang: 'Kings',
             gangBadge: 'b-gang',
+            gangRank: 'Enforcer',
+            onDuty: true,
             rank: 'Captain',
             kills: 12,
             deaths: 4,

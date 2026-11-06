@@ -1,7 +1,9 @@
 import { RelationshipStatusEnum, RelationshipStatusInfo } from '@volt/renderer';
 import { FC } from 'react';
-import { GetUserProfile, LocalizeText, localizeWithFallback } from '../../../../../api';
-import { Flex, Text } from '../../../../../common';
+import { GetUserProfile } from '../../../../../api';
+
+// Plain words for the native heart/smile/bobba relationship icons.
+const RELATIONSHIP_LABELS: Record<string, string> = { heart: 'Partner', smile: 'Friend', bobba: 'Rival' };
 
 interface InfoStandWidgetUserRelationshipsRelationshipItemViewProps {
     type: number;
@@ -15,22 +17,18 @@ export const InfoStandWidgetUserRelationshipsRelationshipItemView: FC<InfoStandW
 
     const relationshipName = RelationshipStatusEnum.RELATIONSHIP_NAMES[type].toLocaleLowerCase();
 
+    const label = RELATIONSHIP_LABELS[relationshipName];
+
+    // One chip per relationship type: the icon and the shown friend's name, without the "and N others" count.
     return (
-        <div className="flex items-center gap-1">
-            <i className={`volt-friends-spritesheet icon-${relationshipName}`} />
-            <Flex alignItems="center" gap={0}>
-                <Text small variant="white" onClick={(event) => GetUserProfile(relationship.randomFriendId)}>
-                    <u>{relationship.randomFriendName}</u>
-                    {relationship.friendCount > 1 &&
-                        ' ' +
-                            localizeWithFallback(
-                                `infostand.relstatus.${relationshipName}.others`,
-                                LocalizeText(`extendedprofile.relstatus.others.${relationshipName}`, ['count'], [(relationship.friendCount - 1).toString()]),
-                                ['amount'],
-                                [(relationship.friendCount - 1).toString()]
-                            )}
-                </Text>
-            </Flex>
-        </div>
+        <button
+            type="button"
+            className="volt-infostand__relationship"
+            title={`${label}: ${relationship.randomFriendName}`}
+            onClick={() => GetUserProfile(relationship.randomFriendId)}
+        >
+            <i className={`volt-friends-spritesheet icon-${relationshipName}`} role="img" aria-label={label} />
+            <span>{relationship.randomFriendName}</span>
+        </button>
     );
 };

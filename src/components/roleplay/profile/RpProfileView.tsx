@@ -1,37 +1,27 @@
 import { GetSessionDataManager, RoomObjectType, UserProfileEvent } from '@volt/renderer';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { AvatarInfoUser } from '../../../api/room/widgets/AvatarInfoUser';
 import { GetRoomSession } from '../../../api/volt/session/GetRoomSession';
 import { useConnectionState } from '../../../hooks/events/useConnectionState';
 import { useMessageEvent } from '../../../hooks/events/useMessageEvent';
-import { usePlayerCardStore } from '../../../state/playerCardStore';
+import { PlayerCardSlot, usePlayerCardStore } from '../../../state/playerCardStore';
 import { InfoStandWidgetUserView } from '../../room/widgets/avatar-info/infostand/InfoStandWidgetUserView';
 
-/**
- * The single owner of the docked user card. It stays mounted outside the room widget, so profile links opened from
- * friends, chat or the toolbar work away from a room too. Native profile replies open the card on its Stats tab; the
- * card reads just one 6090 packet for that user.
- */
-export const RpProfileView = () =>
+export const PLAYER_CARD_HOSTS: Record<PlayerCardSlot, string> = { own: 'district-player-card', other: 'district-target-card' };
+
+/** One docked card slot: portals the slot's card into its HUD host and closes it on Escape while focus is inside. */
+const PlayerCardSlotView = ({ slot }: { slot: PlayerCardSlot }) =>
 {
-    const avatarInfo = usePlayerCardStore(state => state.avatarInfo);
-    const initialTab = usePlayerCardStore(state => state.initialTab);
-    const open = usePlayerCardStore(state => state.open);
+    const card = usePlayerCardStore(state => state[slot]);
     const close = usePlayerCardStore(state => state.close);
     const setAvatarInfo = usePlayerCardStore(state => state.setAvatarInfo);
-    const [profileOpenVersion, setProfileOpenVersion] = useState(0);
-    const { authenticated } = useConnectionState();
-    const host = typeof document === 'undefined' ? null : document.getElementById('district-player-card');
+    const host = typeof document === 'undefined' ? null : document.getElementById(PLAYER_CARD_HOSTS[slot]);
+    const isOpen = !!card;
 
     useEffect(() =>
     {
-        if(!authenticated) close();
-    }, [authenticated, close]);
-
-    useEffect(() =>
-    {
-        if(!avatarInfo || !host) return;
+        if(!isOpen || !host) return;
 
         const onKeyDown = (event: KeyboardEvent) =>
         {
@@ -42,13 +32,43 @@ export const RpProfileView = () =>
             if(!active || !host.contains(active)) return;
 
             event.stopPropagation();
-            close();
+            close(slot);
         };
 
         host.addEventListener('keydown', onKeyDown, true);
 
         return () => host.removeEventListener('keydown', onKeyDown, true);
-    }, [avatarInfo, close, host]);
+    }, [isOpen, close, host, slot]);
+
+    if(!card || !host) return null;
+
+    return createPortal(
+        <InfoStandWidgetUserView
+            key={`${card.avatarInfo.webID}:${card.version}`}
+            avatarInfo={card.avatarInfo}
+            setAvatarInfo={value => setAvatarInfo(slot, value)}
+            initialTab={card.initialTab}
+            onClose={() => close(slot)}
+        />,
+        host
+    );
+};
+
+/**
+ * The owner of the two docked user cards: your own under your HUD and anyone else's under the target HUD. It stays
+ * mounted outside the room widget, so profile links opened from friends, chat or the toolbar work away from a room too.
+ * Native profile replies open the card on its Stats tab; each card reads just one 6090 packet for its user.
+ */
+export const RpProfileView = () =>
+{
+    const open = usePlayerCardStore(state => state.open);
+    const close = usePlayerCardStore(state => state.close);
+    const { authenticated } = useConnectionState();
+
+    useEffect(() =>
+    {
+        if(!authenticated) close();
+    }, [authenticated, close]);
 
     useMessageEvent<UserProfileEvent>(UserProfileEvent, useCallback(event =>
     {
@@ -80,20 +100,15 @@ export const RpProfileView = () =>
         // Only a user actually standing in the current room may carry its room index.
         info.roomIndex = roomUser && roomUser.webID === userId && roomUser.type === RoomObjectType.USER ? roomUser.roomIndex : -1;
 
-        setProfileOpenVersion(version => version + 1);
         open(info, 'stats', 'profile');
     }, [authenticated, open]));
 
-    if(!authenticated || !avatarInfo || !host) return null;
+    if(!authenticated) return null;
 
-    return createPortal(
-        <InfoStandWidgetUserView
-            key={`${avatarInfo.webID}:${profileOpenVersion}`}
-            avatarInfo={avatarInfo}
-            setAvatarInfo={setAvatarInfo}
-            initialTab={initialTab}
-            onClose={close}
-        />,
-        host
+    return (
+        <>
+            <PlayerCardSlotView slot="own" />
+            <PlayerCardSlotView slot="other" />
+        </>
     );
 };

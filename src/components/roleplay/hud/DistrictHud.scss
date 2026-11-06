@@ -28,15 +28,16 @@ $panel-edge: #ffffff1a;
     left: var(--district-card-left, max(16px, env(safe-area-inset-left)));
     z-index: 72;
     box-sizing: border-box;
-    width: 190px;
-    max-width: min(190px, calc(100vw - var(--district-card-left, 16px) - 16px - env(safe-area-inset-right, 0px)));
+    width: 208px;
+    max-width: min(208px, calc(100vw - var(--district-card-left, 16px) - 16px - env(safe-area-inset-right, 0px)));
     max-height: calc(100vh - 32px);
     min-height: 0;
     pointer-events: none;
 }
 
 // Only the user card scrolls inside the measured host; other infostands keep their own sizing.
-#district-player-card > .volt-infostand.district-user-infostand {
+#district-player-card > .volt-infostand.district-user-infostand,
+#district-target-card > .volt-infostand.district-user-infostand {
     max-width: 100%;
     max-height: max(0px, calc(var(--district-card-max-height, calc(100dvh - 32px)) - env(safe-area-inset-bottom, 0px)));
     overflow-y: auto;

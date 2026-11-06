@@ -76,7 +76,7 @@ describe('useRpProfile', () =>
     {
         expect(killDeathRatio(12, 4)).toBe('3.00');
         expect(killDeathRatio(7, 3)).toBe('2.33');
-        expect(killDeathRatio(5, 0)).toBe('5');
-        expect(killDeathRatio(0, 0)).toBe('0');
+        expect(killDeathRatio(5, 0)).toBe('5.00');
+        expect(killDeathRatio(0, 0)).toBe('0.00');
     });
 });

@@ -107,7 +107,7 @@ describe('target HUD', () =>
     {
         render(<TargetHud />);
         const toggle = screen.getByRole('button', { name: 'Toggle target player card' });
-        expect(toggle).toHaveAttribute('aria-controls', 'district-player-card');
+        expect(toggle).toHaveAttribute('aria-controls', 'district-target-card');
         expect(toggle).toContainElement(screen.getByTestId('target-avatar'));
         fireEvent.click(toggle);
         expect(test.link).toHaveBeenCalledWith('avatar-info/toggle-user/22');

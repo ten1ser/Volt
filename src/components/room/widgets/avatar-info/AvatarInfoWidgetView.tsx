@@ -23,7 +23,7 @@ import {
 } from '../../../../api';
 import { Column, LayoutFurniIconImageView } from '../../../../common';
 import { useAvatarInfoWidget, useFurniPickupGuard, useObjectSelectedEvent, useVoltEvent, useRoom, useUiEvent } from '../../../../hooks';
-import { usePlayerCardStore } from '../../../../state/playerCardStore';
+import { playerCardSlot, usePlayerCardStore } from '../../../../state/playerCardStore';
 import { AvatarInfoPetTrainingPanelView } from './AvatarInfoPetTrainingPanelView';
 import { AvatarInfoRentableBotChatView } from './AvatarInfoRentableBotChatView';
 import { AvatarInfoUseProductConfirmView } from './AvatarInfoUseProductConfirmView';
@@ -67,7 +67,7 @@ export const AvatarInfoWidgetView: FC<{}> = (props) => {
     } = useAvatarInfoWidget();
     const { roomSession = null } = useRoom();
     const isPlayerCard = avatarInfo?.type === AvatarInfoUser.OWN_USER || avatarInfo?.type === AvatarInfoUser.PEER;
-    const cardVisible = usePlayerCardStore(state => state.avatarInfo !== null);
+    const cardVisible = usePlayerCardStore(state => state.own !== null || state.other !== null);
 
     const updateAvatarClickControl = (updates: { suppressMenuUntil?: number; suppressRotateUntil?: number }) => {
         const globalScope = globalThis as any;
@@ -143,16 +143,17 @@ export const AvatarInfoWidgetView: FC<{}> = (props) => {
 
                         if (!info || info.isSpectatorMode) return;
 
-                        const card = usePlayerCardStore.getState();
+                        const store = usePlayerCardStore.getState();
+                        const slot = playerCardSlot(info);
 
                         setActiveNameBubble(null);
 
-                        if (card.source === 'room' && card.avatarInfo?.webID === info.webID) {
-                            card.close();
+                        if (store[slot]?.source === 'room' && store[slot].avatarInfo.webID === info.webID) {
+                            store.close(slot);
                             return;
                         }
 
-                        card.open(info, 'overview', 'room');
+                        store.open(info, 'overview', 'room');
                         return;
                     }
                     case 'toggle-user': {
@@ -174,16 +175,17 @@ export const AvatarInfoWidgetView: FC<{}> = (props) => {
 
                         if (!info) return;
 
-                        const card = usePlayerCardStore.getState();
+                        const store = usePlayerCardStore.getState();
+                        const slot = playerCardSlot(info);
 
                         setActiveNameBubble(null);
 
-                        if (card.source === 'room' && card.avatarInfo?.webID === userId) {
-                            card.close();
+                        if (store[slot]?.source === 'room' && store[slot].avatarInfo.webID === userId) {
+                            store.close(slot);
                             return;
                         }
 
-                        card.open(info, 'overview', 'room');
+                        store.open(info, 'overview', 'room');
                         return;
                     }
                     case 'block-menu':
@@ -221,11 +223,7 @@ export const AvatarInfoWidgetView: FC<{}> = (props) => {
     const roomId = roomSession?.roomId ?? -1;
 
     useEffect(() => {
-        return () => {
-            const card = usePlayerCardStore.getState();
-
-            if (card.source === 'room') card.close();
-        };
+        return () => usePlayerCardStore.getState().closeRoomCards();
     }, [roomId]);
 
     const getMenuView = () => {

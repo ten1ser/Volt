@@ -36,8 +36,8 @@ export const allocateRpProfileRequestId = () =>
     return nextRequestId;
 };
 
-/** Kills per death; with no deaths the ratio is the kill count, shown as a whole number so it never reads as a division. */
-export const killDeathRatio = (kills: number, deaths: number): string => (deaths > 0 ? (kills / deaths).toFixed(2) : String(kills));
+/** Kills per death to two decimals; with no deaths the ratio is the kill count (5 kills, 0 deaths reads 5.00). */
+export const killDeathRatio = (kills: number, deaths: number): string => (deaths > 0 ? kills / deaths : kills).toFixed(2);
 
 /**
  * The DistrictRP profile window. Every existing "open profile" path still sends the native profile request; its reply gives

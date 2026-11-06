@@ -72,6 +72,7 @@ const profile = (overrides: Record<string, unknown> = {}) => ({
 const deliver = (parser: Record<string, unknown>) => act(() => test.handlers.get(renderer.UserProfileEvent)({ getParser: () => parser }));
 
 let host: HTMLElement;
+let targetHost: HTMLElement;
 
 describe('DistrictRP player card owner', () =>
 {
@@ -87,12 +88,18 @@ describe('DistrictRP player card owner', () =>
         host = document.createElement('div');
         host.id = 'district-player-card';
         document.body.appendChild(host);
+
+        document.getElementById('district-target-card')?.remove();
+        targetHost = document.createElement('div');
+        targetHost.id = 'district-target-card';
+        document.body.appendChild(targetHost);
     });
 
     afterEach(() =>
     {
         cleanup();
         host.remove();
+        targetHost.remove();
     });
 
     it('stays closed until a profile reply arrives', () =>
@@ -102,7 +109,7 @@ describe('DistrictRP player card owner', () =>
         expect(screen.queryByTestId('user-card')).toBeNull();
     });
 
-    it('opens one Stats card for own and peer profiles', () =>
+    it('opens your own card under your HUD and anyone else in the second slot, both at once', () =>
     {
         render(<RpProfileView />);
 
@@ -110,6 +117,7 @@ describe('DistrictRP player card owner', () =>
 
         const own = screen.getByTestId('user-card');
 
+        expect(host).toContainElement(own);
         expect(own).toHaveAttribute('data-webid', '5');
         expect(own).toHaveAttribute('data-type', 'IUI_OWN_USER');
         expect(own).toHaveAttribute('data-name', 'teniser');
@@ -118,14 +126,21 @@ describe('DistrictRP player card owner', () =>
 
         deliver(profile({ id: 6, username: 'Mara', figure: 'hd-200-1', motto: 'hey' }));
 
-        expect(screen.getAllByTestId('user-card')).toHaveLength(1);
+        expect(screen.getAllByTestId('user-card')).toHaveLength(2);
+        expect(host.querySelector('[data-testid="user-card"]')).toHaveAttribute('data-webid', '5');
 
-        const peer = screen.getByTestId('user-card');
+        const peer = targetHost.querySelector('[data-testid="user-card"]');
 
         expect(peer).toHaveAttribute('data-webid', '6');
         expect(peer).toHaveAttribute('data-type', 'IUI_PEER');
         expect(peer).toHaveAttribute('data-name', 'Mara');
         expect(peer).toHaveAttribute('data-tab', 'stats');
+
+        // A second other player replaces the first in the same slot.
+        deliver(profile({ id: 7, username: 'Iris', figure: 'hd-200-1' }));
+
+        expect(screen.getAllByTestId('user-card')).toHaveLength(2);
+        expect(targetHost.querySelector('[data-testid="user-card"]')).toHaveAttribute('data-webid', '7');
     });
 
     it('reopens Stats for the same user when a profile link fires again', () =>
@@ -192,7 +207,8 @@ describe('DistrictRP player card owner', () =>
         view.rerender(<RpProfileView />);
 
         expect(screen.queryByTestId('user-card')).toBeNull();
-        expect(usePlayerCardStore.getState().avatarInfo).toBeNull();
+        expect(usePlayerCardStore.getState().own).toBeNull();
+        expect(usePlayerCardStore.getState().other).toBeNull();
 
         test.authenticated = true;
         view.rerender(<RpProfileView />);

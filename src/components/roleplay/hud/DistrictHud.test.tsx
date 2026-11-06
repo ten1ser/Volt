@@ -135,4 +135,33 @@ describe('phone-first HUD', () =>
         expect(host).toHaveStyle({ top: '350px' });
         expect(host.style.maxHeight).toBe(`${window.innerHeight - 350 - 16}px`);
     });
+    it('places the other player card under the target HUD when it sits beside yours, else next to your card', () =>
+    {
+        render(<DistrictHud />);
+        const vitals = document.querySelector('.district-vitals') as HTMLElement;
+        const host = document.getElementById('district-target-card') as HTMLElement;
+
+        expect(host).toHaveClass('district-player-card');
+        expect(vitals.contains(host)).toBe(false);
+
+        vi.spyOn(vitals, 'getBoundingClientRect').mockReturnValue({ left: 120, top: 16, right: 700, bottom: 300, width: 580, height: 284, x: 120, y: 16, toJSON: () => ({}) } as DOMRect);
+        act(() => { window.dispatchEvent(new Event('resize')); });
+
+        // No target HUD: one card width (208) plus a 10px gap to the right of your card.
+        expect(host).toHaveStyle({ left: '338px', top: '310px' });
+
+        const target = document.createElement('section');
+        target.className = 'rp-target-hud';
+        vitals.appendChild(target);
+        const targetRect = vi.spyOn(target, 'getBoundingClientRect').mockReturnValue({ left: 420 } as DOMRect);
+        act(() => { window.dispatchEvent(new Event('resize')); });
+
+        expect(host).toHaveStyle({ left: '420px', top: '310px' });
+
+        // Narrow layout stacks the target HUD under yours (same left): fall back to beside your card.
+        targetRect.mockReturnValue({ left: 120 } as DOMRect);
+        act(() => { window.dispatchEvent(new Event('resize')); });
+
+        expect(host).toHaveStyle({ left: '338px' });
+    });
 });

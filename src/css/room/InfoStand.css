@@ -1055,7 +1055,7 @@
 /* DistrictRP user infostand: compact charcoal panel without badge rank or achievement score. */
 .volt-infostand.district-user-infostand {
     box-sizing: border-box;
-    width: min(190px, calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+    width: min(208px, calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
     min-width: 0;
     max-width: calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
     max-height: calc(100vh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
@@ -1091,48 +1091,12 @@
         pointer-events: none;
     }
 
-    .volt-infostand__header {
-        position: static;
+    /* No name header: the tabs and the close button share the top row. */
+    .volt-infostand__tab-row {
         display: flex;
         align-items: center;
         gap: 6px;
-        width: auto;
-        min-width: 0;
-        height: auto;
-        padding-bottom: 6px;
-        border-bottom: 1px solid color-mix(in srgb, var(--district-ui-accent) 45%, transparent);
-    }
-
-    .volt-infostand__profile-link {
-        position: static;
-        flex: 1 1 auto;
-        width: auto;
-        min-width: 0;
-        height: auto;
-        padding: 0;
-        overflow: hidden;
-        color: var(--district-ui-text);
-    }
-
-    .volt-infostand__identity,
-    .volt-infostand__identity > span {
-        display: block;
-        min-width: 0;
-        max-width: 100%;
-        overflow: hidden;
-        color: var(--district-ui-text);
-        font-family: var(--district-ui-font);
-        font-size: 16px;
-        font-weight: 700;
-        line-height: 20px;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        filter: none;
-    }
-
-    .volt-infostand__profile-link:hover .volt-infostand__identity,
-    .volt-infostand__profile-link:hover .volt-infostand__identity > span {
-        color: var(--district-ui-accent-hover);
+        border-bottom: 1px solid color-mix(in srgb, var(--district-ui-border) 55%, transparent);
     }
 
     .volt-infostand__close {
@@ -1166,9 +1130,9 @@
 
     .volt-infostand__tabs {
         display: flex;
+        flex: 1 1 auto;
         gap: 4px;
-        margin-top: 8px;
-        border-bottom: 1px solid color-mix(in srgb, var(--district-ui-border) 55%, transparent);
+        min-width: 0;
     }
 
     .volt-infostand__tab {
@@ -1215,6 +1179,24 @@
                 transform: scaleX(1);
             }
         }
+
+        /* Keyboard focus tints the tab instead of boxing it, so it never reads as a second selected style. */
+        &:focus-visible {
+            outline: none;
+            color: var(--district-ui-text);
+            background: var(--district-ui-raised);
+        }
+    }
+
+    .volt-infostand__section-caption {
+        margin: 0 0 4px;
+        color: var(--district-ui-muted);
+        font-family: var(--district-ui-font);
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 14px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
     }
 
     .volt-infostand__panel {
@@ -1223,19 +1205,180 @@
     }
 
     .volt-infostand__panel--stats {
+        box-sizing: border-box;
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        padding-top: 4px;
+        padding-top: 6px;
     }
 
-    .volt-infostand__stats-role {
-        margin: 0;
-        color: var(--district-ui-muted);
+    .volt-infostand__stats-section + .volt-infostand__stats-section {
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid color-mix(in srgb, var(--district-ui-border) 55%, transparent);
+    }
+
+    /* K/D hero: the ratio large in brass, rank on the right, a kills-versus-deaths bar under it. */
+    .volt-infostand__kd-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .volt-infostand__kd-ratio {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+
+        .volt-infostand__section-caption {
+            margin: 0;
+        }
+
+        strong {
+            color: var(--district-ui-accent);
+            font-family: var(--district-ui-font);
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 30px;
+            font-variant-numeric: tabular-nums;
+        }
+    }
+
+    .volt-infostand__kd-rank {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        min-width: 0;
+        max-width: 55%;
+        padding-bottom: 3px;
+        text-align: right;
+
+        span {
+            color: var(--district-ui-muted);
+            font-family: var(--district-ui-font);
+            font-size: 11px;
+            line-height: 14px;
+        }
+
+        strong {
+            max-width: 100%;
+            overflow: hidden;
+            color: var(--district-ui-text);
+            font-family: var(--district-ui-font);
+            font-size: 12px;
+            font-weight: 400;
+            line-height: 15px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    .volt-infostand__kd-bar,
+    .volt-infostand__meter {
+        overflow: hidden;
+        background: color-mix(in srgb, var(--district-ui-border) 55%, transparent);
+
+        span {
+            display: block;
+            height: 100%;
+            background: var(--district-ui-accent);
+        }
+    }
+
+    .volt-infostand__kd-bar {
+        height: 6px;
+        margin-top: 6px;
+        border-radius: 3px;
+
+        &.has-deaths {
+            background: var(--district-ui-danger);
+        }
+    }
+
+    .volt-infostand__kd-legend {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 3px;
+        font-family: var(--district-ui-font);
+        font-size: 11px;
+        line-height: 14px;
+        font-variant-numeric: tabular-nums;
+
+        span {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .is-kills {
+            color: var(--district-ui-accent);
+        }
+
+        .is-deaths {
+            color: color-mix(in srgb, var(--district-ui-danger) 65%, var(--district-ui-text));
+        }
+    }
+
+    .volt-infostand__meter-row,
+    .volt-infostand__record-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        color: var(--district-ui-text);
         font-family: var(--district-ui-font);
         font-size: 12px;
         line-height: 16px;
-        overflow-wrap: anywhere;
+        font-variant-numeric: tabular-nums;
+
+        span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        strong {
+            font-weight: 700;
+        }
+    }
+
+    .volt-infostand__meter {
+        height: 4px;
+        margin: 3px 0 8px;
+        border-radius: 2px;
+    }
+
+    .volt-infostand__record-icon {
+        width: 12px;
+        height: 12px;
+        fill: none;
+        stroke: var(--district-ui-muted);
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    /* Clean record in brass, a jail history in the danger red. */
+    .volt-infostand__record-tag {
+        margin: 6px 0 0;
+        padding: 3px 6px;
+        border: 1px solid color-mix(in srgb, var(--district-ui-accent) 55%, transparent);
+        border-radius: 4px;
+        background: color-mix(in srgb, var(--district-ui-accent) 10%, transparent);
+        color: var(--district-ui-accent);
+        font-family: var(--district-ui-font);
+        font-size: 11px;
+        line-height: 14px;
+        text-align: center;
+
+        &.is-offender {
+            border-color: var(--district-ui-danger);
+            background: color-mix(in srgb, var(--district-ui-danger) 12%, transparent);
+            color: color-mix(in srgb, var(--district-ui-danger) 65%, var(--district-ui-text));
+        }
     }
 
     .volt-infostand__stats-message {
@@ -1247,47 +1390,10 @@
         line-height: 16px;
     }
 
-    .volt-infostand__stats-toggle {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 2px;
-        padding: 2px;
-        border: 1px solid color-mix(in srgb, var(--district-ui-border) 60%, transparent);
-        border-radius: 4px;
-        background: var(--district-ui-inset);
-    }
-
-    .volt-infostand__stats-toggle-button {
-        padding: 4px 6px;
-        border: 0;
-        border-radius: 3px;
-        background: transparent;
-        color: var(--district-ui-muted);
-        font-family: var(--district-ui-font);
-        font-size: 11px;
-        font-weight: 600;
-        line-height: 15px;
-        cursor: pointer;
-        transition: background-color 140ms ease, color 140ms ease;
-
-        &:hover {
-            color: var(--district-ui-text);
-        }
-
-        &[aria-pressed='true'] {
-            background: var(--district-ui-raised);
-            color: var(--district-ui-accent-hover);
-        }
-    }
-
     .volt-infostand__stats-grid {
         display: grid;
         gap: 6px;
         min-width: 0;
-    }
-
-    .volt-infostand__stats-grid--combat {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .volt-infostand__stats-grid--punches {
@@ -1326,8 +1432,8 @@
             overflow: hidden;
             color: var(--district-ui-muted);
             font-family: var(--district-ui-font);
-            font-size: 10px;
-            line-height: 13px;
+            font-size: 11px;
+            line-height: 14px;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
@@ -1395,6 +1501,59 @@
         }
     }
 
+    .volt-infostand__stage {
+        position: relative;
+
+        /* The duty ribbon takes the bottom 20px, so the stage grows by that much and the feet stay clear. */
+        &.has-duty .volt-infostand__avatar-well {
+            height: 130px;
+
+            &::after {
+                bottom: 30px;
+            }
+        }
+    }
+
+    .volt-infostand__duty {
+        position: absolute;
+        right: 1px;
+        bottom: 1px;
+        left: 1px;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 6px;
+        overflow: hidden;
+        border-radius: 0 0 3px 3px;
+        background: color-mix(in srgb, var(--district-ui-inset) 82%, transparent);
+        color: var(--district-ui-muted);
+        font-family: var(--district-ui-font);
+        font-size: 11px;
+        line-height: 14px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        pointer-events: none;
+
+        &::before {
+            flex: none;
+            width: 6px;
+            height: 6px;
+            content: '';
+            border-radius: 50%;
+            background: var(--district-ui-muted);
+        }
+
+        &.is-on {
+            color: var(--district-ui-text);
+
+            &::before {
+                background: var(--district-ui-accent);
+                box-shadow: 0 0 4px var(--district-ui-accent);
+            }
+        }
+    }
+
     .volt-infostand__avatar {
         top: 12px !important;
         left: 50% !important;
@@ -1403,31 +1562,54 @@
     }
 
     .volt-infostand__badges {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        grid-auto-rows: auto;
-        justify-items: center;
-        gap: 8px;
-        width: 100%;
-        margin: 0;
-    }
-
-    /* Two readonly affiliation mounts: the actual job and gang badges with their names underneath. */
-    .volt-infostand__affiliation {
+        box-sizing: border-box;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        gap: 3px;
+        width: 100%;
+        margin: 8px 0 0;
+        border: 1px solid color-mix(in srgb, var(--district-ui-border) 55%, transparent);
+        border-radius: 4px;
+    }
+
+    /* Two readonly affiliation rows in one framed list: badge on the left, caption, name and rank beside it. */
+    .volt-infostand__affiliation {
+        box-sizing: border-box;
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        grid-template-rows: auto auto auto;
+        column-gap: 8px;
+        align-content: center;
         width: 100%;
         min-width: 0;
         max-width: 100%;
-        text-align: center;
+        padding: 6px;
+        text-align: left;
+
+        & + & {
+            border-top: 1px solid color-mix(in srgb, var(--district-ui-border) 55%, transparent);
+        }
+    }
+
+    .volt-infostand__affiliation-role {
+        grid-column: 2;
+        min-width: 0;
+        overflow: hidden;
+        color: var(--district-ui-muted);
+        font-family: var(--district-ui-font);
+        font-size: 11px;
+        line-height: 14px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        &.is-accent {
+            color: var(--district-ui-accent);
+        }
     }
 
     .volt-infostand__affiliation-badge {
         display: grid;
+        grid-row: 1 / span 3;
         place-items: center;
-        flex: 0 0 42px;
         box-sizing: border-box;
         width: 42px;
         height: 42px;
@@ -1448,13 +1630,19 @@
     }
 
     .volt-infostand__affiliation-caption {
+        align-self: end;
         color: var(--district-ui-muted);
         font-family: var(--district-ui-font);
-        font-size: 12px;
+        font-size: 11px;
+        font-weight: 600;
         line-height: 14px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
     }
 
     .volt-infostand__affiliation-name {
+        align-self: start;
+        min-width: 0;
         max-width: 100%;
         overflow: hidden;
         color: var(--district-ui-text);
@@ -1496,18 +1684,21 @@
         line-height: 1;
     }
 
+    /* Framed one-line motto field, like the native motto box; the pencil sits at its right on your own card. */
     .volt-infostand__motto--box {
+        box-sizing: border-box;
         display: flex;
-        align-items: flex-start;
-        gap: 4px;
+        align-items: center;
+        gap: 6px;
         min-width: 0;
-        min-height: 0;
+        min-height: 26px;
         max-height: none;
-        margin: 12px 0 0;
-        padding: 7px 8px 7px 24px;
-        border: 1px solid color-mix(in srgb, var(--district-ui-border) 45%, transparent);
+        margin: 8px 0 0;
+        padding: 4px 6px;
+        border: 1px solid var(--district-ui-border);
         border-radius: 4px;
-        background: color-mix(in srgb, var(--district-ui-inset) 65%, transparent);
+        background: var(--district-ui-inset);
+        box-shadow: inset 0 1px 2px rgb(0 0 0 / 45%);
         overflow: visible;
 
         &::before {
@@ -1522,9 +1713,9 @@
     }
 
     .volt-infostand__pen {
-        top: 6px;
-        left: 5px;
-        opacity: 1;
+        position: static;
+        flex: none;
+        opacity: 0.85;
     }
 
     .volt-infostand__motto-text {
@@ -1532,8 +1723,9 @@
         min-width: 0;
         max-height: none;
         padding: 0;
-        overflow: visible;
-        overflow-wrap: anywhere;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
         color: var(--district-ui-text);
         font-family: var(--district-ui-font);
         font-size: 12px;
@@ -1552,15 +1744,23 @@
         }
     }
 
-    button.volt-infostand__motto-text {
-        display: block;
-        width: 100%;
+    .volt-infostand__motto-edit {
+        display: flex;
+        flex: 1 1 auto;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
         margin: 0;
         padding: 0;
         border: 0;
         border-radius: 0;
         background: none;
+        text-align: left;
         cursor: text;
+
+        &:hover .volt-infostand__pen {
+            opacity: 1;
+        }
     }
 
     .motto-input {
@@ -1610,9 +1810,41 @@
     }
 
     .volt-infostand__relationships {
-        min-height: 0;
+        display: flex;
+        flex-wrap: wrap;
         gap: 4px;
+        min-height: 0;
+        margin-top: 8px;
         font-family: var(--district-ui-font);
+    }
+
+    .volt-infostand__relationship {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        max-width: 100%;
+        min-width: 0;
+        padding: 1px 8px 1px 4px;
+        border: 1px solid var(--district-ui-border);
+        border-radius: 10px;
+        background: transparent;
+        color: var(--district-ui-text);
+        font-family: var(--district-ui-font);
+        font-size: 11px;
+        line-height: 16px;
+        cursor: pointer;
+
+        span {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        &:hover {
+            border-color: var(--district-ui-accent);
+            color: var(--district-ui-accent-hover);
+        }
     }
 
     .flex-tags {
@@ -1667,8 +1899,7 @@
     }
 
     .volt-infostand.district-user-infostand .volt-infostand__tab,
-    .volt-infostand.district-user-infostand .volt-infostand__tab::after,
-    .volt-infostand.district-user-infostand .volt-infostand__stats-toggle-button {
+    .volt-infostand.district-user-infostand .volt-infostand__tab::after {
         transition: none;
     }
 

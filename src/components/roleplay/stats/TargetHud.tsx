@@ -28,7 +28,7 @@ export const TargetHud: FC = () =>
                         type="button"
                         className="rp-target-hud__portrait-toggle"
                         aria-label="Toggle target player card"
-                        aria-controls="district-player-card"
+                        aria-controls="district-target-card"
                         title="Toggle target player card"
                         disabled={!roomSession || !!unavailable}
                         onClick={() => CreateLinkEvent(`avatar-info/toggle-user/${target.userId}`)}

@@ -1,83 +1,239 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { usePlayerCardStore } from '../../../state/playerCardStore';
 import { RpProfileView } from './RpProfileView';
 
-const test = vi.hoisted(() => ({ identity: null as any, card: null as any, close: vi.fn() }));
-vi.mock('../../../common', () => ({ VoltCardView: ({ children }: any) => <div>{children}</div> }));
-vi.mock('../../../common/layout/LayoutAvatarImageView', () => ({ LayoutAvatarImageView: () => <div data-testid="avatar" /> }));
-vi.mock('../../../hooks/roleplay/useRpProfile', async () =>
+const test = vi.hoisted(() => ({
+    handlers: new Map<unknown, (event: unknown) => void>(),
+    authenticated: true,
+    userId: 5,
+    roomSession: null as any
+}));
+
+vi.mock('@volt/renderer', () =>
 {
-    const actual = await vi.importActual<typeof import('../../../hooks/roleplay/useRpProfile')>('../../../hooks/roleplay/useRpProfile');
-    return { ...actual, useRpProfile: () => ({ identity: test.identity, card: test.card, close: test.close }) };
+    class UserProfileEvent
+    {}
+
+    return {
+        UserProfileEvent,
+        RoomObjectType: { USER: 1 },
+        GetSessionDataManager: () => ({ userId: test.userId })
+    };
+});
+vi.mock('../../../hooks/events/useMessageEvent', () => ({
+    useMessageEvent: (type: unknown, handler: (event: unknown) => void) => test.handlers.set(type, handler)
+}));
+vi.mock('../../../hooks/events/useConnectionState', () => ({ useConnectionState: () => ({ authenticated: test.authenticated }) }));
+vi.mock('../../../api/volt/session/GetRoomSession', () => ({ GetRoomSession: () => test.roomSession }));
+vi.mock('../../room/widgets/avatar-info/infostand/InfoStandWidgetUserView', () => ({
+    InfoStandWidgetUserView: ({ avatarInfo, initialTab, setAvatarInfo, onClose }: any) =>
+    {
+        const [tab, setTab] = useState(initialTab);
+
+        return (
+            <div
+                data-testid="user-card"
+                role="dialog"
+                aria-label="Player card"
+                data-webid={avatarInfo.webID}
+                data-name={avatarInfo.name}
+                data-motto={avatarInfo.motto}
+                data-tab={tab}
+                data-type={avatarInfo.type}
+                data-roomindex={avatarInfo.roomIndex}
+            >
+                <button type="button" onClick={onClose}>close-card</button>
+                <button type="button" onClick={() => setTab('overview')}>switch-overview</button>
+                <button
+                    type="button"
+                    onClick={() => setAvatarInfo((previous: any) => ({ ...previous, motto: 'edited' }))}
+                >
+                    update-card
+                </button>
+                <input aria-label="card-input" />
+            </div>
+        );
+    }
+}));
+
+const renderer = await import('@volt/renderer');
+
+const profile = (overrides: Record<string, unknown> = {}) => ({
+    id: 5,
+    username: 'teniser',
+    figure: 'hd-180-1',
+    motto: 'hello',
+    openProfileWindow: true,
+    ...overrides
 });
 
-const card = (overrides = {}) => ({ available: true, gang: '', job: 'Hospital', rank: 'Trainee', kills: 12, deaths: 4,
-    punchesThrown: 248, punchesMissed: 61, punchesReceived: 190, timesJailed: 2, ...overrides });
-const statValue = (label: string) => screen.getByText(label).previousElementSibling?.textContent;
+const deliver = (parser: Record<string, unknown>) => act(() => test.handlers.get(renderer.UserProfileEvent)({ getParser: () => parser }));
 
-describe('DistrictRP profile window', () =>
+let host: HTMLElement;
+
+describe('DistrictRP player card owner', () =>
 {
     beforeEach(() =>
     {
-        test.identity = { userId: 5, username: 'teniser', figure: 'hd-180-1' };
-        test.card = card();
-        test.close.mockClear();
-    });
-    afterEach(cleanup);
+        test.handlers.clear();
+        test.authenticated = true;
+        test.userId = 5;
+        test.roomSession = null;
+        usePlayerCardStore.getState().close();
 
-    it('stays closed until a profile is opened', () =>
+        document.getElementById('district-player-card')?.remove();
+        host = document.createElement('div');
+        host.id = 'district-player-card';
+        document.body.appendChild(host);
+    });
+
+    afterEach(() =>
     {
-        test.identity = null;
+        cleanup();
+        host.remove();
+    });
+
+    it('stays closed until a profile reply arrives', () =>
+    {
         render(<RpProfileView />);
-        expect(screen.queryByRole('dialog')).toBeNull();
+
+        expect(screen.queryByTestId('user-card')).toBeNull();
     });
 
-    it('shows the name, job and rank, and every fight counter with the K/D ratio', () =>
+    it('opens one Stats card for own and peer profiles', () =>
     {
         render(<RpProfileView />);
-        expect(screen.getByRole('heading', { name: 'teniser' })).toBeInTheDocument();
-        expect(screen.getByText('Hospital, Trainee')).toBeInTheDocument();
-        expect(screen.getByTestId('avatar')).toBeInTheDocument();
-        expect([statValue('K/D'), statValue('Kills'), statValue('Deaths'), statValue('Jailed')]).toEqual(['3.00', '12', '4', '2']);
-        expect(screen.queryByText('Thrown')).toBeNull();
-        fireEvent.click(screen.getByRole('tab', { name: 'Punches' }));
-        expect(screen.getByRole('tab', { name: 'Punches' })).toHaveAttribute('aria-selected', 'true');
-        expect([statValue('Thrown'), statValue('Missed'), statValue('Received')]).toEqual(['248', '61', '190']);
-        expect(screen.queryByText('Kills')).toBeNull();
+
+        deliver(profile());
+
+        const own = screen.getByTestId('user-card');
+
+        expect(own).toHaveAttribute('data-webid', '5');
+        expect(own).toHaveAttribute('data-type', 'IUI_OWN_USER');
+        expect(own).toHaveAttribute('data-name', 'teniser');
+        expect(own).toHaveAttribute('data-motto', 'hello');
+        expect(own).toHaveAttribute('data-tab', 'stats');
+
+        deliver(profile({ id: 6, username: 'Mara', figure: 'hd-200-1', motto: 'hey' }));
+
+        expect(screen.getAllByTestId('user-card')).toHaveLength(1);
+
+        const peer = screen.getByTestId('user-card');
+
+        expect(peer).toHaveAttribute('data-webid', '6');
+        expect(peer).toHaveAttribute('data-type', 'IUI_PEER');
+        expect(peer).toHaveAttribute('data-name', 'Mara');
+        expect(peer).toHaveAttribute('data-tab', 'stats');
     });
 
-    it('shows the kill count as a whole number when there are no deaths', () =>
+    it('reopens Stats for the same user when a profile link fires again', () =>
     {
-        test.card = card({ kills: 2, deaths: 0 });
         render(<RpProfileView />);
-        expect(statValue('K/D')).toBe('2');
-        expect(screen.getByText('K/D').parentElement).toHaveAttribute('title', 'No deaths yet: K/D is the kill count');
+
+        deliver(profile());
+        expect(screen.getByTestId('user-card')).toHaveAttribute('data-tab', 'stats');
+
+        fireEvent.click(screen.getByRole('button', { name: 'switch-overview' }));
+        expect(screen.getByTestId('user-card')).toHaveAttribute('data-tab', 'overview');
+
+        deliver(profile({ id: 0 }));
+        deliver(profile({ openProfileWindow: false }));
+        expect(screen.getByTestId('user-card')).toHaveAttribute('data-tab', 'overview');
+
+        deliver(profile());
+
+        expect(screen.getAllByTestId('user-card')).toHaveLength(1);
+        expect(screen.getByTestId('user-card')).toHaveAttribute('data-tab', 'stats');
     });
 
-    it('shows the gang only when there is one, and says unemployed without a job', () =>
+    it('uses the current room index only when the profile user is really in it', () =>
     {
-        test.card = card({ gang: 'Southside Kings', job: '', rank: '' });
         render(<RpProfileView />);
-        expect(screen.getByText('Southside Kings')).toBeInTheDocument();
-        expect(screen.getByText('Unemployed')).toBeInTheDocument();
+
+        deliver(profile({ id: 6, username: 'Mara' }));
+        expect(screen.getByTestId('user-card')).toHaveAttribute('data-roomindex', '-1');
+
+        test.roomSession = { userDataManager: { getUserData: (id: number) => ({ webID: id, type: 1, roomIndex: 9 }) } };
+        deliver(profile({ id: 6, username: 'Mara' }));
+        expect(screen.getByTestId('user-card')).toHaveAttribute('data-roomindex', '9');
+
+        test.roomSession = { userDataManager: { getUserData: () => ({ webID: 7, type: 1, roomIndex: 9 }) } };
+        deliver(profile({ id: 6, username: 'Mara' }));
+        expect(screen.getByTestId('user-card')).toHaveAttribute('data-roomindex', '-1');
     });
 
-    it('shows placeholders while loading and a notice when unavailable', () =>
+    it('ignores an explicitly closed profile but keeps legacy replies compatible', () =>
     {
-        test.card = null;
+        render(<RpProfileView />);
+
+        deliver(profile({ openProfileWindow: false }));
+        expect(screen.queryByTestId('user-card')).toBeNull();
+
+        deliver(profile({ openProfileWindow: undefined }));
+        expect(screen.getByTestId('user-card')).toBeInTheDocument();
+    });
+
+    it('ignores invalid identities and clears on logout without stale data reappearing', () =>
+    {
         const view = render(<RpProfileView />);
-        expect(statValue('Kills')).toBe('–');
-        expect(statValue('K/D')).toBe('–');
-        test.card = card({ available: false });
+
+        for (const invalid of [{ id: 0 }, { id: -1 }, { id: 1.5 }, { username: '' }, { username: '   ' }, { figure: '' }])
+        {
+            deliver(profile(invalid));
+            expect(screen.queryByTestId('user-card')).toBeNull();
+        }
+
+        deliver(profile());
+        expect(screen.getByTestId('user-card')).toBeInTheDocument();
+
+        test.authenticated = false;
         view.rerender(<RpProfileView />);
-        expect(screen.getByRole('status')).toHaveTextContent('This profile is not available.');
+
+        expect(screen.queryByTestId('user-card')).toBeNull();
+        expect(usePlayerCardStore.getState().avatarInfo).toBeNull();
+
+        test.authenticated = true;
+        view.rerender(<RpProfileView />);
+
+        expect(screen.queryByTestId('user-card')).toBeNull();
+
+        deliver(profile());
+        expect(screen.getByTestId('user-card')).toBeInTheDocument();
     });
 
-    it('closes with the close button and Escape', () =>
+    it('closes from the card control and from Escape while focus is inside', () =>
     {
         render(<RpProfileView />);
-        fireEvent.click(screen.getByRole('button', { name: 'Close profile' }));
-        fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
-        expect(test.close).toHaveBeenCalledTimes(2);
+        deliver(profile());
+
+        fireEvent.click(screen.getByRole('button', { name: 'close-card' }));
+        expect(screen.queryByTestId('user-card')).toBeNull();
+
+        deliver(profile());
+
+        const input = screen.getByLabelText('card-input');
+
+        input.focus();
+        fireEvent.keyDown(document.body, { key: 'Escape' });
+        expect(screen.getByTestId('user-card')).toBeInTheDocument();
+
+        fireEvent.keyDown(input, { key: 'Escape' });
+        expect(screen.queryByTestId('user-card')).toBeNull();
+    });
+
+    it('applies native InfoStand updates through the store without changing identity', () =>
+    {
+        render(<RpProfileView />);
+        deliver(profile());
+
+        fireEvent.click(screen.getByRole('button', { name: 'update-card' }));
+
+        const card = screen.getByTestId('user-card');
+
+        expect(card).toHaveAttribute('data-motto', 'edited');
+        expect(card).toHaveAttribute('data-webid', '5');
+        expect(card).toHaveAttribute('data-tab', 'stats');
     });
 });

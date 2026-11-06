@@ -7,6 +7,8 @@ import {
     RoomEngineEvent,
     RoomEngineObjectEvent,
     RoomEnterEffect,
+    RoomObjectCategory,
+    RoomObjectType,
     RoomSessionDanceEvent
 } from '@volt/renderer';
 import { FC, useEffect, useState } from 'react';
@@ -15,11 +17,13 @@ import {
     AvatarInfoPet,
     AvatarInfoRentableBot,
     AvatarInfoUser,
+    AvatarInfoUtilities,
     GetConfigurationValue,
     RoomWidgetUpdateRentableBotChatEvent
 } from '../../../../api';
 import { Column, LayoutFurniIconImageView } from '../../../../common';
-import { useAvatarInfoWidget, useFurniPickupGuard, useVoltEvent, useRoom, useUiEvent } from '../../../../hooks';
+import { useAvatarInfoWidget, useFurniPickupGuard, useObjectSelectedEvent, useVoltEvent, useRoom, useUiEvent } from '../../../../hooks';
+import { usePlayerCardStore } from '../../../../state/playerCardStore';
 import { AvatarInfoPetTrainingPanelView } from './AvatarInfoPetTrainingPanelView';
 import { AvatarInfoRentableBotChatView } from './AvatarInfoRentableBotChatView';
 import { AvatarInfoUseProductConfirmView } from './AvatarInfoUseProductConfirmView';
@@ -28,7 +32,6 @@ import { InfoStandWidgetBotView } from './infostand/InfoStandWidgetBotView';
 import { InfoStandWidgetFurniView } from './infostand/InfoStandWidgetFurniView';
 import { InfoStandWidgetPetView } from './infostand/InfoStandWidgetPetView';
 import { InfoStandWidgetRentableBotView } from './infostand/InfoStandWidgetRentableBotView';
-import { InfoStandWidgetUserView } from './infostand/InfoStandWidgetUserView';
 import { AvatarInfoWidgetAvatarView } from './menu/AvatarInfoWidgetAvatarView';
 import { AvatarInfoWidgetDecorateView } from './menu/AvatarInfoWidgetDecorateView';
 import { AvatarInfoWidgetFurniView } from './menu/AvatarInfoWidgetFurniView';
@@ -63,6 +66,8 @@ export const AvatarInfoWidgetView: FC<{}> = (props) => {
         setIsDecorating = null
     } = useAvatarInfoWidget();
     const { roomSession = null } = useRoom();
+    const isPlayerCard = avatarInfo?.type === AvatarInfoUser.OWN_USER || avatarInfo?.type === AvatarInfoUser.PEER;
+    const cardVisible = usePlayerCardStore(state => state.avatarInfo !== null);
 
     const updateAvatarClickControl = (updates: { suppressMenuUntil?: number; suppressRotateUntil?: number }) => {
         const globalScope = globalThis as any;
@@ -123,11 +128,67 @@ export const AvatarInfoWidgetView: FC<{}> = (props) => {
                     case 'hide':
                         setAvatarInfo(null);
                         setActiveNameBubble(null);
+                        usePlayerCardStore.getState().close();
 
                         if (roomSession) GetRoomEngine().clearSelectedAvatar(roomSession.roomId);
                         return;
+                    case 'toggle-own': {
+                        if (!roomSession || isGameMode || roomSession.isSpectator || RoomEnterEffect.isRunning()) return;
+
+                        const userData = roomSession.userDataManager?.getUserDataByIndex(roomSession.ownRoomIndex);
+
+                        if (!userData) return;
+
+                        const info = AvatarInfoUtilities.getUserInfo(RoomObjectCategory.UNIT, userData);
+
+                        if (!info || info.isSpectatorMode) return;
+
+                        const card = usePlayerCardStore.getState();
+
+                        setActiveNameBubble(null);
+
+                        if (card.source === 'room' && card.avatarInfo?.webID === info.webID) {
+                            card.close();
+                            return;
+                        }
+
+                        card.open(info, 'overview', 'room');
+                        return;
+                    }
+                    case 'toggle-user': {
+                        if (!roomSession || isGameMode || roomSession.isSpectator || RoomEnterEffect.isRunning()) return;
+
+                        const rawUserId = parts[2];
+
+                        if (!rawUserId || !/^\d+$/.test(rawUserId)) return;
+
+                        const userId = Number(rawUserId);
+
+                        if (!Number.isSafeInteger(userId) || userId <= 0) return;
+
+                        const userData = roomSession.userDataManager?.getUserData(userId);
+
+                        if (!userData || userData.webID !== userId || userData.type !== RoomObjectType.USER) return;
+
+                        const info = AvatarInfoUtilities.getUserInfo(RoomObjectCategory.UNIT, userData);
+
+                        if (!info) return;
+
+                        const card = usePlayerCardStore.getState();
+
+                        setActiveNameBubble(null);
+
+                        if (card.source === 'room' && card.avatarInfo?.webID === userId) {
+                            card.close();
+                            return;
+                        }
+
+                        card.open(info, 'overview', 'room');
+                        return;
+                    }
                     case 'block-menu':
                         updateAvatarClickControl({ suppressMenuUntil: Date.now() + BLOCK_MENU_WINDOW_MS });
+                        usePlayerCardStore.getState().close();
                         setAvatarInfo(null);
                         setActiveNameBubble(null);
                         return;
@@ -142,7 +203,7 @@ export const AvatarInfoWidgetView: FC<{}> = (props) => {
         AddLinkEventTracker(linkTracker);
 
         return () => RemoveLinkEventTracker(linkTracker);
-    }, [roomSession, setActiveNameBubble, setAvatarInfo]);
+    }, [isGameMode, roomSession, setActiveNameBubble, setAvatarInfo]);
 
     useEffect(() => {
         if (avatarInfo?.type !== AvatarInfoFurni.FURNI) {
@@ -154,8 +215,21 @@ export const AvatarInfoWidgetView: FC<{}> = (props) => {
         }
     }, [avatarInfo]);
 
+    useObjectSelectedEvent(() => usePlayerCardStore.getState().close());
+
+    // A card opened from the in-room HUD belongs to this room; a globally opened profile stays.
+    const roomId = roomSession?.roomId ?? -1;
+
+    useEffect(() => {
+        return () => {
+            const card = usePlayerCardStore.getState();
+
+            if (card.source === 'room') card.close();
+        };
+    }, [roomId]);
+
     const getMenuView = () => {
-        if (!roomSession || isGameMode) return null;
+        if (!roomSession || isGameMode || cardVisible) return null;
 
         if (activeNameBubble) return <AvatarInfoWidgetNameView nameInfo={activeNameBubble} onClose={() => setActiveNameBubble(null)} />;
 
@@ -227,9 +301,6 @@ export const AvatarInfoWidgetView: FC<{}> = (props) => {
                 }
 
                 return <InfoStandWidgetFurniView avatarInfo={avatarInfo as AvatarInfoFurni} onClose={() => setAvatarInfo(null)} />;
-            case AvatarInfoUser.OWN_USER:
-            case AvatarInfoUser.PEER:
-                return <InfoStandWidgetUserView avatarInfo={avatarInfo as AvatarInfoUser} setAvatarInfo={setAvatarInfo} onClose={() => setAvatarInfo(null)} />;
             case AvatarInfoUser.BOT:
                 return <InfoStandWidgetBotView avatarInfo={avatarInfo as AvatarInfoUser} onClose={() => setAvatarInfo(null)} />;
             case AvatarInfoRentableBot.RENTABLE_BOT:
@@ -250,7 +321,7 @@ export const AvatarInfoWidgetView: FC<{}> = (props) => {
                 />
             )}
             {getMenuView()}
-            {avatarInfo && (
+            {avatarInfo && !isPlayerCard && (
                 <Column alignItems="end" className="absolute right-[5px] bottom-[57px] pointer-events-none z-30 text-white">
                     {getInfostandView()}
                 </Column>

@@ -21,7 +21,28 @@ $panel-edge: #ffffff1a;
 }
 .district-vitals:empty { display: none; }
 
-// The logo, a 2x image shown at 160px, level with the corner text; it only decorates, so clicks reach the room.
+// Own/peer player card host: always mounted below the whole vitals stack and outside its desktop scale.
+.district-player-card {
+    position: fixed;
+    top: 0;
+    left: var(--district-card-left, max(16px, env(safe-area-inset-left)));
+    z-index: 72;
+    box-sizing: border-box;
+    width: 190px;
+    max-width: min(190px, calc(100vw - var(--district-card-left, 16px) - 16px - env(safe-area-inset-right, 0px)));
+    max-height: calc(100vh - 32px);
+    min-height: 0;
+    pointer-events: none;
+}
+
+// Only the user card scrolls inside the measured host; other infostands keep their own sizing.
+#district-player-card > .volt-infostand.district-user-infostand {
+    max-width: 100%;
+    max-height: max(0px, calc(var(--district-card-max-height, calc(100dvh - 32px)) - env(safe-area-inset-bottom, 0px)));
+    overflow-y: auto;
+}
+
+// The logo, a 2x image shown at 160px (200px on desktop), level with the corner text; it only decorates, so clicks reach the room.
 .district-wordmark {
     position: fixed;
     top: max(16px, env(safe-area-inset-top));
@@ -85,7 +106,15 @@ $panel-edge: #ffffff1a;
     font: 600 16px/20px var(--district-font);
     @include ink;
 
-    span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    // The room icon is authored art on a dark cutaway: keep it exact 24px and click-through like the rest of the corner.
+    &__icon {
+        flex: 0 0 24px;
+        width: 24px;
+        height: 24px;
+        pointer-events: none;
+        filter: drop-shadow(0 1px 1px #00000099);
+    }
+    &__label { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     // In a room the name opens the room tools menu.
     &.is-menu { cursor: pointer; text-align: right; pointer-events: auto; }
@@ -270,8 +299,29 @@ $panel-edge: #ffffff1a;
     .room-tools-list { left: 6px; }
 }
 
-// Below this width the centred wordmark would run into the 296px vitals or the up to 360px top-right corner.
-@media (max-width: 960px) { .district-wordmark { display: none; } }
+// Desktop (2026-11-05): the top corners read small next to the room, so the whole top HUD is 25% larger.
+// Scaling the two anchored corners keeps the fixed 16px offsets and the portrait crop proportions intact.
+@media (min-width: 1025px) {
+    .district-vitals { transform: scale(1.25); transform-origin: top left; }
+    .district-topbar { transform: scale(1.25); transform-origin: top right; }
+    .district-wordmark { width: 200px; }
+    // The taller clock needs more room: the dropdown sits below the 71.25px top-right visual height.
+    .volt-room-tools-container.district-room-tools { top: max(96px, calc(env(safe-area-inset-top) + 96px)); }
+}
+
+// Wide desktop: own and target vitals stand side by side, each keeping its 280px layout width.
+@media (min-width: 1280px) {
+    .district-vitals { flex-direction: row; align-items: flex-start; gap: 24px; width: max-content; max-width: calc(100vw - 32px); }
+    .district-vitals .rp-stats-hud { flex: 0 0 280px; }
+}
+
+// A rendered target widens the left cluster into the centred wordmark's space; hide it only in that range.
+@media (min-width: 1280px) and (max-width: 1760px) {
+    .district-vitals:has(.rp-target-hud) ~ .district-wordmark { display: none; }
+}
+
+// At or below this width the centred wordmark would run into the 350px vitals or the up to 450px top-right corner.
+@media (max-width: 1200px) { .district-wordmark { display: none; } }
 
 @media (max-width: 700px) {
     .district-vitals { top: max(12px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); width: min(280px, calc(100vw - 176px)); }

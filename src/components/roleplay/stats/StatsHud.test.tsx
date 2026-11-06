@@ -1,14 +1,28 @@
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StatsHud } from './StatsHud';
 
-const test = vi.hoisted(() => ({ authenticated: true, send: vi.fn(), receive: null, treatment: null as { phase: number; progress: number; remainingMs: number } | null, user: { userName: 'DistrictPlayer', figure: 'hr-100-61', gender: 'M' } }));
+const test = vi.hoisted(() => ({ authenticated: true, send: vi.fn(), link: vi.fn(), receive: null, treatment: null as { phase: number; progress: number; remainingMs: number } | null, roomSession: { roomId: 1 } as any, user: { userName: 'DistrictPlayer', figure: 'hr-100-61', gender: 'M' } }));
 vi.mock('../../../hooks/session/useSessionSnapshots', () => ({ useUserDataSnapshot: () => test.user }));
 vi.mock('../../../hooks/roleplay/useRpHospitalTreatment', () => ({ useRpHospitalTreatment: () => test.treatment }));
-vi.mock('../../../common/layout/LayoutAvatarImageView', () => ({ LayoutAvatarImageView: ({ figure, gender }: { figure: string; gender: string }) => <div data-testid="player-avatar" data-figure={figure} data-gender={gender} /> }));
-vi.mock('@volt/renderer', () => ({ RpStatsEvent: class
+vi.mock('../../../common/layout/LayoutAvatarImageView', () => ({
+    LayoutAvatarImageView: ({ figure, gender, direction, nativeCroppedHead, trimmed, headOnly, compactHead }: any) => (
+        <div
+            data-testid="player-avatar"
+            data-figure={figure}
+            data-gender={gender}
+            data-direction={direction}
+            data-native-cropped-head={String(!!nativeCroppedHead)}
+            data-trimmed={String(!!trimmed)}
+            data-head-only={String(!!headOnly)}
+            data-compact-head={String(!!compactHead)}
+        />
+    )
+}));
+vi.mock('@volt/renderer', () => ({ CreateLinkEvent: test.link, RpStatsEvent: class
 {}, RpStatsRequestComposer: class
 {} }));
+vi.mock('../../../hooks/rooms/useRoom', () => ({ useRoom: () => ({ roomSession: test.roomSession }) }));
 vi.mock('../../../api/utils/LocalizeText', () => ({ LocalizeText: (key: string) => key }));
 vi.mock('../../../api/volt/SendMessageComposer', () => ({ SendMessageComposer: test.send }));
 vi.mock('../../../hooks/events/useConnectionState', () => ({ useConnectionState: () => ({ authenticated: test.authenticated }) }));
@@ -25,7 +39,7 @@ describe('DistrictRP stats HUD', () =>
     {
         test.user = { userName: 'DistrictPlayer', figure: 'hr-100-61', gender: 'M' };
         test.treatment = null;
-        test.authenticated = true; test.send.mockClear(); vi.useFakeTimers();
+        test.authenticated = true; test.send.mockClear(); test.link.mockClear(); test.roomSession = { roomId: 1 }; vi.useFakeTimers();
     });
     afterEach(() =>
     {
@@ -47,11 +61,12 @@ describe('DistrictRP stats HUD', () =>
         snapshot(73, 29);
         expect(screen.getByRole('progressbar', { name: 'Health' })).toHaveAttribute('aria-valuenow', '73');
         expect(screen.getByRole('progressbar', { name: 'Energy' })).toHaveAttribute('aria-valuenow', '29');
-        expect(screen.getByRole('progressbar', { name: 'Health' })).toHaveAttribute('title', '73 / 100');
-        expect(screen.queryByText('73 / 100')).toBeNull();
-        // The number sits to the right of its bar.
-        expect(screen.getByRole('progressbar', { name: 'Health' }).nextElementSibling).toHaveTextContent('73');
-        expect(screen.getByRole('progressbar', { name: 'Energy' }).nextElementSibling).toHaveTextContent('29');
+        const health = screen.getByRole('progressbar', { name: 'Health' });
+        const energy = screen.getByRole('progressbar', { name: 'Energy' });
+        expect(health).toHaveAttribute('title', '73 / 100');
+        // The current/100 label lives inside its own bar, not as a floating value.
+        expect(within(health).getByText('73 / 100')).toBeInTheDocument();
+        expect(within(energy).getByText('29 / 100')).toBeInTheDocument();
     });
 
     it('refreshes periodically and stops polling when the HUD unmounts', () =>
@@ -70,6 +85,11 @@ describe('DistrictRP stats HUD', () =>
         snapshot(100, 100);
         expect(screen.getByText('DistrictPlayer')).toBeInTheDocument();
         expect(screen.getByTestId('player-avatar')).toHaveAttribute('data-figure', 'hr-100-61');
+        expect(screen.getByTestId('player-avatar')).toHaveAttribute('data-direction', '2');
+        expect(screen.getByTestId('player-avatar')).toHaveAttribute('data-native-cropped-head', 'true');
+        expect(screen.getByTestId('player-avatar')).toHaveAttribute('data-trimmed', 'true');
+        expect(screen.getByTestId('player-avatar')).toHaveAttribute('data-head-only', 'false');
+        expect(screen.getByTestId('player-avatar')).toHaveAttribute('data-compact-head', 'false');
         test.user = { userName: 'UpdatedPlayer', figure: 'hr-200-45', gender: 'F' };
         view.rerender(<StatsHud />);
         expect(screen.getByText('UpdatedPlayer')).toBeInTheDocument();
@@ -124,5 +144,24 @@ describe('DistrictRP stats HUD', () =>
         view.rerender(<StatsHud />);
         expect(screen.getByRole('progressbar', { name: 'Hospital treatment' })).toHaveAttribute('aria-valuenow', '100');
         expect(screen.getByText('100%')).toBeInTheDocument();
+    });
+
+    it('toggles the docked player card from the own portrait only', () =>
+    {
+        render(<StatsHud />);
+        snapshot(100, 100);
+        const toggle = screen.getByRole('button', { name: 'Toggle your player card' });
+        expect(toggle).toHaveAttribute('aria-controls', 'district-player-card');
+        expect(toggle).toContainElement(screen.getByTestId('player-avatar'));
+        fireEvent.click(toggle);
+        expect(test.link).toHaveBeenCalledWith('avatar-info/toggle-own');
+    });
+
+    it('disables the portrait toggle outside a room', () =>
+    {
+        test.roomSession = null;
+        render(<StatsHud />);
+        snapshot(100, 100);
+        expect(screen.getByRole('button', { name: 'Toggle your player card' })).toBeDisabled();
     });
 });

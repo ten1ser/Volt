@@ -1,8 +1,9 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DistrictHud, displayRoomName } from './DistrictHud';
 import moonIcon from '../../../assets/images/roleplay/phone/moon.png';
 import sunIcon from '../../../assets/images/roleplay/phone/sun.png';
+import roomIcon from '../../../assets/images/roleplay/room-icon.svg';
 import { useRoomToolsMenuStore } from '../../room/widgets/room-tools/roomToolsMenuStore';
 
 interface TestState
@@ -24,6 +25,7 @@ afterEach(() =>
 {
     cleanup(); test.roomSession = test.room = null;
     test.city = { time: '12:30', isDay: true, phaseRemainingMs: 450000, onlinePlayers: 32 };
+    vi.restoreAllMocks();
 });
 describe('phone-first HUD', () =>
 {
@@ -37,6 +39,7 @@ describe('phone-first HUD', () =>
         expect(screen.queryByText(/online/)).toBeNull();
         expect(screen.getByAltText('DistrictRP')).toHaveClass('district-wordmark');
         expect(document.querySelector('.district-topbar').contains(screen.getByAltText('DistrictRP'))).toBe(false);
+        expect(document.querySelector('.district-location__icon')).toHaveAttribute('src', roomIcon);
         expect(screen.queryByRole('button', { name: 'Settings' })).toBeNull();
     });
     it('puts the own vitals above the target card, outside the top-right bar', () =>
@@ -69,9 +72,15 @@ describe('phone-first HUD', () =>
         const topbar = document.querySelector('.district-topbar');
         expect(topbar.firstElementChild).toBe(chip);
         expect(topbar.lastElementChild).toHaveClass('district-clock');
-        expect(chip.querySelector('img')).toBeNull();
-        expect(topbar.querySelectorAll('img')).toHaveLength(1);
-        expect(topbar.querySelector('img')).toHaveAttribute('src', sunIcon);
+        const icon = chip.querySelector('img.district-location__icon');
+        expect(icon).toHaveAttribute('src', roomIcon);
+        expect(icon).toHaveAttribute('alt', '');
+        expect(icon).toHaveAttribute('aria-hidden', 'true');
+        expect(icon).toHaveAttribute('draggable', 'false');
+        expect(icon).toHaveAttribute('width', '24');
+        expect(icon).toHaveAttribute('height', '24');
+        expect(chip).toHaveAccessibleName('Regency Café');
+        expect(topbar.querySelector('.district-clock img')).toHaveAttribute('src', sunIcon);
         expect(topbar.querySelectorAll('time')).toHaveLength(1);
         expect(screen.queryByText(/min left/)).toBeNull();
         fireEvent.click(chip);
@@ -98,5 +107,32 @@ describe('phone-first HUD', () =>
         test.city = null;
         render(<DistrictHud />);
         expect(screen.getByTitle('Synchronizing city time')).toHaveTextContent('--:--');
+    });
+    it('keeps the player-card host outside the scaled vitals and follows their measured bounds', () =>
+    {
+        render(<DistrictHud />);
+        const vitals = document.querySelector('.district-vitals') as HTMLElement;
+        const host = document.getElementById('district-player-card') as HTMLElement;
+
+        expect(host).not.toBeNull();
+        expect(host).toHaveClass('district-player-card');
+        expect(vitals.contains(host)).toBe(false);
+
+        const rect = { left: 120, top: 16, right: 400, bottom: 300, width: 280, height: 284, x: 120, y: 16, toJSON: () => ({}) };
+
+        vi.spyOn(vitals, 'getBoundingClientRect').mockReturnValue(rect as DOMRect);
+        act(() => { window.dispatchEvent(new Event('resize')); });
+
+        expect(host).toHaveStyle({ left: '120px', top: '310px' });
+        expect(host.style.getPropertyValue('--district-card-left')).toBe('120px');
+        expect(host.style.getPropertyValue('--district-card-max-height')).toBe(`${window.innerHeight - 310 - 16}px`);
+        expect(host.style.maxHeight).toBe(`${window.innerHeight - 310 - 16}px`);
+
+        rect.bottom = 340;
+        rect.height = 324;
+        act(() => { window.dispatchEvent(new Event('resize')); });
+
+        expect(host).toHaveStyle({ top: '350px' });
+        expect(host.style.maxHeight).toBe(`${window.innerHeight - 350 - 16}px`);
     });
 });

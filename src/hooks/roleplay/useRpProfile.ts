@@ -29,7 +29,8 @@ export interface RpProfileCard
 }
 
 let nextRequestId = 0;
-const allocateRequestId = () =>
+/** Shared by the main profile window and the player card, so their simultaneous 6090 requests never collide. */
+export const allocateRpProfileRequestId = () =>
 {
     nextRequestId = nextRequestId % 2147483647 + 1;
     return nextRequestId;
@@ -57,7 +58,7 @@ export const useRpProfile = () =>
         setIdentity({ userId: parser.id, username: parser.username, figure: parser.figure });
         if(pending.current.userId !== parser.id) setCard(null);
 
-        const requestId = allocateRequestId();
+        const requestId = allocateRpProfileRequestId();
         pending.current = { requestId, userId: parser.id };
         try
         {

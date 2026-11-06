@@ -1,83 +1,99 @@
-import { useId, useState } from 'react';
-import { VoltCardView } from '../../../common';
-import { LayoutAvatarImageView } from '../../../common/layout/LayoutAvatarImageView';
-import { killDeathRatio, useRpProfile } from '../../../hooks/roleplay/useRpProfile';
-import './RpProfileView.scss';
+import { GetSessionDataManager, RoomObjectType, UserProfileEvent } from '@volt/renderer';
+import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { AvatarInfoUser } from '../../../api/room/widgets/AvatarInfoUser';
+import { GetRoomSession } from '../../../api/volt/session/GetRoomSession';
+import { useConnectionState } from '../../../hooks/events/useConnectionState';
+import { useMessageEvent } from '../../../hooks/events/useMessageEvent';
+import { usePlayerCardStore } from '../../../state/playerCardStore';
+import { InfoStandWidgetUserView } from '../../room/widgets/avatar-info/infostand/InfoStandWidgetUserView';
 
-const stat = (label: string, value: string | number, accent = false, title?: string) => (
-    <div className="rp-profile__stat" key={label} title={title}>
-        <strong className={accent ? 'is-accent' : undefined}>{value}</strong>
-        <span>{label}</span>
-    </div>
-);
-
-const TABS = [{ id: 'fights', label: 'Combat' }, { id: 'punches', label: 'Punches' }] as const;
-
-/** DistrictRP user profile: avatar, name, gang, job and rank, and lifetime fight counters. */
+/**
+ * The single owner of the docked user card. It stays mounted outside the room widget, so profile links opened from
+ * friends, chat or the toolbar work away from a room too. Native profile replies open the card on its Stats tab; the
+ * card reads just one 6090 packet for that user.
+ */
 export const RpProfileView = () =>
 {
-    const windowId = useId();
-    const { identity, card, close } = useRpProfile();
-    // Combat counters lead; the punch counters sit on their own tab.
-    const [tab, setTab] = useState<'fights' | 'punches'>('fights');
+    const avatarInfo = usePlayerCardStore(state => state.avatarInfo);
+    const initialTab = usePlayerCardStore(state => state.initialTab);
+    const open = usePlayerCardStore(state => state.open);
+    const close = usePlayerCardStore(state => state.close);
+    const setAvatarInfo = usePlayerCardStore(state => state.setAvatarInfo);
+    const [profileOpenVersion, setProfileOpenVersion] = useState(0);
+    const { authenticated } = useConnectionState();
+    const host = typeof document === 'undefined' ? null : document.getElementById('district-player-card');
 
-    if(!identity) return null;
+    useEffect(() =>
+    {
+        if(!authenticated) close();
+    }, [authenticated, close]);
 
-    const loading = !card;
-    const value = (count: number | undefined) => (loading || !card.available ? '–' : count);
-    const role = card?.job ? (card.rank ? `${card.job}, ${card.rank}` : card.job) : card ? 'Unemployed' : '';
+    useEffect(() =>
+    {
+        if(!avatarInfo || !host) return;
 
-    return <VoltCardView theme="district" uniqueKey="district-profile" className="rp-profile district-rp-window" isResizable={false} constrainToViewport cascade>
-        <div role="dialog" aria-labelledby={`${windowId}-title`} onKeyDown={event =>
+        const onKeyDown = (event: KeyboardEvent) =>
         {
-            if(event.key === 'Escape' && !event.defaultPrevented)
-            {
-                event.stopPropagation(); close();
-            }
-        }}>
-            <header className="rp-profile__titlebar district-rp-titlebar drag-handler">
-                <span>Profile</span>
-                <button type="button" className="rp-profile__close district-rp-close" aria-label="Close profile" onClick={close}>×</button>
-            </header>
-            <div className={`rp-profile__banner ${card?.gang ? 'has-gang' : ''}`}>
-                <div className="rp-profile__portrait" aria-hidden="true">
-                    <LayoutAvatarImageView figure={identity.figure} direction={2} className="rp-profile__avatar" />
-                </div>
-                <div className="rp-profile__identity">
-                    <h2 id={`${windowId}-title`} className="rp-profile__name">{identity.username}</h2>
-                    <p className="rp-profile__role">
-                        {card?.gang && <span className="rp-profile__gang">{card.gang}</span>}
-                        {card?.gang && role && <span aria-hidden="true"> · </span>}
-                        {role && <span className="rp-profile__job">{role}</span>}
-                    </p>
-                </div>
-            </div>
-            <div className="rp-profile__body" aria-busy={loading}>
-                {card && !card.available
-                    ? <p className="rp-profile__notice" role="status">This profile is not available.</p>
-                    : <>
-                        <div className="rp-profile__tabs" role="tablist" aria-label="Stats">
-                            {TABS.map(entry => (
-                                <button key={entry.id} type="button" role="tab" id={`${windowId}-tab-${entry.id}`} aria-selected={tab === entry.id}
-                                    aria-controls={`${windowId}-panel`} onClick={() => setTab(entry.id)}>{entry.label}</button>
-                            ))}
-                        </div>
-                        <div id={`${windowId}-panel`} role="tabpanel" aria-labelledby={`${windowId}-tab-${tab}`}>
-                            {tab === 'fights'
-                                ? <div className="rp-profile__row rp-profile__row--fights">
-                                    {stat('K/D', loading ? '–' : killDeathRatio(card.kills, card.deaths), true, !loading && card.deaths === 0 ? 'No deaths yet: K/D is the kill count' : undefined)}
-                                    {stat('Kills', value(card?.kills))}
-                                    {stat('Deaths', value(card?.deaths))}
-                                    {stat('Jailed', value(card?.timesJailed))}
-                                </div>
-                                : <div className="rp-profile__row rp-profile__row--punches">
-                                    {stat('Thrown', value(card?.punchesThrown))}
-                                    {stat('Missed', value(card?.punchesMissed))}
-                                    {stat('Received', value(card?.punchesReceived))}
-                                </div>}
-                        </div>
-                    </>}
-            </div>
-        </div>
-    </VoltCardView>;
+            if(event.key !== 'Escape' || event.defaultPrevented) return;
+
+            const active = document.activeElement;
+
+            if(!active || !host.contains(active)) return;
+
+            event.stopPropagation();
+            close();
+        };
+
+        host.addEventListener('keydown', onKeyDown, true);
+
+        return () => host.removeEventListener('keydown', onKeyDown, true);
+    }, [avatarInfo, close, host]);
+
+    useMessageEvent<UserProfileEvent>(UserProfileEvent, useCallback(event =>
+    {
+        if(!authenticated) return;
+
+        const parser = event.getParser();
+
+        if(!parser) return;
+        // The server can explicitly ask not to raise a profile window; legacy replies have no such field.
+        if(parser.openProfileWindow === false) return;
+
+        const userId = parser.id;
+        const username = parser.username;
+        const figure = parser.figure;
+
+        if(!Number.isSafeInteger(userId) || userId <= 0) return;
+        if(typeof username !== 'string' || !username.trim()) return;
+        if(typeof figure !== 'string' || !figure.trim()) return;
+
+        const roomUser = GetRoomSession()?.userDataManager?.getUserData(userId);
+        const isOwnUser = userId === GetSessionDataManager().userId;
+        const info = new AvatarInfoUser(isOwnUser ? AvatarInfoUser.OWN_USER : AvatarInfoUser.PEER);
+
+        info.webID = userId;
+        info.name = username;
+        info.figure = figure;
+        info.motto = typeof parser.motto === 'string' ? parser.motto : '';
+        info.userType = RoomObjectType.USER;
+        // Only a user actually standing in the current room may carry its room index.
+        info.roomIndex = roomUser && roomUser.webID === userId && roomUser.type === RoomObjectType.USER ? roomUser.roomIndex : -1;
+
+        setProfileOpenVersion(version => version + 1);
+        open(info, 'stats', 'profile');
+    }, [authenticated, open]));
+
+    if(!authenticated || !avatarInfo || !host) return null;
+
+    return createPortal(
+        <InfoStandWidgetUserView
+            key={`${avatarInfo.webID}:${profileOpenVersion}`}
+            avatarInfo={avatarInfo}
+            setAvatarInfo={setAvatarInfo}
+            initialTab={initialTab}
+            onClose={close}
+        />,
+        host
+    );
 };

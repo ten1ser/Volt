@@ -97,6 +97,7 @@ export const PhoneView: FC = () =>
     const [seenThreads, setSeenThreads] = useState(visibleThreads);
     const { status, call, lines, offer, answer, hangUp, respondOffer, setBrowsing } = useRpPhone();
     const landscape = (app === 'business' || app === 'native') && !call;
+    const large = landscape && (app === 'business' || nativeApp === 'gang');
     const position = landscape ? landscapeOffset : offset;
     useEffect(() =>
     {
@@ -344,7 +345,7 @@ export const PhoneView: FC = () =>
             )}
             <section
                 ref={frame}
-                className={`district-phone ${open ? 'is-open' : ''} ${landscape ? 'is-landscape' : ''}`}
+                className={`district-phone ${open ? 'is-open' : ''} ${landscape ? 'is-landscape' : ''} ${large ? 'is-large' : ''}`}
                 aria-label="Phone"
                 aria-hidden={!open}
                 inert={!open}

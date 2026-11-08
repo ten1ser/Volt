@@ -45,6 +45,14 @@ const readRecent = (): number[] =>
     return Array.isArray(stored) ? stored.filter((value): value is number => Number.isInteger(value) && value >= PUBLIC_MIN && value <= PUBLIC_MAX).slice(0, RECENT_STORED) : [];
 };
 
+/** Time since a dispatch call opened: whole minutes once it is older than a minute. */
+export const hospitalCallAge = (openedAt: number, now: number) =>
+{
+    const seconds = Math.max(0, now - openedAt);
+
+    return seconds < 60 ? 'just now' : `${ Math.floor(seconds / 60) }m ago`;
+};
+
 /** The built-in radio handset. Transmissions are read in room chat; the server owns power, channel and access. */
 export const RadioView: FC = () =>
 {
@@ -66,7 +74,7 @@ export const RadioView: FC = () =>
     const audio = useRef<AudioContext | null>(null);
     const previousMessageId = useRef(0);
     const { authenticated } = useConnectionState();
-    const { status, notice, messages, pending, refresh, power, tune, clearNotice } = useRpRadio();
+    const { status, notice, messages, pending, refresh, power, tune, clearNotice, calls, respond, callPending } = useRpRadio();
     openRef.current = open;
     minimizedRef.current = minimized;
 
@@ -231,6 +239,19 @@ export const RadioView: FC = () =>
         }
     }, [recent]);
 
+    // The Calls list ages its timestamps only while it is on screen.
+    const showCalls = statusPowered && statusChannel === RadioChannel.Hospital;
+    const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
+
+    useEffect(() =>
+    {
+        if(!showCalls) return;
+        setNow(Math.floor(Date.now() / 1000));
+        const timer = window.setInterval(() => setNow(Math.floor(Date.now() / 1000)), 15000);
+
+        return () => window.clearInterval(timer);
+    }, [showCalls]);
+
     const canTune = statusPowered && !pending;
     const onPublic = statusChannel === RadioChannel.Public;
     const rangeError = `Enter a public frequency from ${formatFrequency(PUBLIC_MIN)} to ${formatFrequency(PUBLIC_MAX)}.`;
@@ -378,6 +399,18 @@ export const RadioView: FC = () =>
                             tune(RadioChannel.Public, value);
                         }}>{formatFrequency(value)}</button>)}
                     </div>}
+                    {statusChannel === RadioChannel.Hospital && <section className="district-radio__calls" aria-label="Hospital calls">
+                        <header className="district-radio__calls-head"><span>Calls</span><span className="district-radio__calls-count">{calls.length}</span></header>
+                        {calls.length === 0
+                            ? <p className="district-radio__calls-empty">No open calls</p>
+                            : <ol className="district-radio__calls-list">
+                                {calls.map(call => <li key={call.number} className="district-radio__call">
+                                    <span className="district-radio__call-number">#{call.number}</span>
+                                    <span className="district-radio__call-body"><strong>{call.patientName}</strong><span>{call.location || 'Unknown location'} · {hospitalCallAge(call.openedAt, now)}</span></span>
+                                    <button type="button" className="district-btn is-primary district-radio__respond" disabled={callPending} onClick={() => respond(call.number)}>Respond</button>
+                                </li>)}
+                            </ol>}
+                    </section>}
                 </>}
                 {notice && (
                     <div className={`district-radio__notice ${notice.refused ? 'is-refused' : ''}`} role="alert">

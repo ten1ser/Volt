@@ -300,10 +300,9 @@ $panel-edge: #ffffff1a;
     .room-tools-list { left: 6px; }
 }
 
-// Desktop (2026-11-05): the top corners read small next to the room, so the whole top HUD is 25% larger.
-// Scaling the two anchored corners keeps the fixed 16px offsets and the portrait crop proportions intact.
+// Desktop (2026-11-05): the top-right corner reads small next to the room, so it is 25% larger.
+// The vitals (portraits, names, bars) stay at 1x since 2026-11-07: the user found them too large.
 @media (min-width: 1025px) {
-    .district-vitals { transform: scale(1.25); transform-origin: top left; }
     .district-topbar { transform: scale(1.25); transform-origin: top right; }
     .district-wordmark { width: 200px; }
     // The taller clock needs more room: the dropdown sits below the 71.25px top-right visual height.
@@ -321,7 +320,7 @@ $panel-edge: #ffffff1a;
     .district-vitals:has(.rp-target-hud) ~ .district-wordmark { display: none; }
 }
 
-// At or below this width the centred wordmark would run into the 350px vitals or the up to 450px top-right corner.
+// At or below this width the centred wordmark would run into the 280px vitals or the up to 450px top-right corner.
 @media (max-width: 1200px) { .district-wordmark { display: none; } }
 
 @media (max-width: 700px) {

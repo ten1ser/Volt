@@ -196,6 +196,7 @@ export const InfoStandWidgetUserView: FC<InfoStandWidgetUserViewProps> = (props)
     const mottoMaxLength = GetConfigurationValue<number>('motto.max.length', 38);
     const hasProfile = !affiliations.loading && !affiliations.unavailable;
     const dutyText = hasProfile && affiliations.job ? (affiliations.onDuty ? `On duty · ${affiliations.job}` : 'Off duty') : '';
+    const unaffiliated = hasProfile && !affiliations.job && !affiliations.jobBadge && !affiliations.gang && !affiliations.gangBadge;
     const fights = affiliations.kills + affiliations.deaths;
     const killShare = fights > 0 ? (affiliations.kills * 100) / fights : 0;
     const punchesLanded = affiliations.punchesThrown - affiliations.punchesMissed;
@@ -237,13 +238,14 @@ export const InfoStandWidgetUserView: FC<InfoStandWidgetUserViewProps> = (props)
                     className="volt-infostand__panel"
                 >
                     <div className={`volt-infostand__stage ${dutyText ? 'has-duty' : ''}`}>
+                        <span className="volt-infostand__stage-name" title={avatarInfo.name}>{avatarInfo.name}</span>
                         <button
                             type="button"
                             className="volt-infostand__avatar-well"
                             aria-label="View stats"
                             onClick={() => setTab('stats')}
                         >
-                            <InfoStandAvatarView direction={2} figure={avatarInfo.figure} top={24} left={17} />
+                            <InfoStandAvatarView direction={isOwnUser ? 2 : 4} figure={avatarInfo.figure} top={24} left={17} />
                         </button>
                         {dutyText && <span className={`volt-infostand__duty ${affiliations.onDuty ? 'is-on' : ''}`}>{dutyText}</span>}
                     </div>
@@ -278,56 +280,58 @@ export const InfoStandWidgetUserView: FC<InfoStandWidgetUserViewProps> = (props)
                             </>
                         )}
                     </div>
-                    <div className="volt-infostand__badges">
-                        <div
-                            className="volt-infostand__affiliation"
-                            role="group"
-                            aria-label="Job badge"
-                            aria-busy={affiliations.loading}
-                            title={affiliations.job || undefined}
-                        >
-                            <span className="volt-infostand__affiliation-badge">
-                                {affiliations.jobBadge ? (
-                                    <LayoutBadgeImageView badgeCode={affiliations.jobBadge} customTitle={affiliations.job} isGroup={true} showInfo={true} />
-                                ) : (
-                                    <svg className="volt-infostand__affiliation-mark" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M9 7V5.5A2.5 2.5 0 0 1 11.5 3h1A2.5 2.5 0 0 1 15 5.5V7M5 7h14v11H5zM5 12h14" />
-                                    </svg>
+                    {unaffiliated ? <p className="volt-infostand__unaffiliated">No job · No gang</p> : (
+                        <div className="volt-infostand__badges">
+                            <div
+                                className="volt-infostand__affiliation"
+                                role="group"
+                                aria-label="Job badge"
+                                aria-busy={affiliations.loading}
+                                title={affiliations.job || undefined}
+                            >
+                                <span className="volt-infostand__affiliation-badge">
+                                    {affiliations.jobBadge ? (
+                                        <LayoutBadgeImageView badgeCode={affiliations.jobBadge} customTitle={affiliations.job} isGroup={true} showInfo={true} />
+                                    ) : (
+                                        <svg className="volt-infostand__affiliation-mark" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M9 7V5.5A2.5 2.5 0 0 1 11.5 3h1A2.5 2.5 0 0 1 15 5.5V7M5 7h14v11H5zM5 12h14" />
+                                        </svg>
+                                    )}
+                                </span>
+                                <span className="volt-infostand__affiliation-caption">Job</span>
+                                <span className="volt-infostand__affiliation-name">
+                                    {affiliationText(affiliations.job, affiliations.jobBadge, affiliations.loading, affiliations.unavailable, 'No job')}
+                                </span>
+                                {affiliations.job && affiliations.rank && (
+                                    <span className="volt-infostand__affiliation-role is-accent">{affiliations.rank}</span>
                                 )}
-                            </span>
-                            <span className="volt-infostand__affiliation-caption">Job</span>
-                            <span className="volt-infostand__affiliation-name">
-                                {affiliationText(affiliations.job, affiliations.jobBadge, affiliations.loading, affiliations.unavailable, 'No job')}
-                            </span>
-                            {affiliations.job && affiliations.rank && (
-                                <span className="volt-infostand__affiliation-role is-accent">{affiliations.rank}</span>
-                            )}
-                        </div>
-                        <div
-                            className="volt-infostand__affiliation"
-                            role="group"
-                            aria-label="Gang badge"
-                            aria-busy={affiliations.loading}
-                            title={affiliations.gang || undefined}
-                        >
-                            <span className="volt-infostand__affiliation-badge">
-                                {affiliations.gangBadge ? (
-                                    <LayoutBadgeImageView badgeCode={affiliations.gangBadge} customTitle={affiliations.gang} isGroup={true} showInfo={true} />
-                                ) : (
-                                    <svg className="volt-infostand__affiliation-mark" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M12 3l7 3v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6z" />
-                                    </svg>
+                            </div>
+                            <div
+                                className="volt-infostand__affiliation"
+                                role="group"
+                                aria-label="Gang badge"
+                                aria-busy={affiliations.loading}
+                                title={affiliations.gang || undefined}
+                            >
+                                <span className="volt-infostand__affiliation-badge">
+                                    {affiliations.gangBadge ? (
+                                        <LayoutBadgeImageView badgeCode={affiliations.gangBadge} customTitle={affiliations.gang} isGroup={true} showInfo={true} />
+                                    ) : (
+                                        <svg className="volt-infostand__affiliation-mark" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M12 3l7 3v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6z" />
+                                        </svg>
+                                    )}
+                                </span>
+                                <span className="volt-infostand__affiliation-caption">Gang</span>
+                                <span className="volt-infostand__affiliation-name">
+                                    {affiliationText(affiliations.gang, affiliations.gangBadge, affiliations.loading, affiliations.unavailable, 'No gang')}
+                                </span>
+                                {affiliations.gang && affiliations.gangRank && (
+                                    <span className="volt-infostand__affiliation-role">{affiliations.gangRank}</span>
                                 )}
-                            </span>
-                            <span className="volt-infostand__affiliation-caption">Gang</span>
-                            <span className="volt-infostand__affiliation-name">
-                                {affiliationText(affiliations.gang, affiliations.gangBadge, affiliations.loading, affiliations.unavailable, 'No gang')}
-                            </span>
-                            {affiliations.gang && affiliations.gangRank && (
-                                <span className="volt-infostand__affiliation-role">{affiliations.gangRank}</span>
-                            )}
+                            </div>
                         </div>
-                    </div>
+                    )}
                     {avatarInfo.carryItem > 0 && (
                         <>
                             <div className="volt-infostand__rule" />

@@ -37,7 +37,7 @@ export const DistrictHud: FC = () =>
     const vitalsRef = useRef<HTMLDivElement>(null);
     const [cardPosition, setCardPosition] = useState<{ left: number; otherLeft: number; top: number; maxHeight: number } | null>(null);
 
-    // The player cards are portalled here so they sit below the whole vitals stack and never inherit the desktop 1.25 scale.
+    // The player cards are portalled here so they sit below the whole vitals stack and never inherit a HUD scale.
     useLayoutEffect(() =>
     {
         const vitals = vitalsRef.current;

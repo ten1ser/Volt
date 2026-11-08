@@ -1163,6 +1163,13 @@
         }
     }
 }
+// Business and Gang hold lists and forms, so their handset opens a little larger with the same phone proportions (user pick 2026-11-07; 960x520 looked like a tablet); the max-height rules still shrink it.
+@media (min-width: 561px) {
+    .district-phone.is-landscape.is-large {
+        width: min(700px, calc(100vw - 32px));
+        height: 340px;
+    }
+}
 @media (max-width: 560px) {
     .district-phone.is-landscape {
         width: min(300px, calc(100vw - 32px)); height: 620px;

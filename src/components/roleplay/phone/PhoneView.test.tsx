@@ -120,11 +120,24 @@ describe('DistrictRP phone', () =>
         expect(test.link).toHaveBeenCalledTimes(8);
     });
 
+    it('makes only the Gang app large inside the landscape handset', () =>
+    {
+        render(<PhoneView />); open();
+        fireEvent.click(screen.getByRole('button', { name: 'Gang' }));
+        expect(phone()).toHaveClass('is-landscape', 'is-large');
+        fireEvent.click(screen.getByRole('button', { name: 'Back to apps' }));
+        expect(phone()).not.toHaveClass('is-large');
+        fireEvent.click(screen.getByRole('button', { name: 'Rooms' }));
+        expect(phone()).toHaveClass('is-landscape');
+        expect(phone()).not.toHaveClass('is-large');
+        fireEvent.click(screen.getByRole('button', { name: 'Back to apps' }));
+    });
+
     it('hosts Businesses inside a landscape handset and returns to portrait apps', () =>
     {
         render(<PhoneView />); open();
         fireEvent.click(screen.getByRole('button', { name: 'Businesses' }));
-        expect(phone()).toHaveClass('is-open', 'is-landscape');
+        expect(phone()).toHaveClass('is-open', 'is-landscape', 'is-large');
         expect(phone()).toContainElement(screen.getByTestId('business-content'));
         expect(screen.getByTestId('business-content')).toHaveAttribute('data-embedded', 'true');
         expect(test.link).toHaveBeenCalledExactlyOnceWith('businesses/hide');

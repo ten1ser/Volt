@@ -2,7 +2,6 @@ import {
     AvatarAction,
     AvatarExpressionEnum,
     CreateLinkEvent,
-    RoomControllerLevel,
     RoomObjectCategory,
     RoomObjectVariable,
     RoomUnitDropHandItemComposer
@@ -26,6 +25,7 @@ import {
 } from '../../../../../api';
 import { HelpNameChangeEvent } from '../../../../../events';
 import { useRoom, useWiredTools } from '../../../../../hooks';
+import { useRpPhone } from '../../../../../hooks/roleplay/useRpPhone';
 import { ContextMenuHeaderView } from '../../context-menu/ContextMenuHeaderView';
 import { ContextMenuListItemView } from '../../context-menu/ContextMenuListItemView';
 import { ContextMenuView } from '../../context-menu/ContextMenuView';
@@ -83,6 +83,7 @@ export const AvatarInfoWidgetOwnAvatarView: FC<AvatarInfoWidgetOwnAvatarViewProp
     const [mode, setMode] = useState(isDancing && hasClub && !hasActiveEffect ? MODE_CLUB_DANCES : MODE_NORMAL);
     const { roomSession = null } = useRoom();
     const { openInspectionForUser, showInspectButton } = useWiredTools();
+    const { status: phoneStatus } = useRpPhone();
 
     const expressionsMenuEnabled = GetConfigurationValue('avatar.expressions_menu.enabled', true);
     const signsEnabled = GetConfigurationValue('avatar.signs.enabled', true);
@@ -188,8 +189,6 @@ export const AvatarInfoWidgetOwnAvatarView: FC<AvatarInfoWidgetOwnAvatarViewProp
         if (hideMenu) onClose();
     };
 
-    const isShowDecorate = () =>
-        hasClub && (avatarInfo.amIOwner || avatarInfo.amIAnyRoomController || avatarInfo.roomControllerLevel > RoomControllerLevel.GUEST);
     const canUsePremiumExpression = !hasActiveEffect && !isSwimming;
     const premiumExpressionClassNames = hasVip ? [] : ['air-avatar-menu-item--locked'];
 
@@ -210,21 +209,12 @@ export const AvatarInfoWidgetOwnAvatarView: FC<AvatarInfoWidgetOwnAvatarViewProp
             <ContextMenuHeaderView className="cursor-pointer" onClick={() => GetUserProfile(avatarInfo.webID)}>
                 {avatarInfo.name}
             </ContextMenuHeaderView>
+            {phoneStatus && <div className="district-avatar-menu-phone" title="Your phone number">{phoneStatus.hasSim ? phoneStatus.number : 'No SIM'}</div>}
             <div className="air-avatar-menu-buttons">
                 {mode === MODE_NORMAL && (
                     <>
-                        {avatarInfo.allowNameChange && (
-                            <ContextMenuListItemView classNames={['air-avatar-menu-item--link']} onClick={() => processAction('change_name')}>
-                                {LocalizeText('widget.avatar.change_name')}
-                            </ContextMenuListItemView>
-                        )}
-                        {isShowDecorate() && (
-                            <ContextMenuListItemView onClick={() => processAction('decorate')}>
-                                {LocalizeText('widget.avatar.decorate')}
-                            </ContextMenuListItemView>
-                        )}
-                        <ContextMenuListItemView classNames={['air-avatar-menu-item--link']} onClick={() => processAction('change_looks')}>
-                            {LocalizeText('widget.memenu.myclothes')}
+                        <ContextMenuListItemView onClick={() => processAction('change_looks')}>
+                            {localizeWithFallback('district.menu.clothing', 'Clothing')}
                         </ContextMenuListItemView>
                         {expressionsMenuEnabled ? (
                             <ContextMenuListItemView onClick={() => processAction('expressions')}>
@@ -264,12 +254,6 @@ export const AvatarInfoWidgetOwnAvatarView: FC<AvatarInfoWidgetOwnAvatarViewProp
                             </ContextMenuListItemView>
                         )}
 
-                        {/* Polaris-only actions are appended after the official AIR rows. */}
-                        <ContextMenuListItemView onClick={() => processAction('badge_leaderboard')}>
-                            <span className="air-avatar-menu-extra-label">
-                                {localizeWithFallback('badge_leaderboard.title.total_badges', 'Badge leaderboard')}
-                            </span>
-                        </ContextMenuListItemView>
                     </>
                 )}
                 {mode === MODE_CLUB_DANCES && (

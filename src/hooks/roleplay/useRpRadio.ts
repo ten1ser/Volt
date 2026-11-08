@@ -1,4 +1,4 @@
-import { RpRadioRequestComposer, RpRadioStatusEvent, RpRadioTransmissionEvent } from '@volt/renderer';
+import { RpHospitalCallRespondComposer, RpHospitalCallsEvent, RpRadioRequestComposer, RpRadioStatusEvent, RpRadioTransmissionEvent } from '@volt/renderer';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SendMessageComposer } from '../../api/volt/SendMessageComposer';
 import { registerSharedHook, useSharedHook } from '../../state/useSharedHook';
@@ -38,6 +38,15 @@ export interface RadioTransmission
     sentAt: number;
 }
 
+export interface HospitalCall
+{
+    number: number;
+    patientId: number;
+    patientName: string;
+    location: string;
+    openedAt: number;
+}
+
 export type RadioNotice = { text: string; refused: boolean };
 
 let nextRequestId = 0;
@@ -69,8 +78,11 @@ export const useRpRadioSource = () =>
     const [status, setStatus] = useState<RadioStatus | null>(null);
     const [notice, setNotice] = useState<RadioNotice | null>(null);
     const [messages, setMessages] = useState<RadioTransmission[]>([]);
+    const [calls, setCalls] = useState<HospitalCall[]>([]);
     const [pending, setPending] = useState(false);
+    const [callPending, setCallPending] = useState(false);
     const outstanding = useRef<{ id: number; timer: number } | null>(null);
+    const callsOutstanding = useRef<{ id: number; timer: number } | null>(null);
     const nextMessageId = useRef(0);
     const account = useRef(0);
     const userData = useUserDataSnapshot();
@@ -86,6 +98,12 @@ export const useRpRadioSource = () =>
         if(outstanding.current) window.clearTimeout(outstanding.current.timer);
         outstanding.current = null;
         setPending(false);
+    }, []);
+    const invalidateCalls = useCallback(() =>
+    {
+        if(callsOutstanding.current) window.clearTimeout(callsOutstanding.current.timer);
+        callsOutstanding.current = null;
+        setCallPending(false);
     }, []);
     useMessageEvent<RpRadioStatusEvent>(RpRadioStatusEvent, useCallback(event =>
     {
@@ -113,6 +131,20 @@ export const useRpRadioSource = () =>
         };
         setMessages(previous => [...previous.slice(-(MAX_MESSAGES - 1)), message]);
     }, []));
+
+    useMessageEvent<RpHospitalCallsEvent>(RpHospitalCallsEvent, useCallback(event =>
+    {
+        if(!activeSession()) return;
+        const parser = event.getParser();
+        // A push (requestId 0) refreshes the list without consuming the request in flight.
+        if(parser.requestId !== 0 && parser.requestId !== callsOutstanding.current?.id) return;
+        setCalls(parser.calls.map(call => ({
+            number: call.number, patientId: call.patientId, patientName: call.patientName, location: call.location, openedAt: call.openedAt
+        })));
+        if(parser.requestId === 0) return;
+        invalidateCalls();
+        if(parser.notice) setNotice({ text: parser.notice, refused: false });
+    }, [invalidateCalls]));
     // A different account (or a sign-out) starts with no radio state from the previous session.
     useEffect(() =>
     {
@@ -124,6 +156,10 @@ export const useRpRadioSource = () =>
         setStatus(null);
         setNotice(null);
         setMessages([]);
+        if(callsOutstanding.current) window.clearTimeout(callsOutstanding.current.timer);
+        callsOutstanding.current = null;
+        setCallPending(false);
+        setCalls([]);
         nextMessageId.current = 0;
     }, [accountId, authenticated]);
     const request = useCallback((action: number, channel: number, frequency: number, text = '') =>
@@ -147,6 +183,27 @@ export const useRpRadioSource = () =>
         }
         return true;
     }, [invalidate]);
+    const respond = useCallback((number: number) =>
+    {
+        if(!activeSession() || callsOutstanding.current) return false;
+        const id = allocateRequestId();
+        setCallPending(true);
+        const timer = window.setTimeout(() =>
+        {
+            if(callsOutstanding.current?.id !== id) return;
+            invalidateCalls();
+            setNotice({ text: 'No response from the server.', refused: true });
+        }, 10000);
+        callsOutstanding.current = { id, timer };
+        if(!send(() => new RpHospitalCallRespondComposer(id, number)))
+        {
+            invalidateCalls();
+            setNotice({ text: 'The radio could not reach the server.', refused: true });
+            return false;
+        }
+        return true;
+    }, [invalidateCalls]);
+    const refreshCalls = useCallback(() => respond(0), [respond]);
 
     // Reading the status once signed in hands out the free radio and opens its authoritative channel.
     useEffect(() =>
@@ -154,11 +211,25 @@ export const useRpRadioSource = () =>
         if(!authenticated || accountId < 1) return;
         request(RadioAction.Status, 0, 0);
     }, [authenticated, accountId, request]);
+    // The dispatch list exists only while the radio is powered on the hospital channel.
+    const poweredHospital = !!status?.powered && status.channel === RadioChannel.Hospital;
+    useEffect(() =>
+    {
+        if(!authenticated || accountId < 1) return;
+        if(poweredHospital)
+        {
+            refreshCalls();
+            return;
+        }
+        setCalls([]);
+    }, [authenticated, accountId, poweredHospital, refreshCalls]);
     // A shared hook host can outlive a session; never leave a response timer behind.
     useEffect(() => () =>
     {
         if(outstanding.current) window.clearTimeout(outstanding.current.timer);
         outstanding.current = null;
+        if(callsOutstanding.current) window.clearTimeout(callsOutstanding.current.timer);
+        callsOutstanding.current = null;
     }, []);
     const refresh = useCallback(() => request(RadioAction.Status, 0, 0), [request]);
     const power = useCallback((on: boolean) => request(RadioAction.Power, on ? 1 : 0, 0), [request]);
@@ -176,8 +247,12 @@ export const useRpRadioSource = () =>
         status: authenticated ? status : null,
         notice,
         messages,
+        calls: authenticated ? calls : [],
         pending: authenticated && pending,
+        callPending: authenticated && callPending,
         refresh,
+        respond,
+        refreshCalls,
         power,
         tune,
         transmit,

@@ -82,6 +82,33 @@ $above-chat: calc(#{$bottom} + 64px);
 
 @keyframes district-progress-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
+// Hospital transfer / treatment shares the bar: the server drives the fill, so no timed animation.
+.district-action-progress--treatment {
+    > i i {
+        background: linear-gradient(90deg, #a8463e, #e2675c);
+        transform: none;
+        animation: none;
+        transition: width 180ms ease;
+    }
+
+    &.is-healing span { color: #e2675c; }
+    &.is-transfer span { color: #d9b25a; }
+}
+
+.district-action-progress__meta {
+    flex: 0 0 auto;
+    min-width: 4ch;
+    margin-left: auto;
+    color: #fff;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .district-action-progress--treatment > i i { transition: none; }
+}
+
 // Below this width the bottom-left log would run under the centred chat bar (720px + gutters), so it rises above the
 // chat bar and the progress bar's row (26px + 10px), which it would also meet below about 1170px.
 @media (max-width: 1503px) {

@@ -206,6 +206,102 @@ $muted: var(--district-ui-muted, #b1b1ad);
         }
     }
 
+    // Hospital knockout calls: a short list of numbered rows, newest at the bottom, each with its own Respond.
+    &__calls {
+        margin-top: 8px;
+        padding-top: 7px;
+        border-top: 1px solid #ffffff14;
+    }
+
+    &__calls-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        color: $muted;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .06em;
+        line-height: 15px;
+        text-transform: uppercase;
+    }
+
+    &__calls-count {
+        min-width: 18px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: #3a3324;
+        color: $brass-light;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0;
+        text-align: center;
+    }
+
+    &__calls-empty {
+        margin: 0;
+        padding: 6px 0;
+        color: $muted;
+        font-size: 12px;
+        line-height: 16px;
+        text-align: center;
+    }
+
+    &__calls-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        max-height: 168px;
+        margin: 0;
+        padding: 0;
+        overflow-y: auto;
+        list-style: none;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        scrollbar-color: #4a4d54 transparent;
+    }
+
+    &__call {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 6px 5px 7px;
+        border: 1px solid #4a4d54;
+        border-left: 3px solid #c96b5a;
+        border-radius: 5px;
+        background: #26292f;
+    }
+
+    &__call-number {
+        color: $brass-light;
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        line-height: 15px;
+    }
+
+    &__call-body {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+
+        strong,
+        span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        strong { color: $text; font-size: 12px; font-weight: 700; line-height: 15px; }
+        span { color: $muted; font-size: 11px; line-height: 14px; }
+    }
+
+    &__respond {
+        min-height: 24px;
+        padding: 0 8px;
+        font-size: 12px;
+    }
+
     &__notice {
         display: flex;
         align-items: flex-start;

@@ -30,7 +30,13 @@ vi.mock('@volt/renderer', () =>
         constructor(public requestId: number, public action: number, public channel: number, public frequency: number, public text: string)
         {}
     }
-    return { RpRadioStatusEvent, RpRadioTransmissionEvent, RpRadioRequestComposer };
+    class RpHospitalCallsEvent {}
+    class RpHospitalCallRespondComposer
+    {
+        constructor(public requestId: number, public callNumber: number)
+        {}
+    }
+    return { RpHospitalCallsEvent, RpHospitalCallRespondComposer, RpRadioStatusEvent, RpRadioTransmissionEvent, RpRadioRequestComposer };
 });
 vi.mock('../session/useSessionSnapshots', async () =>
 {
@@ -57,6 +63,19 @@ const status = (requestId: number, overrides: object = {}) => ({ requestId, refu
     channelLabel: 'Public', hospitalAccess: false, gangAccess: true, listeners: 2, ...overrides });
 const transmission = (overrides: object = {}) => ({ channel: 0, frequency: 1234, channelLabel: 'Public', senderId: 2, senderName: 'bob',
     senderRank: '', text: 'meet at the bank', sentAt: 1700000000, ...overrides });
+const callsReply = (requestId: number, overrides: object = {}) => ({ requestId, notice: '', calls: [], ...overrides });
+const call = (number: number, overrides: object = {}) => ({ number, patientId: number + 10, patientName: `patient ${ number }`,
+    location: 'Ward 3', openedAt: 1700000000, ...overrides });
+const answer = (result: { current: ReturnType<typeof useRpRadioSource> }, number: number) =>
+{
+    let sent = false;
+
+    act(() =>
+    {
+        sent = result.current.respond(number);
+    });
+    return sent;
+};
 describe('useRpRadio', () =>
 {
     beforeEach(() =>
@@ -218,5 +237,56 @@ describe('useRpRadio', () =>
 
         expect(result.current.transmit('x'.repeat(120))).toBe(true);
         expect(test.sent.at(-1).text).toHaveLength(120);
+    });
+
+    it('adopts pushed hospital calls and ignores replies to other requests', () =>
+    {
+        const { result } = renderHook(() => useRpRadioSource());
+
+        deliver(renderer.RpHospitalCallsEvent, callsReply(0, { calls: [ call(7) ] }));
+        expect(result.current.calls).toEqual([ call(7) ]);
+
+        deliver(renderer.RpHospitalCallsEvent, callsReply(4242, { calls: [ call(8) ] }));
+        expect(result.current.calls).toEqual([ call(7) ]);
+    });
+
+    it('refreshes the call list on a powered hospital channel and clears it when leaving', () =>
+    {
+        const { result } = renderHook(() => useRpRadioSource());
+        deliver(renderer.RpRadioStatusEvent, status(test.sent[0].requestId));
+        const before = test.sent.length;
+
+        act(() => result.current.tune(1, 0));
+        deliver(renderer.RpRadioStatusEvent, status(test.sent.at(-1).requestId, { channel: 1, frequency: 0, channelLabel: 'Hospital' }));
+        expect(test.sent).toHaveLength(before + 2);
+        expect(test.sent.at(-1)).toMatchObject({ callNumber: 0 });
+
+        deliver(renderer.RpHospitalCallsEvent, callsReply(test.sent.at(-1).requestId, { calls: [ call(3) ] }));
+        expect(result.current.calls).toHaveLength(1);
+
+        act(() => result.current.tune(0, 1300));
+        deliver(renderer.RpRadioStatusEvent, status(test.sent.at(-1).requestId, { channel: 0, frequency: 1300 }));
+        expect(result.current.calls).toEqual([]);
+    });
+
+    it('correlates respond replies and refuses a second request in flight', () =>
+    {
+        const { result } = renderHook(() => useRpRadioSource());
+        deliver(renderer.RpRadioStatusEvent, status(test.sent[0].requestId, { channel: 1, frequency: 0, channelLabel: 'Hospital' }));
+        const refreshId = test.sent.at(-1).requestId;
+
+        expect(result.current.callPending).toBe(true);
+        expect(answer(result, 4)).toBe(false);
+
+        deliver(renderer.RpHospitalCallsEvent, callsReply(refreshId));
+        expect(result.current.callPending).toBe(false);
+
+        expect(answer(result, 4)).toBe(true);
+        const respondId = test.sent.at(-1).requestId;
+        expect(test.sent.at(-1)).toMatchObject({ requestId: respondId, callNumber: 4 });
+
+        deliver(renderer.RpHospitalCallsEvent, callsReply(respondId, { notice: 'Call 4 was taken.' }));
+        expect(result.current.notice).toEqual({ text: 'Call 4 was taken.', refused: false });
+        expect(result.current.callPending).toBe(false);
     });
 });

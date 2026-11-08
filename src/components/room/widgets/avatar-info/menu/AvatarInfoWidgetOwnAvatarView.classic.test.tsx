@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
     effectId: 0,
     hasClub: true,
     hasVip: true,
+    phoneStatus: { hasSim: true, number: '555-0142' } as { hasSim: boolean; number: string } | null,
     posture: 'std',
     sendDanceMessage: vi.fn(),
     sendExpressionMessage: vi.fn(),
@@ -24,6 +25,7 @@ afterEach(() => {
     mocks.effectId = 0;
     mocks.hasClub = true;
     mocks.hasVip = true;
+    mocks.phoneStatus = { hasSim: true, number: '555-0142' };
     mocks.posture = 'std';
     mocks.showInspectButton = true;
 });
@@ -73,6 +75,8 @@ vi.mock('../../../../../hooks', () => ({
     useWiredTools: () => ({ openInspectionForUser: vi.fn(), showInspectButton: mocks.showInspectButton })
 }));
 
+vi.mock('../../../../../hooks/roleplay/useRpPhone', () => ({ useRpPhone: () => ({ status: mocks.phoneStatus }) }));
+
 vi.mock('../../context-menu/ContextMenuView', () => ({
     ContextMenuView: ({
         children,
@@ -116,7 +120,7 @@ const renderMenu = (onClose = vi.fn(), isDancing = false) =>
 const getActionLabels = () => Array.from(document.querySelector('.air-avatar-menu-buttons').children).map((element) => element.textContent);
 
 describe('AIR own-avatar menu', () => {
-    it('uses the own-menu variant, AIR anchor rules, XML row order, and then Polaris extras', () => {
+    it('uses the own-menu variant, AIR anchor rules and the trimmed DistrictRP row order', () => {
         renderMenu();
 
         const menu = document.querySelector('.volt-avatar-action-menu--own');
@@ -126,30 +130,55 @@ describe('AIR own-avatar menu', () => {
         expect(menu).toHaveAttribute('data-maximum-vertical-lead-ratio', '0.05');
         expect(menu).toHaveAttribute('data-freeze-position-on-hover', 'true');
         expect(getActionLabels()).toEqual([
-            'widget.avatar.change_name',
-            'widget.avatar.decorate',
-            'widget.memenu.myclothes',
+            'Clothing',
             'infostand.link.expressions',
             'widget.memenu.dance',
             'infostand.show.signs',
             'avatar.widget.drop_hand_item',
-            'infostand.button.wired_inspect',
-            'Badge leaderboard'
+            'infostand.button.wired_inspect'
         ]);
         expect(screen.queryByText('product.type.effect')).not.toBeInTheDocument();
     });
 
-    it('keeps the retained AIR and Polaris actions wired', () => {
+    it('keeps the Clothing action wired', () => {
         const onClose = vi.fn();
 
         renderMenu(onClose);
 
-        fireEvent.click(screen.getByText('widget.memenu.myclothes'));
-        fireEvent.click(screen.getByText('Badge leaderboard'));
+        fireEvent.click(screen.getByText('Clothing'));
 
         expect(mocks.createLinkEvent).toHaveBeenCalledWith('avatar-editor/show');
-        expect(mocks.createLinkEvent).toHaveBeenCalledWith('badge-leaderboard/show');
-        expect(onClose).toHaveBeenCalledTimes(2);
+        expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows the phone number under the name', () => {
+        renderMenu();
+
+        expect(document.querySelector('.district-avatar-menu-phone')).toHaveTextContent('555-0142');
+    });
+
+    it('shows No SIM when the phone has no SIM', () => {
+        mocks.phoneStatus = { hasSim: false, number: '' };
+
+        renderMenu();
+
+        expect(document.querySelector('.district-avatar-menu-phone')).toHaveTextContent('No SIM');
+    });
+
+    it('shows no phone line without phone status', () => {
+        mocks.phoneStatus = null;
+
+        renderMenu();
+
+        expect(document.querySelector('.district-avatar-menu-phone')).not.toBeInTheDocument();
+    });
+
+    it('no longer shows the removed rows', () => {
+        renderMenu();
+
+        expect(screen.queryByText('widget.avatar.change_name')).not.toBeInTheDocument();
+        expect(screen.queryByText('widget.avatar.decorate')).not.toBeInTheDocument();
+        expect(screen.queryByText('Badge leaderboard')).not.toBeInTheDocument();
     });
 
 });

@@ -173,6 +173,34 @@
 .district-btn.is-danger:hover:not(:disabled) { border-color: #dc7f89; background: #c45a66; color: #fff; }
 .district-btn:disabled { opacity: .45; cursor: default; }
 .district-btn:focus-visible { outline: 2px solid var(--district-ui-accent); outline-offset: 2px; }
+/* Avatar menus (own and other players, 2026-11-07): the RP window panel and .district-btn rows replace the AIR bubble and
+   button bitmaps. Sizes and offsets stay those of RoomWidgets.css so the menu keeps its anchor above the avatar.
+   The `border` shorthand also clears the bitmap border-image. */
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own)::before { border: 1px solid #ffffff1a; border-radius: 10px; background: linear-gradient(160deg, #2f3238, #23252a 42%, #1a1b20); box-shadow: 0 8px 20px #0009, inset 0 1px #ffffff1f; }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own)::after { bottom: -1px; left: calc(50% - 7px); width: 0; height: 0; border: 7px solid transparent; border-top-color: #1a1b20; border-bottom: 0; background: none; }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) .volt-context-menu-header { color: var(--district-ui-text); font: 700 13px/16px var(--district-ui-font); }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) .volt-context-menu-header:hover { color: var(--district-ui-accent-hover); }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) .volt-context-menu-header::after { background: #ffffff1a; }
+/* Own menu: the phone number sits under the name and carries the divider instead of the header. */
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) .volt-context-menu-header:has(+ .district-avatar-menu-phone) { margin-bottom: 1px; }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) .volt-context-menu-header:has(+ .district-avatar-menu-phone)::after { display: none; }
+.district-avatar-menu-phone { box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 4px; width: 107px; margin: 0 0 6px 4px; padding-bottom: 5px; border-bottom: 1px solid #ffffff1a; color: var(--district-ui-muted); font: 700 11px/14px var(--district-ui-font); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.district-avatar-menu-phone::before { flex: 0 0 7px; width: 7px; height: 11px; content: ''; border: 1px solid var(--district-ui-accent); border-radius: 2px; box-sizing: border-box; box-shadow: inset 0 -2px 0 -1px var(--district-ui-accent); }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) .air-avatar-menu-buttons { gap: 3px; }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) .air-avatar-menu-buttons > .volt-context-menu-item::before,
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) .air-avatar-menu-sign-cell::before { display: none; }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) :is(.air-avatar-menu-buttons > .volt-context-menu-item, .air-avatar-menu-sign-cell) { border: 1px solid #ffffff24; border-radius: 6px; background: #26292f; color: var(--district-ui-text); font: 700 12px/16px var(--district-ui-font); text-decoration: none; cursor: pointer; }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) .air-avatar-menu-buttons > .volt-context-menu-item { line-height: 24px; padding-top: 0; }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) .air-avatar-menu-sign-cell { line-height: 23px; }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) :is(.air-avatar-menu-buttons > .volt-context-menu-item, .air-avatar-menu-sign-cell):hover { border-color: #ffffff40; background: #2f333a; color: var(--district-ui-accent-hover); }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) :is(.air-avatar-menu-buttons > .volt-context-menu-item, .air-avatar-menu-sign-cell):active { background: #1f2126; }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) .air-avatar-menu-buttons > .volt-context-menu-item:is(.disabled, .air-avatar-menu-item--locked),
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) .air-avatar-menu-buttons > .volt-context-menu-item:is(.disabled, .air-avatar-menu-item--locked):hover { border-color: #ffffff14; background: #202227; color: #6f7176; cursor: default; }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) .volt-context-menu-footer::before,
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own).menu-hidden .volt-context-menu-footer::before { width: 0; height: 0; border: 5px solid transparent; border-top-color: var(--district-ui-muted); border-bottom: 0; background: none; }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own) .volt-context-menu-footer:hover::before { border-top-color: var(--district-ui-accent-hover); background: none; }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own).menu-hidden .volt-context-menu-footer::before { top: 12px; left: 14px; border-top: 0; border-bottom: 5px solid var(--district-ui-muted); }
+:is(.volt-avatar-action-menu--classic, .volt-avatar-action-menu--own).menu-hidden .volt-context-menu-footer:hover::before { border-bottom-color: var(--district-ui-accent-hover); background: none; }
 @media (max-width: 480px) {
     .theme-district.volt-group-members .volt-group-members-list-grid { grid-template-columns: minmax(0, 1fr) !important; }
     .theme-district .district-group-badge { flex-basis: 64px; }

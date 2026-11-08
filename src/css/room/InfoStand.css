@@ -1078,19 +1078,6 @@
         display: none;
     }
 
-    &::after {
-        position: absolute;
-        top: 0;
-        left: 10px;
-        width: 34px;
-        height: 2px;
-        content: '';
-        border-radius: 0 0 2px 2px;
-        background: var(--district-ui-accent);
-        opacity: 0.65;
-        pointer-events: none;
-    }
-
     /* No name header: the tabs and the close button share the top row. */
     .volt-infostand__tab-row {
         display: flex;
@@ -1504,8 +1491,8 @@
     .volt-infostand__stage {
         position: relative;
 
-        /* The duty ribbon takes the bottom 20px, so the stage grows by that much and the feet stay clear. */
-        &.has-duty .volt-infostand__avatar-well {
+        /* The name strip takes the bottom 20px, so the stage grows by that much and the feet stay clear. */
+        .volt-infostand__avatar-well {
             height: 130px;
 
             &::after {
@@ -1514,19 +1501,44 @@
         }
     }
 
-    .volt-infostand__duty {
+    /* Bottom strip of the stage: the player's name on the left, duty state (if employed) on the right. */
+    .volt-infostand__stage-name {
         position: absolute;
         right: 1px;
         bottom: 1px;
         left: 1px;
         z-index: 3;
-        display: flex;
-        align-items: center;
-        gap: 6px;
+        box-sizing: border-box;
         padding: 3px 6px;
         overflow: hidden;
         border-radius: 0 0 3px 3px;
         background: color-mix(in srgb, var(--district-ui-inset) 82%, transparent);
+        color: var(--district-ui-text);
+        font-family: var(--district-ui-font);
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 14px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        pointer-events: none;
+    }
+
+    .volt-infostand__stage.has-duty .volt-infostand__stage-name {
+        padding-right: calc(55% + 4px);
+    }
+
+    .volt-infostand__duty {
+        position: absolute;
+        right: 1px;
+        bottom: 1px;
+        left: 45%;
+        z-index: 4;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 5px;
+        padding: 3px 6px 3px 0;
+        overflow: hidden;
         color: var(--district-ui-muted);
         font-family: var(--district-ui-font);
         font-size: 11px;
@@ -1559,6 +1571,21 @@
         left: 50% !important;
         z-index: 2;
         transform: translateX(-50%);
+    }
+
+    /* Neither a job nor a gang: one muted line instead of two empty framed rows. */
+    .volt-infostand__unaffiliated {
+        box-sizing: border-box;
+        width: 100%;
+        margin: 8px 0 0;
+        padding: 6px 8px;
+        border: 1px dashed color-mix(in srgb, var(--district-ui-border) 55%, transparent);
+        border-radius: 4px;
+        color: var(--district-ui-muted);
+        font-family: var(--district-ui-font);
+        font-size: 12px;
+        line-height: 16px;
+        text-align: center;
     }
 
     .volt-infostand__badges {

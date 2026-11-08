@@ -199,8 +199,7 @@ describe('user infostand redesign', () => {
         state.affiliations = affiliations({ loading: false, unavailable: false, job: '', jobBadge: '', gang: '', gangBadge: '' });
         view.rerender(<InfoStandWidgetUserView avatarInfo={createAvatarInfo('IUI_OWN_USER') as any} setAvatarInfo={vi.fn()} onClose={vi.fn()} />);
 
-        expect(screen.getByText('No job')).toBeInTheDocument();
-        expect(screen.getByText('No gang')).toBeInTheDocument();
+        expect(screen.getByText('No job · No gang')).toBeInTheDocument();
 
         state.affiliations = affiliations({ job: 'Hospital', jobBadge: '', gang: 'Kings', gangBadge: 'b-gang' });
         view.rerender(<InfoStandWidgetUserView avatarInfo={createAvatarInfo('IUI_OWN_USER') as any} setAvatarInfo={vi.fn()} onClose={vi.fn()} />);
@@ -214,13 +213,37 @@ describe('user infostand redesign', () => {
         expect(screen.getAllByText('Unavailable')).toHaveLength(2);
     });
 
+    it('shows one compact unaffiliated line instead of the two empty affiliation rows', () => {
+        state.affiliations = affiliations({ loading: false, unavailable: false, job: '', jobBadge: '', gang: '', gangBadge: '' });
+
+        render(<InfoStandWidgetUserView avatarInfo={createAvatarInfo('IUI_PEER') as any} setAvatarInfo={vi.fn()} onClose={vi.fn()} />);
+
+        expect(screen.getByText('No job · No gang')).toBeInTheDocument();
+        expect(screen.queryByRole('group', { name: 'Job badge' })).toBeNull();
+    });
+
+    it('keeps the affiliation rows when the player has a job badge', () => {
+        state.affiliations = affiliations({ loading: false, unavailable: false, job: 'Hospital', jobBadge: 'b1', gang: '', gangBadge: '' });
+
+        render(<InfoStandWidgetUserView avatarInfo={createAvatarInfo('IUI_PEER') as any} setAvatarInfo={vi.fn()} onClose={vi.fn()} />);
+
+        expect(screen.getByRole('group', { name: 'Job badge' })).toBeInTheDocument();
+        expect(screen.queryByText('No job · No gang')).toBeNull();
+    });
+
+    it('labels the stage with the player name', () => {
+        render(<InfoStandWidgetUserView avatarInfo={createAvatarInfo('IUI_PEER') as any} setAvatarInfo={vi.fn()} onClose={vi.fn()} />);
+
+        expect(document.querySelector('.volt-infostand__stage-name')).toHaveTextContent('Ada');
+    });
+
     it('has no name header and selects Stats from the avatar without opening the profile window', () => {
         const onClose = vi.fn();
 
         render(<InfoStandWidgetUserView avatarInfo={createAvatarInfo('IUI_PEER') as any} setAvatarInfo={vi.fn()} onClose={onClose} />);
 
-        // The HUD above names the player; the card only carries it in the tab list's accessible name.
-        expect(screen.queryByText('Ada')).toBeNull();
+        // The HUD above names the player; the stage label repeats it inside the card.
+        expect(document.querySelector('.volt-infostand__stage-name')).toHaveTextContent('Ada');
         expect(screen.getByRole('tablist', { name: 'Ada player card' })).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: 'View stats' }));

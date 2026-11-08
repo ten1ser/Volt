@@ -1,7 +1,7 @@
 import { AddLinkEventTracker } from '@volt/renderer';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { RadioView } from './RadioView';
+import { hospitalCallAge, RadioView } from './RadioView';
 
 interface TestStatus
 {
@@ -27,15 +27,27 @@ interface TestMessage
     sentAt: number;
 }
 
+interface TestCall
+{
+    number: number;
+    patientId: number;
+    patientName: string;
+    location: string;
+    openedAt: number;
+}
+
 interface RadioMock
 {
     status: TestStatus | null;
     notice: { text: string; refused: boolean } | null;
     messages: TestMessage[];
+    calls: TestCall[];
     pending: boolean;
+    callPending: boolean;
     refresh: ReturnType<typeof vi.fn>;
     power: ReturnType<typeof vi.fn>;
     tune: ReturnType<typeof vi.fn>;
+    respond: ReturnType<typeof vi.fn>;
     clearNotice: ReturnType<typeof vi.fn>;
 }
 
@@ -59,10 +71,13 @@ const makeRadio = (): RadioMock => ({
     status: { powered: true, channel: 0, frequency: 1234, channelLabel: 'Public', hospitalAccess: false, gangAccess: true, listeners: 3 },
     notice: null,
     messages: [],
+    calls: [],
     pending: false,
+    callPending: false,
     refresh: vi.fn(),
     power: vi.fn(),
     tune: vi.fn(),
+    respond: vi.fn(),
     clearNotice: vi.fn()
 });
 const tracker = () => vi.mocked(AddLinkEventTracker).mock.calls.at(-1)?.[0] as unknown as LinkTracker;
@@ -368,5 +383,47 @@ describe('RadioView', () =>
 
         fireEvent.click(power);
         expect(test.radio.power).toHaveBeenCalledWith(true);
+    });
+
+    it('lists hospital calls and responds with the call number', () =>
+    {
+        const openedAt = Math.floor(Date.now() / 1000) - 180;
+
+        test.radio.status = { powered: true, channel: 1, frequency: 0, channelLabel: 'Hospital', hospitalAccess: true, gangAccess: true, listeners: 2 };
+        test.radio.calls = [
+            { number: 12, patientId: 4, patientName: 'Ann Patient', location: 'Ward 3', openedAt },
+            { number: 13, patientId: 5, patientName: 'Ben Patient', location: '', openedAt }
+        ];
+        render(<RadioView />);
+        open();
+
+        expect(screen.getByRole('region', { name: 'Hospital calls' })).toBeInTheDocument();
+        expect(screen.getByText('Ann Patient')).toBeInTheDocument();
+        expect(screen.getByText('Ward 3 · 3m ago')).toBeInTheDocument();
+        expect(screen.getByText('Unknown location · 3m ago')).toBeInTheDocument();
+        expect(screen.getAllByRole('button', { name: 'Respond' })).toHaveLength(2);
+
+        fireEvent.click(screen.getAllByRole('button', { name: 'Respond' })[1]);
+        expect(test.radio.respond).toHaveBeenCalledWith(13);
+    });
+
+    it('shows an empty calls list on hospital and hides the section on public', () =>
+    {
+        test.radio.status = { powered: true, channel: 1, frequency: 0, channelLabel: 'Hospital', hospitalAccess: true, gangAccess: true, listeners: 1 };
+        const { rerender } = render(<RadioView />);
+
+        open();
+        expect(screen.getByText('No open calls')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Respond' })).toBeNull();
+
+        test.radio.status = { ...test.radio.status, channel: 0, channelLabel: 'Public' };
+        rerender(<RadioView />);
+        expect(screen.queryByRole('region', { name: 'Hospital calls' })).toBeNull();
+    });
+
+    it('ages call timestamps', () =>
+    {
+        expect(hospitalCallAge(1000, 1059)).toBe('just now');
+        expect(hospitalCallAge(1000, 1180)).toBe('3m ago');
     });
 });

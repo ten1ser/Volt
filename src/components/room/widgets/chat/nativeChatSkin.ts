@@ -51,6 +51,7 @@ export const isNativeAnonymousStyle = (id: number): boolean => ANONYMOUS_STYLES.
 export const getNativeChatBaseFontSize = (id: number): number => LARGE_FONT_STYLES.has(id) ? 17 : 12;
 // Ordinary talk (0) and the DistrictRP action colours (server RpChat: 3 injury, 4 combat, 5 work, 6 money, 7 crime,
 // 11 items, 12 medical, 13 phone) and client radio lines (900) and the RP action strips (901 shooting, 902 knockout,
-// 903 medical, 904 hit, 905 rob, 906 phone) share the plain bold-name room text.
-const DISTRICT_PLAIN_STYLES = new Set([0, 3, 4, 5, 6, 7, 11, 12, 13, 900, 901, 902, 903, 904, 905, 906]);
+// 903 medical, 904 hit, 905 rob, 906 phone, 907 money, 908 work, 909 items, 910 HP, 911 missed punch,
+// 912 missed shot, 913 ended call) share the plain bold-name room text.
+const DISTRICT_PLAIN_STYLES = new Set([0, 3, 4, 5, 6, 7, 11, 12, 13, 900, 901, 902, 903, 904, 905, 906, 907, 908, 909, 910, 911, 912, 913]);
 export const isDistrictPlainStyle = (id: number): boolean => DISTRICT_PLAIN_STYLES.has(id);

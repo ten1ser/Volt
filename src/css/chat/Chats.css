@@ -2068,10 +2068,11 @@
     display: none;
 }
 
-/* RP action strips (server RpChat styles 901-906): the radio strip's shape with a per-category edge, name colour and an
+/* RP action strips (server RpChat styles 901-913): the radio strip's shape with a per-category edge, name colour and an
    18px pixel badge before the name. Dedicated style numbers, so players who pick a native bubble colour keep it.
-   901 shooting, 902 knockout, 903 medical, 904 hit, 905 rob, 906 phone. */
-.bubble-container.native-room-bubble .chat-bubble:is(.bubble-901, .bubble-902, .bubble-903, .bubble-904, .bubble-905, .bubble-906) {
+   901 shooting, 902 knockout, 903 medical, 904 hit, 905 rob, 906 phone, 907 money, 908 work, 909 items, 910 HP,
+   911 missed punch, 912 missed shot, 913 ended call. */
+.bubble-container.native-room-bubble .chat-bubble:is(.bubble-901, .bubble-902, .bubble-903, .bubble-904, .bubble-905, .bubble-906, .bubble-907, .bubble-908, .bubble-909, .bubble-910, .bubble-911, .bubble-912, .bubble-913) {
     border-image-source: none;
     border-radius: 6px;
     background: var(--rp-strip-bg);
@@ -2085,21 +2086,32 @@
 .bubble-container.native-room-bubble .chat-bubble.bubble-904 { --rp-strip-bg: #1a1e25eb; --rp-strip-edge: #6f8fb8; --rp-strip-name: #a9c3e6; --rp-strip-badge: url('@/assets/images/roleplay/chat/badge-fist.png'); }
 .bubble-container.native-room-bubble .chat-bubble.bubble-905 { --rp-strip-bg: #1e1b23eb; --rp-strip-edge: #8a7aa8; --rp-strip-name: #c6b8e0; --rp-strip-badge: url('@/assets/images/roleplay/chat/badge-rob.png'); }
 .bubble-container.native-room-bubble .chat-bubble.bubble-906 { --rp-strip-bg: #1d1b24eb; --rp-strip-edge: #9b7fd0; --rp-strip-name: #c9b6f2; --rp-strip-badge: url('@/assets/images/roleplay/chat/badge-phone.png'); }
+.bubble-container.native-room-bubble .chat-bubble.bubble-907 { --rp-strip-bg: #1b2119eb; --rp-strip-edge: #6fae5a; --rp-strip-name: #a8dc8f; --rp-strip-badge: url('@/assets/images/roleplay/chat/badge-money.png'); }
+.bubble-container.native-room-bubble .chat-bubble.bubble-908 { --rp-strip-bg: #231e17eb; --rp-strip-edge: #d08a3a; --rp-strip-name: #f0b878; --rp-strip-badge: url('@/assets/images/roleplay/chat/badge-work.png'); }
+.bubble-container.native-room-bubble .chat-bubble.bubble-909 { --rp-strip-bg: #181f25eb; --rp-strip-edge: #5aa8d6; --rp-strip-name: #9fd2f0; --rp-strip-badge: url('@/assets/images/roleplay/chat/badge-items.png'); }
+.bubble-container.native-room-bubble .chat-bubble.bubble-910 { --rp-strip-bg: #241a1beb; --rp-strip-edge: #c4473f; --rp-strip-name: #f09a92; --rp-strip-badge: url('@/assets/images/roleplay/chat/badge-hp.png'); }
+.bubble-container.native-room-bubble .chat-bubble.bubble-911 { --rp-strip-bg: #1a1e25eb; --rp-strip-edge: #4e5f75; --rp-strip-name: #a9c3e6; --rp-strip-badge: url('@/assets/images/roleplay/chat/badge-fist-miss.png'); }
+.bubble-container.native-room-bubble .chat-bubble.bubble-912 { --rp-strip-bg: #221b19eb; --rp-strip-edge: #6a4a3e; --rp-strip-name: #f0a070; --rp-strip-badge: url('@/assets/images/roleplay/chat/badge-shooting-miss.png'); }
+.bubble-container.native-room-bubble .chat-bubble.bubble-913 { --rp-strip-bg: #1d1b24eb; --rp-strip-edge: #9b7fd0; --rp-strip-name: #c9b6f2; --rp-strip-badge: url('@/assets/images/roleplay/chat/badge-phone-end.png'); }
 
-.bubble-container.native-room-bubble .chat-bubble:is(.bubble-901, .bubble-902, .bubble-903, .bubble-904, .bubble-905, .bubble-906) :is(.chat-content, .message) {
+.bubble-container.native-room-bubble .chat-bubble:is(.bubble-901, .bubble-902, .bubble-903, .bubble-904, .bubble-905, .bubble-906, .bubble-907, .bubble-908, .bubble-909, .bubble-910, .bubble-911, .bubble-912, .bubble-913) :is(.chat-content, .message) {
     color: #f1eee6;
 }
 
-.bubble-container.native-room-bubble .chat-bubble.bubble-902 .message {
+/* Knockouts and misses read quieter than the line they follow. */
+.bubble-container.native-room-bubble .chat-bubble:is(.bubble-902, .bubble-911, .bubble-912) .message {
     color: #b4b6b2;
+}
+
+.bubble-container.native-room-bubble .chat-bubble.bubble-902 .message {
     font-style: italic;
 }
 
-.bubble-container.native-room-bubble .chat-bubble:is(.bubble-901, .bubble-902, .bubble-903, .bubble-904, .bubble-905, .bubble-906) .username {
+.bubble-container.native-room-bubble .chat-bubble:is(.bubble-901, .bubble-902, .bubble-903, .bubble-904, .bubble-905, .bubble-906, .bubble-907, .bubble-908, .bubble-909, .bubble-910, .bubble-911, .bubble-912, .bubble-913) .username {
     color: var(--rp-strip-name);
 }
 
-.bubble-container.native-room-bubble .chat-bubble:is(.bubble-901, .bubble-902, .bubble-903, .bubble-904, .bubble-905, .bubble-906) .chat-content::before {
+.bubble-container.native-room-bubble .chat-bubble:is(.bubble-901, .bubble-902, .bubble-903, .bubble-904, .bubble-905, .bubble-906, .bubble-907, .bubble-908, .bubble-909, .bubble-910, .bubble-911, .bubble-912, .bubble-913) .chat-content::before {
     content: '';
     display: inline-block;
     width: 18px;
@@ -2110,6 +2122,6 @@
     image-rendering: pixelated;
 }
 
-.bubble-container.native-room-bubble .chat-bubble:is(.bubble-901, .bubble-902, .bubble-903, .bubble-904, .bubble-905, .bubble-906) .pointer {
+.bubble-container.native-room-bubble .chat-bubble:is(.bubble-901, .bubble-902, .bubble-903, .bubble-904, .bubble-905, .bubble-906, .bubble-907, .bubble-908, .bubble-909, .bubble-910, .bubble-911, .bubble-912, .bubble-913) .pointer {
     display: none;
 }

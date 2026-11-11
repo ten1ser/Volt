@@ -5,6 +5,7 @@ import { LayoutAvatarImageView } from '../../../common/layout/LayoutAvatarImageV
 import { useRpStats } from '../../../hooks/roleplay/useRpStats';
 import { useRoom } from '../../../hooks/rooms/useRoom';
 import { useUserDataSnapshot } from '../../../hooks/session/useSessionSnapshots';
+import { ScreenEffectsView } from '../effects/ScreenEffectsView';
 import './StatsHud.scss';
 
 const label = (key: string, fallback: string) =>
@@ -42,6 +43,7 @@ export const StatsHud: FC = () =>
 
     return (
         <section className="rp-stats-hud" aria-label={label('roleplay.stats.title', 'Your stats')}>
+            <ScreenEffectsView health={stats.health} />
             <div className="rp-stats-hud__main">
                 <button
                     type="button"

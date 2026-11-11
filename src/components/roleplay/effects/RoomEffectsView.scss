@@ -1,0 +1,99 @@
+// Room effects (packet 6140): one 6-frame sprite strip per kind, drawn by pixel-art/rp-effects/final.py.
+// Each cell is 64x96 and its bottom-centre sits on the avatar's feet; --rp-fx-scale follows the room zoom.
+
+$rp-fx-cell-w: 64px;
+$rp-fx-cell-h: 96px;
+$rp-fx-frames: 6;
+
+.rp-room-effects {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 4;
+}
+
+.rp-room-effect {
+    position: absolute;
+    width: 0;
+    height: 0;
+}
+
+.rp-room-effect__sprite {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: $rp-fx-cell-w;
+    height: $rp-fx-cell-h;
+    transform: translate(-50%, -100%) scale(var(--rp-fx-scale, 1));
+    transform-origin: 50% 100%;
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    image-rendering: pixelated;
+    animation: rp-fx-frames 540ms steps($rp-fx-frames) 1 forwards;
+}
+
+@keyframes rp-fx-frames {
+    from { background-position: 0 0; }
+    to { background-position: -($rp-fx-cell-w * $rp-fx-frames) 0; }
+}
+
+@each $kind in punch-hit, punch-miss, shot-hit, shot-miss, armor-break, knockout, heal, robbed {
+    .rp-room-effect--#{$kind} .rp-room-effect__sprite {
+        background-image: url('@/assets/images/roleplay/effects/effect-#{$kind}.png');
+    }
+}
+
+.rp-room-effect--punch-hit .rp-room-effect__sprite,
+.rp-room-effect--shot-hit .rp-room-effect__sprite {
+    animation-duration: 480ms;
+}
+
+// Stars keep circling the knocked-out avatar for a few loops.
+.rp-room-effect--knockout .rp-room-effect__sprite {
+    animation: rp-fx-frames 600ms steps($rp-fx-frames) 4;
+}
+
+.rp-room-effect--heal .rp-room-effect__sprite {
+    animation-duration: 720ms;
+}
+
+// Floating combat text, anchored above the head (top of the avatar bounds).
+.rp-room-effect__amount {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate(-50%, -100%);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    color: #ff4a3a;
+    text-shadow:
+        1px 0 0 #1a0e0a, -1px 0 0 #1a0e0a, 0 1px 0 #1a0e0a, 0 -1px 0 #1a0e0a,
+        1px 1px 0 #1a0e0a, -1px 1px 0 #1a0e0a, 1px -1px 0 #1a0e0a, -1px -1px 0 #1a0e0a,
+        0 2px 0 #1a0e0a;
+    animation: rp-fx-float 1000ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+.rp-room-effect__amount--heal { color: #5cf06c; text-shadow: 1px 0 0 #0e2e14, -1px 0 0 #0e2e14, 0 1px 0 #0e2e14, 0 -1px 0 #0e2e14, 1px 1px 0 #0e2e14, -1px 1px 0 #0e2e14, 1px -1px 0 #0e2e14, -1px -1px 0 #0e2e14, 0 2px 0 #0e2e14; }
+.rp-room-effect__amount--coins { color: #ffcc1f; }
+
+@keyframes rp-fx-float {
+    0% { opacity: 0; transform: translate(-50%, -60%) scale(0.6); }
+    15% { opacity: 1; transform: translate(-50%, -110%) scale(1.25); }
+    30% { transform: translate(-50%, -120%) scale(1); }
+    75% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -260%) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rp-room-effect__sprite { animation-duration: 1ms; animation-iteration-count: 1; visibility: hidden; }
+    .rp-room-effect__amount { animation: rp-fx-fade 1000ms linear forwards; transform: translate(-50%, -150%); }
+}
+
+@keyframes rp-fx-fade {
+    0%, 70% { opacity: 1; }
+    100% { opacity: 0; }
+}

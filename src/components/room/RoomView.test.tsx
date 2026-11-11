@@ -36,6 +36,7 @@ vi.mock('../roleplay/hud/CityBackdrop', () => ({ CityBackdrop: () => null }));
 vi.mock('./spectator/RoomSpectatorView', () => ({ RoomSpectatorView: () => null }));
 vi.mock('./widgets/RoomWidgetsView', () => ({ RoomWidgetsView: () => null }));
 vi.mock('./widgets/wired-fx/WiredVariableFxOverlayView', () => ({ WiredVariableFxOverlayView: () => null }));
+vi.mock('../roleplay/effects/RoomEffectsView', () => ({ RoomEffectsView: () => null }));
 
 const dispatched = () => vi.mocked(DispatchMouseEvent).mock.calls.map(([event]) => event.type);
 

@@ -68,7 +68,7 @@ describe('RoomEffectsView', () =>
     {
         test.effects = [{ id: 1, kind: 6, targetVirtualId: 7, sourceVirtualId: 3, amount: 25 }];
         const { container } = render(<RoomEffectsView />);
-        const effect = container.querySelector('.rp-room-effect');
+        const effect = container.querySelector<HTMLElement>('.rp-room-effect');
 
         expect(effect).toHaveClass('rp-room-effect--heal');
         expect(effect.style.visibility).toBe('visible');
@@ -78,7 +78,7 @@ describe('RoomEffectsView', () =>
         expect(effect.querySelector('.rp-room-effect__sprite')).not.toBeNull();
         expect(GetRoomObjectBounds).toHaveBeenCalledWith(5, 7, 20, 1);
 
-        const amount = container.querySelector('.rp-room-effect__amount--heal');
+        const amount = container.querySelector<HTMLElement>('.rp-room-effect__amount--heal');
 
         expect(amount).toHaveTextContent('+25');
         expect(amount.style.top).toBe('-88px');
@@ -90,7 +90,7 @@ describe('RoomEffectsView', () =>
         test.effects = [{ id: 1, kind: 0, targetVirtualId: 7, sourceVirtualId: 3, amount: 9 }];
         const { container } = render(<RoomEffectsView />);
 
-        expect((container.querySelector('.rp-room-effect')).style.visibility).toBe('hidden');
+        expect(container.querySelector<HTMLElement>('.rp-room-effect').style.visibility).toBe('hidden');
     });
 
     it('drops unknown kinds, an empty list and the view without a room', () =>

@@ -2030,6 +2030,17 @@
     transform: translateX(-50%);
 }
 
+/* A larger head in the well: scaled 1.3x from its feet and allowed to rise past the well's top, like a head over a
+   native decorated bubble. The radio line keeps its own small 18px head. */
+.bubble-container.native-room-bubble.district-plain-chat .chat-bubble:not(.bubble-900) .user-container {
+    overflow: visible;
+}
+
+.bubble-container.native-room-bubble.district-plain-chat .chat-bubble:not(.bubble-900) .user-image {
+    transform: translateX(-50%) scale(1.3);
+    transform-origin: 50% 100%;
+}
+
 
 /* Radio lines (client style 900): a night-gold strip with a brass edge, read next to speech. No skin image, so it
    also renders in chat history; the pointer is hidden because the line belongs to no avatar. */
@@ -2076,14 +2087,14 @@
 .bubble-container.native-room-bubble.district-plain-chat .chat-bubble.bubble-901 { border-image-source: url('@/assets/images/roleplay/chat/bubble-901.png'); border-image-slice: 32 25 10 56 fill; border-image-width: 32px 25px 10px 56px; border-image-outset: 15px 12px 4px 23px; }
 .bubble-container.native-room-bubble.district-plain-chat .chat-bubble.bubble-902 { border-image-source: url('@/assets/images/roleplay/chat/bubble-902.png'); border-image-slice: 36 13 10 43 fill; border-image-width: 36px 13px 10px 43px; border-image-outset: 19px 0px 4px 10px; }
 .bubble-container.native-room-bubble.district-plain-chat .chat-bubble.bubble-903 { border-image-source: url('@/assets/images/roleplay/chat/bubble-903.png'); border-image-slice: 32 13 14 39 fill; border-image-width: 32px 13px 14px 39px; border-image-outset: 15px 0px 8px 6px; }
-.bubble-container.native-room-bubble.district-plain-chat .chat-bubble.bubble-904 { border-image-source: url('@/assets/images/roleplay/chat/bubble-904.png'); border-image-slice: 35 13 6 57 fill; border-image-width: 35px 13px 6px 57px; border-image-outset: 18px 0px 0px 24px; }
+.bubble-container.native-room-bubble.district-plain-chat .chat-bubble.bubble-904 { border-image-source: url('@/assets/images/roleplay/chat/bubble-904.png'); border-image-slice: 35 13 6 60 fill; border-image-width: 35px 13px 6px 60px; border-image-outset: 18px 0px 0px 27px; }
 .bubble-container.native-room-bubble.district-plain-chat .chat-bubble.bubble-905 { border-image-source: url('@/assets/images/roleplay/chat/bubble-905.png'); border-image-slice: 33 13 12 45 fill; border-image-width: 33px 13px 12px 45px; border-image-outset: 16px 0px 6px 12px; }
 .bubble-container.native-room-bubble.district-plain-chat .chat-bubble.bubble-906 { border-image-source: url('@/assets/images/roleplay/chat/bubble-906.png'); border-image-slice: 30 13 6 40 fill; border-image-width: 30px 13px 6px 40px; border-image-outset: 13px 0px 0px 7px; }
 .bubble-container.native-room-bubble.district-plain-chat .chat-bubble.bubble-907 { border-image-source: url('@/assets/images/roleplay/chat/bubble-907.png'); border-image-slice: 37 13 6 48 fill; border-image-width: 37px 13px 6px 48px; border-image-outset: 20px 0px 0px 15px; }
 .bubble-container.native-room-bubble.district-plain-chat .chat-bubble.bubble-908 { border-image-source: url('@/assets/images/roleplay/chat/bubble-908.png'); border-image-slice: 30 13 9 44 fill; border-image-width: 30px 13px 9px 44px; border-image-outset: 13px 0px 3px 11px; }
 .bubble-container.native-room-bubble.district-plain-chat .chat-bubble.bubble-909 { border-image-source: url('@/assets/images/roleplay/chat/bubble-909.png'); border-image-slice: 33 13 6 40 fill; border-image-width: 33px 13px 6px 40px; border-image-outset: 16px 0px 0px 7px; }
 .bubble-container.native-room-bubble.district-plain-chat .chat-bubble.bubble-910 { border-image-source: url('@/assets/images/roleplay/chat/bubble-910.png'); border-image-slice: 31 13 12 44 fill; border-image-width: 31px 13px 12px 44px; border-image-outset: 14px 0px 6px 11px; }
-.bubble-container.native-room-bubble.district-plain-chat .chat-bubble.bubble-911 { border-image-source: url('@/assets/images/roleplay/chat/bubble-911.png'); border-image-slice: 32 13 6 57 fill; border-image-width: 32px 13px 6px 57px; border-image-outset: 15px 0px 0px 24px; }
+.bubble-container.native-room-bubble.district-plain-chat .chat-bubble.bubble-911 { border-image-source: url('@/assets/images/roleplay/chat/bubble-911.png'); border-image-slice: 32 13 6 60 fill; border-image-width: 32px 13px 6px 60px; border-image-outset: 15px 0px 0px 27px; }
 .bubble-container.native-room-bubble.district-plain-chat .chat-bubble.bubble-912 { border-image-source: url('@/assets/images/roleplay/chat/bubble-912.png'); border-image-slice: 30 25 6 53 fill; border-image-width: 30px 25px 6px 53px; border-image-outset: 13px 12px 0px 20px; }
 .bubble-container.native-room-bubble.district-plain-chat .chat-bubble.bubble-913 { border-image-source: url('@/assets/images/roleplay/chat/bubble-913.png'); border-image-slice: 30 13 6 40 fill; border-image-width: 30px 13px 6px 40px; border-image-outset: 13px 0px 0px 7px; }
 

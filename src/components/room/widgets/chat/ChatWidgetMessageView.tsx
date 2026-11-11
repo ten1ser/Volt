@@ -6,7 +6,7 @@ import { useSessionInfo } from '../../../../hooks/session/useSessionInfo';
 import { ChatTextSize, getChatFontScale, getChatTextSize } from '../chat-input/chatTextSize';
 import { measureBubbleVisualOffsets } from './chatBubbleMetrics';
 import { getNativeChatCreation, getNativeChatGeometry } from './nativeChatScroller';
-import { getNativeChatBaseFontSize, getNativeDefaultSkin, isDistrictPlainStyle, isNativeAnonymousStyle } from './nativeChatSkin';
+import { getNativeChatBaseFontSize, getNativeDefaultSkin, isDistrictPlainStyle, isNativeAnonymousStyle, splitRpLeadingAsterisk } from './nativeChatSkin';
 import { NativeChatText } from './NativeChatText';
 
 interface ChatWidgetMessageViewProps {
@@ -47,6 +47,7 @@ export const ChatWidgetMessageView: FC<ChatWidgetMessageViewProps> = ({
     const makeRoomRef = useRef(makeRoom);
     const { onClickChat } = useOnClickChat();
     const formattedText = useMemo(() => `${chat.formattedText}`, [chat.formattedText]);
+    const rpText = useMemo(() => splitRpLeadingAsterisk(chat.styleId, formattedText), [chat.styleId, formattedText]);
 
     const getBubbleWidth = useMemo(() => {
         // AIR's history factory always requests NORMAL (350), and ChatBubble
@@ -197,8 +198,8 @@ export const ChatWidgetMessageView: FC<ChatWidgetMessageViewProps> = ({
                     )}
                     {!nativeTextEnabled && (
                         <>
-                            {!anonymous && !chat.hideUsername && <b className="username">{chat.username}: </b>}
-                            <span className={messageClassName} dangerouslySetInnerHTML={{ __html: formattedText }} onClick={onClickChat} />
+                            {!anonymous && !chat.hideUsername && <b className="username">{rpText.prefix}{chat.username}: </b>}
+                            <span className={messageClassName} dangerouslySetInnerHTML={{ __html: anonymous || chat.hideUsername ? formattedText : rpText.html }} onClick={onClickChat} />
                         </>
                     )}
                 </div>

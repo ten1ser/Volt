@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isDistrictPlainStyle, isNativeAnonymousStyle } from './nativeChatSkin';
+import { isDistrictPlainStyle, isNativeAnonymousStyle, splitRpLeadingAsterisk } from './nativeChatSkin';
 
 describe('DistrictRP plain chat styles', () =>
 {
@@ -12,5 +12,33 @@ describe('DistrictRP plain chat styles', () =>
     {
         expect([1, 2, 8, 9, 10, 14, 15, 16, 31, 33].some(isDistrictPlainStyle)).toBe(false);
         expect(isNativeAnonymousStyle(1)).toBe(true);
+    });
+});
+
+describe('splitRpLeadingAsterisk', () =>
+{
+    it('moves the leading asterisk of an RP action line in front of the name', () =>
+    {
+        expect(splitRpLeadingAsterisk(904, '*Punches bob*')).toEqual({ prefix: '*', html: 'Punches bob*' });
+    });
+
+    it('leaves an RP action line without a leading asterisk unchanged', () =>
+    {
+        expect(splitRpLeadingAsterisk(904, 'hello')).toEqual({ prefix: '', html: 'hello' });
+    });
+
+    it('leaves ordinary chat unchanged', () =>
+    {
+        expect(splitRpLeadingAsterisk(0, '*waves*')).toEqual({ prefix: '', html: '*waves*' });
+    });
+
+    it('moves the leading asterisk on the last RP action style', () =>
+    {
+        expect(splitRpLeadingAsterisk(913, '*Hangs up*').prefix).toBe('*');
+    });
+
+    it('leaves the radio style outside the RP action range unchanged', () =>
+    {
+        expect(splitRpLeadingAsterisk(900, '*x*')).toEqual({ prefix: '', html: '*x*' });
     });
 });

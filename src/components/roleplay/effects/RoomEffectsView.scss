@@ -38,14 +38,16 @@ $rp-fx-frames: 6;
     to { background-position: -($rp-fx-cell-w * $rp-fx-frames) 0; }
 }
 
-@each $kind in punch-hit, punch-miss, shot-hit, shot-miss, armor-break, knockout, heal, robbed {
+// stab-hit is drawn ahead of a knife weapon; no server kind sends it yet.
+@each $kind in punch-hit, punch-miss, shot-hit, shot-miss, armor-break, knockout, heal, robbed, stab-hit {
     .rp-room-effect--#{$kind} .rp-room-effect__sprite {
         background-image: url('@/assets/images/roleplay/effects/effect-#{$kind}.png');
     }
 }
 
 .rp-room-effect--punch-hit .rp-room-effect__sprite,
-.rp-room-effect--shot-hit .rp-room-effect__sprite {
+.rp-room-effect--shot-hit .rp-room-effect__sprite,
+.rp-room-effect--stab-hit .rp-room-effect__sprite {
     animation-duration: 480ms;
 }
 
